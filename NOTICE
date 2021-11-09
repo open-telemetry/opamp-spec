@@ -1,0 +1,8 @@
+Open Agent Management Protocol
+
+Copyright The OpenTelemetry Authors 
+
+Some parts of this specification are copied from, derived from, or inspired by
+OpAMP spec (https://github.com/signalfx/opamp-spec), created by Splunk Inc.
+(https://www.splunk.com/).
+Copyright 2021 Splunk Inc.
