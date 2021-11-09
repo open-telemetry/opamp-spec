@@ -168,7 +168,7 @@ message ServerToAgent {
     string instance_uid = 1;
     oneof Body {
         DataForAgent data_for_agent = 2;
-        ErrorResponse error_response = 3;
+        ServerErrorResponse error_response = 3;
     }
 }
 ```
@@ -188,7 +188,7 @@ ServerToAgent message is addressed to.
 
 The Body of the message is a Protobuf oneof field, meaning that only one of the
 choices can be present. See later for [DataForAgent](#dataforagent-message) and
-[ErrorResponse](#errorresponse-message) descriptions.
+[ServerErrorResponse](#servererrorresponse-message) descriptions.
 
 <h2 id="dataforagent-message">DataForAgent Message</h2>
 
@@ -218,10 +218,11 @@ reports may be desirable when processing takes a long time, in which case the
 status reports allow the Server to stay informed.
 
 Note that the Server will reply to each status report with a DataForAgent
-message (or with an ErrorResponse if something goes wrong). These DataForAgent
-messages may have the same content as the one received earlier or the content
-may be different if the situation on the Server has changed. The Agent SHOULD be
-ready to process these additional DataForAgent messages as they arrive.
+message (or with an ServerErrorResponse if something goes wrong). These
+DataForAgent messages may have the same content as the one received earlier or
+the content may be different if the situation on the Server has changed. The
+Agent SHOULD be ready to process these additional DataForAgent messages as they
+arrive.
 
 The Agent SHOULD NOT send any status reports at all if the status of the Agent
 did not change as a result of processing.
@@ -291,14 +292,14 @@ enum Flags {
 ```
 
 
-<h2 id="errorresponse-message">ErrorResponse Message</h2>
+<h2 id="servererrorresponse-message">ServerErrorResponse Message</h2>
 
 
 The message has the following structure:
 
 
 ```protobuf
-message ErrorResponse {
+message ServerErrorResponse {
     enum Type {
         UNKNOWN = 0;
         BAD_REQUEST = 1;
@@ -362,7 +363,7 @@ The Server MUST respond to the status report by sending a
 If the status report is processed successfully by the Server then the
 [Body](#body) field MUST be set to [DataForAgent](#dataforagent-message)
 message. If the status report processing failed then the [Body](#body) field
-MUST be set to ErrorResponse message.
+MUST be set to ServerErrorResponse message.
 
 Here is the sequence diagram that shows how status reporting works (assuming
 server-side processing is successful):
@@ -2026,9 +2027,10 @@ the Agent authentication fails.
 
 If the Server receives a malformed AgentToServer message the Server SHOULD
 respond with a ServerToAgent message with error_response field set in the
-[Body](#body) and the [Type](#type) of [ErrorResponse](#errorresponse-message)
-message set to BAD_REQUEST. The [error_message](#error_message) field SHOULD be
-a human readable description of the problem with the AgentToServer message.
+[Body](#body) and the [Type](#type) of
+[ServerErrorResponse](#errorresponse-message) message set to BAD_REQUEST. The
+[error_message](#error_message) field SHOULD be a human readable description of
+the problem with the AgentToServer message.
 
 The Agent SHOULD NOT retry sending an AgentToServer message to which it received
 a BAD_REQUEST response.
@@ -2058,13 +2060,13 @@ once.
 When the Server is overloaded and is unstable to process the AgentToServer
 message it SHOULD respond with an ServerToAgent message with error_response
 field set in the [Body](#body) and the [type](#type) of
-[ErrorResponse](#errorresponse-message) message set to UNAVAILABLE. ~~The agent
-SHOULD retry the message.~~ _(Note: retrying individual messages is not possible
-since we no longer have sequence ids and don't know which message failed)._ The
-agent SHOULD disconnect, wait, then reconnect again and resume its operation.
-The retry_info field may be optionally set with retry_after_nanoseconds field
-specifying how long the Agent SHOULD wait before ~~retiring the message~~
-reconnecting:
+[ServerErrorResponse](#servererrorresponse-message) message set to UNAVAILABLE.
+~~The agent SHOULD retry the message.~~ _(Note: retrying individual messages is
+not possible since we no longer have sequence ids and don't know which message
+failed)._ The agent SHOULD disconnect, wait, then reconnect again and resume its
+operation. The retry_info field may be optionally set with
+retry_after_nanoseconds field specifying how long the Agent SHOULD wait before
+~~retiring the message~~ reconnecting:
 
 
 ```protobuf
