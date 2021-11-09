@@ -1010,7 +1010,7 @@ revocation may be performed for either of the 3 types of the destinations,
 provided that the Server previously offered and the Agent accepted the
 particular type of destination.
 
-For own telemetry and "other" destinations the Server MUSt also communicate the
+For own telemetry and "other" destinations the Server MUST also communicate the
 revocation fact to the corresponding destinations so that they can begin
 rejecting access to connections that use the revoked credentials.
 
@@ -1065,7 +1065,7 @@ because they are unchanged.
 Settings to connect to the OpAMP server. If this field is not set then the agent
 should assume that the settings are unchanged and should continue using existing
 settings. The agent MUST verify the offered connection settings by actually
-connecting before accepting the setting to ensure it does not loose access to
+connecting before accepting the setting to ensure it does not lose access to
 the OpAMP server due to invalid settings.
 
 <h4 id="own_metrics">own_metrics</h4>
@@ -1260,8 +1260,9 @@ PEM-encoded private key of the certificate. Required.
 
 
 PEM-encoded public key of the CA that signed this certificate. Optional, MUST be
-specified if the certificate is CA-signed. Can be stored by intermediary proxies
-in order to verify the connecting client's certificate in the future.
+specified if the certificate is CA-signed. Can be stored by intermediary
+TLS-terminating proxies in order to verify the connecting client's certificate
+in the future.
 
 <h2 id="own-telemetry-reporting">Own Telemetry Reporting</h2>
 
