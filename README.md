@@ -766,17 +766,24 @@ performed by the agent and has the following structure:
 
 ```protobuf
 message AgentInstallStatus {
-    bytes server_offered_hash = 1;
+    string server_offered_version = 1;
+    bytes server_offered_hash = 2;
     enum Status {
         INSTALLED = 0;
         INSTALLING = 1;
         INSTALL_FAILED = 2;
         INSTALL_NO_PERMISSION = 3;
     }
-    Status status = 2;
-    string error_message = 3;
+    Status status = 3;
+    string error_message = 4;
 }
 ```
+
+<h4 id="server_offered_version">server_offered_version</h4>
+
+The version field from the AgentPackageAvailable that the server offered to the
+agent. MUST be set if the agent previously received an offer from the server to
+install this agent.
 
 
 <h4 id="server_offered_hash">server_offered_hash</h4>
