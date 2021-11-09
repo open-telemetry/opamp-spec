@@ -2377,6 +2377,8 @@ worse latency characteristics but may be desirable for some implementation.
 
 --
 
+Copyright The OpenTelemetry Authors
+
 Copyright 2021 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
