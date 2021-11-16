@@ -582,11 +582,14 @@ message EffectiveConfig {
 
 <h4 id="hash">hash</h4>
 
+The hash of the effective config. The hash is calculated by the Agent from the
+content of the effective config (from the names and content of all items in the
+config_map field).
 
-The hash of the effective config. After establishing the OpAMP connection if the
-effective config did not change since it was last reported during the previous
-connection sessions the Agent is recommended to include only the hash and omit
-the config_map field to save bandwidth.
+After establishing the OpAMP connection if the effective config did not change
+since it was last reported during the previous connection sessions the Agent is
+recommended to include only the hash field and omit the config_map field to save
+bandwidth.
 
 The Server SHOULD compare this hash with the last hash of effective config it
 received from the Agent and if the hashes are different the Server SHOULD ask
