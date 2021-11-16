@@ -1533,9 +1533,9 @@ message AgentRemoteConfig {
 <h2 id="addons">Addons</h2>
 
 
-An Addon is a collection of named files. The content of the files, functionality
-provided by the addons, how they are stored and used by the Agent side is agent
-type-specific and is outside the concerns of the OpAMP protocol.
+An Addon has a name and content stored in a file. The content of the file,
+functionality provided by the addons, how they are stored and used by the Agent
+side is agent type-specific and is outside the concerns of the OpAMP protocol.
 
 The Agent may have zero or more addons installed. Each addon has a name. The
 Agent cannot have more than one addon of the particular name installed.
@@ -1554,10 +1554,17 @@ initiative if the Server wants to push addons to the Agent.
 
 The [AddonsAvailable](#addonsavailable-message) message describes the addons
 that are available on the Server for this Agent. For each addon the message
-lists the files that are part of the addon and provides the URL from which the
-file can be downloaded using an HTTP GET request. The URLs point to addon files
-on a Download Server (which may be on the same host as the OpAMP Server or a
-different host).
+describes the file that has the addon content and provides the URL from which
+the file can be downloaded using an HTTP GET request. The URLs point to addon
+files on a Download Server (which may be on the same host as the OpAMP Server or
+a different host).
+
+The protocol supports only a single downloadable file per addon. If the Agent's
+addons conceptually are composed of multiple files then the Agent and Server can
+agree to store the files in any file format that allows storing multiple files
+in a single file, e.g. a zip or tar file. After downloading the single addon
+file the Agent may extract the files contained in it. How exactly this is done
+is Agent specific and is beyond the scope of the protocol.
 
 <h3 id="downloading-addons">Downloading Addons</h3>
 
@@ -1589,33 +1596,27 @@ download the particular addon:
   the Agent has with the hash of the addon offered by the Server in the
   [hash](#hash) field in the [AddonAvailable](#addonavailable-message) message.
   If the hashes are the same then the addon is the same and processing for this
-  addon is done, proceed to the next addo. If the hashes are different then
-  check each individual file as described in Step 3.
+  addon is done, proceed to the next addon. If the hashes are different then
+  check the addon file as described in Step 3.
 
 Finally, if the Agent has any addons that are not offered by the Server the
 addons SHOULD be deleted by the Agent.
 
 <h4 id="step-3">Step 3</h4>
 
-
-For each file of the addon offered by the Server the Agent SHOULD check if it
+For the file of the addon offered by the Server the Agent SHOULD check if it
 should download the file:
-
-
 
 * If the Agent does not have a file with the specified name then it SHOULD
   download the file.
 * If the Agent has the file then the Agent SHOULD compare the hash of the file
   it has locally with the [hash](#hash) field in the
   [DownloadableFile](#downloadablefile-message) message. If hashes are the same
-  the processing of this file is done. Otherwise the offered version is and the
-  file SHOULD be downloaded from the location specified in the
+  the processing of this file is done. Otherwise the offered file is different
+  and the file SHOULD be downloaded from the location specified in the
   [download_url](#download_url) field of the
   [DownloadableFile](#downloadablefile-message) message. The Agent SHOULD use an
   HTTP GET message to download the file.
-
-Finally, if the Agent has any files that are not offered by the Server for this
-addon then the file SHOULD be deleted by the Agent.
 
 The procedure outlined above allows the Agent to efficiently download only new
 or changed addons and only download new or changed files.
@@ -1691,30 +1692,19 @@ guarantees are needed by the implementation).
 The hashes are opaque to the Agent, the Agent never calculates hashes, it only
 stores and compares them.
 
-There are 4 levels of hashes: 
+There are 3 levels of hashes: 
 
 <h4 id="file-hash">File Hash</h4>
-
 
 The hash of the addon file content. This is stored in the [hash](#hash) field in
 the [DownloadableFile](#downloadablefile-message) message. This value SHOULD be
 used by the Agent to determine if the particular file it has is different on the
 Server and needs to be re-downloaded.
 
-<h4 id="file-list-hash">File List Hash</h4>
-
-
-The aggregate hash of the list. SHOULD be calculated based on the names and
-content of all files. This is stored in the hash field in the
-[DownloadableFileList](#downloadablefilelist-message) message. This value SHOULD
-be used by the Agent to determine if the particular file list it has is
-different on the Server and needs to be re-downloaded.
-
 <h4 id="addon-hash">Addon Hash</h4>
 
-
-The addon hash that identifies the entire addon (its name, and all of its
-files). This hash is stored in the [hash](#hash) field in the
+The addon hash that identifies the entire addon (addon name and file content).
+This hash is stored in the [hash](#hash) field in the
 [AddonAvailable](#addonavailable-message) message.
 
 This value SHOULD be used by the Agent to determine if the particular addon it
@@ -1787,7 +1777,7 @@ message has the following structure:
 
 ```protobuf
 message AddonAvailable {
-    DownloadableFileList files = 1;
+    DownloadableFile file = 1;
     bytes hash = 2;
 }
 ```
@@ -1795,78 +1785,43 @@ message AddonAvailable {
 
 TODO: do we need other fields, e.g. addon version or description?
 
-<h4 id="files">files</h4>
+<h4 id="file">file</h4>
 
-
-The list of files in the addon. The map of addon files. Keys are file names.
-
-<h4 id="hash">hash</h4>
-
-
-The aggregate hash of the addon. SHOULD be calculated based on file names and
-content of all files in the addon.
-
-<h3 id="downloadablefilelist-message">DownloadableFileList Message</h3>
-
-
-A list of files that can be downloaded. The list's aggregate hash and the hash
-of each individual file is provided so that the downloading can be skipped if
-the Agent already has the collection or the individual files. The message has
-the following structure:
-
-
-```protobuf
-message DownloadableFileList {
-    map<string,DownloadableFile> files = 1;
-    bytes hash = 2;
-}
-```
-
-
-<h4 id="files">files</h4>
-
-
-The map of addon files. Keys are file names.
+The downloadable file of the addon.
 
 <h4 id="hash">hash</h4>
 
-
-The aggregate hash of the addon. SHOULD be calculated based on file names and
-content of all files in the addon.
+The hash of the addon. SHOULD be calculated based on addon name and
+content of the file of the addon.
 
 <h3 id="downloadablefile-message">DownloadableFile Message</h3>
 
-
 The message has the following structure:
-
 
 ```protobuf
 message DownloadableFile {
     string download_url = 1;
-    bytes hash = 2;
+    bytes content_hash = 2;
 }
 ```
 
-
 <h4 id="download_url">download_url</h4>
-
 
 The URL from which the file can be downloaded using HTTP GET request. The server
 at the specified URL SHOULD support range requests to allow for resuming
 downloads.
 
-<h4 id="hash">hash</h4>
+<h4 id="content_hash">content_hash</h4>
 
-
-The hash of the file content.
+The hash of the file content. Can be used by the Agent to verify that the file
+was downloaded correctly.
 
 <h2 id="agent-package-updates">Agent Package Updates</h2>
 
-
-Agent package a collection of named files. The package can be downloaded by the
-Agent and installed to replace the Agent itself, either to upgrade it to a newer
-version or to downgrade it to an older version. The content of the files, how
-they are installed on the Agent side is agent type-specific and is outside the
+Agent package is a downloadable file. The package can be downloaded by the Agent
+and installed to replace the Agent itself, either to upgrade it to a newer
+version or to downgrade it to an older version. The content of the file, how it
+is installed on the Agent side is agent type-specific and is outside the
 concerns of the OpAMP protocol.
 
 To offer a package to the Agent the Server sets the
@@ -1875,24 +1830,23 @@ message that is sent either in response to an status report form the Agent or by
 Server's initiative if the Server wants to push a package to the Agent.
 
 The [AgentPackageAvailable](#agentpackageavailable-message) message describes a
-package that is available on the Server for this Agent. The message lists the
-files that are part of the package and provides the URL from which the file can
-be downloaded using an HTTP GET request. The URLs point to addon files on a
+package that is available on the Server for this Agent. The message points to
+the file that is contains the package and provides the URL from which the file
+can be downloaded using an HTTP GET request. The URLs point to a file on a
 Download Server (which may be on the same host as the OpAMP Server or a
 different host).
 
 <h3 id="downloading-agent-package">Downloading Agent Package</h3>
 
-
 After receiving the [AgentPackageAvailable](#agentpackageavailable-message)
 message the Agent SHOULD follow the download procedure that is similar to
-[Addon download procedure](#downloading-addons) and download the package files
+[Addon download procedure](#downloading-addons) and download the package file
 as necessary, using the hashes to avoid unnecessary downloads.
 
-The Agent MAY send status reports as it downloads each individual file. The
-Agent SHOULD send a status report when the downloading of the package is
-finished and the package is installed (or failed to install). The execution
-sequence is the following:
+The Agent MAY send status reports as it downloads the file. The Agent SHOULD
+send a status report when the downloading of the package is finished and the
+package is installed (or failed to install). The execution sequence is the
+following:
 
 
 ```
@@ -1903,22 +1857,7 @@ sequence is the following:
        │                 │◄──────────────────────────────────┤
        │   HTTP GET      │                                   │
        │◄────────────────┤                                   │
-       │ Download file #1│                                   │
-       ├────────────────►│                                   │
-       │                 │ AgentToServer{StatusReport}       │
-       │                 ├──────────────────────────────────►│
-       │   HTTP GET      │                                   │
-       │◄────────────────┤                                   │
-       │ Download file #2│                                   │
-       ├────────────────►│                                   │
-       │                 │ AgentToServer{StatusReport}       │
-       │                 ├──────────────────────────────────►│
-       │                 │                                   │
-       .                 .                                   .
-
-       │   HTTP GET      │                                   │
-       │◄────────────────┤                                   │
-       │ Download file #N│                                   │
+       │ Download file   │                                   │
        ├────────────────►│                                   │
        │                 │ AgentToServer{StatusReport}       │
        │                 ├──────────────────────────────────►│
@@ -1931,6 +1870,13 @@ the current state and is ready to rollback the installation if it fails, such
 that the Agent does not end up in a broken state due to a failed attempt to
 install the downloaded package. The exact mechanisms for such rollback are
 outside the scope of the OpAMP specification.
+
+The protocol supports only a single downloadable file per package. If the
+Agent's packages conceptually are composed of multiple files then the Agent and
+Server can agree to store the files in any file format that allows storing
+multiple files in a single file, e.g. a zip or tar file. After downloading the
+single package file the Agent may extract the files contained in it. How exactly
+this is done is Agent specific and is beyond the scope of the protocol.
 
 <h3 id="security-considerations">Security Considerations</h3>
 
@@ -1954,22 +1900,20 @@ has the following structure:
 ```protobuf
 message AgentPackageAvailable {
     string version = 1;
-    DownloadableFileList files = 2;
+    DownloadableFile file = 2;
 }
 ```
 
 
 <h4 id="version">version</h4>
 
-
 The agent version that is available on the server side. The agent may for
 example use this information to avoid downloading a package that was previously
 already downloaded and failed to install.
 
-<h4 id="files">files</h4>
+<h4 id="file">file</h4>
 
-
-The list of files in the package.
+The downloadable file of the package.
 
 <h1 id="connection-management">Connection Management</h1>
 
