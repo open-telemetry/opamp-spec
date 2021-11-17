@@ -472,7 +472,6 @@ message StatusReport {
     EffectiveConfig effective_config = 2;
     RemoteConfigStatus remote_config_status = 3;
     bytes server_provided_all_addons_hash = 4;
-    HealthStatus health_status = 5;
 }
 ```
 
@@ -516,27 +515,6 @@ server via AddonsAvailable message.
 The server SHOULD compare this hash to the aggregate hash of all addons that it
 has for this Agent and if the hashes are different the server SHOULD send an
 AddonsAvailable message to the agent.
-
-<h4 id="health_status">health_status</h4>
-
-
-Indicates whether the agent is healthy or not. The value is one of the enum:
-
-
-```protobuf
-enum HealthStatus {
-    // The health status is unchanged since last reported.
-    HealthUnset = 0;
-    // The agent is healthy.
-    Healthy = 1;
-    // The agent is unhealthy.
-    Unhealthy = 2;
-}
-```
-
-
-More granular health information is expected to be reported by the Agent as
-described in [Own Telemetry Reporting](#own-telemetry-reporting).
 
 <h3 id="agentdescription-message">AgentDescription Message</h3>
 
