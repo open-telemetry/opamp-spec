@@ -118,6 +118,39 @@ the Agent to the Server and from the Server to the Agent.
 The default URL path for the initial WebSocket's HTTP connection is /v1/opamp.
 The URL path MAY be configurable on the Agent and on the Server.
 
+OpAMP is an asynchronous, full-duplex message exchange protocol. The order and
+sequence of messages exchanged by the Agent and the Server is defined for each
+particular capability in the corresponding section of this specification.
+
+The sequence is normally started by an initiating message triggered by some
+external event. For example after the connection is established the Agent sends
+a StatusReport message. In this case the "connection established" is the
+triggering event and the StatusReport is the initiating message.
+
+Both the Agent and the Server may begin a sequence by sending an initiating
+message.
+
+The initiating message may trigger the recipient to send one or messages back,
+which in turn may trigger messages in the opposite direction and so on. This
+exchange of messages in both directions continues until the sequence is over
+because the goal of the exchange is achieved or the sequence failed with an
+error.
+
+Note that the same message may in some cases be the initiating message of the
+sequence and in some other cases it may be triggered in response to receiving
+some other message. Unlike other protocols in OpAMP there is no strict
+separation between "request" and "response" messages types. The role of the
+message depends on how the sequence is triggered.
+
+For example the StatusReport message may be the initiating message sent by the
+Agent when the Agent connects to the Server for the first time. The StatusReport
+message may also be sent by the Agent in response to the Server making a remote
+configuration offer to the Agent and Agent reporting that it accepted the
+configuration.
+
+See sections under the [Operation](#operation) section for the details of the
+message sequences.
+
 <h2 id="agenttoserver-message">AgentToServer Message</h2>
 
 
@@ -340,7 +373,7 @@ Error message, typically human readable.
 
 Additional [RetryInfo](#throttling) message about retrying if type==UNAVAILABLE.
 
-<h1 id="operation">Operation</h1>
+# Operation
 
 
 <h2 id="status-reporting">Status Reporting</h2>
@@ -1974,7 +2007,6 @@ a BAD_REQUEST response.
 The Agent MAY retry sending AgentToServer message if:
 
 
-
 * AgentToServer message that requires a response was sent, however no response
   was received within a reasonable time (the timeout MAY be configurable).
 * AgentToServer message that requires a response was sent, however the
@@ -1986,6 +2018,31 @@ For messages that require a response if the Server receives the same message
 more than once the Server MUST respond to each message, not just the first
 message, even if the Server detects the duplicates and processes the message
 once.
+
+Note that the Agent is not required to keep a growing queue of messages that it
+wants to send to the Server if the connection is unavailable. The Agent
+typically only needs to keep one up-to-date message of each kind that it wants
+to send to the Server and send it as soon as the connection is available.
+
+For example, the Agent should keep track of its own status and compose a
+StatusReport message that is ready to be sent at the first opportunity. If the
+Agent is unable to send the StatusReport message (for example if the connection
+is not yet available) the Agent does not need to create a new StatusReport every
+time the Agent's status changes and keep all these StatusReport messages in a
+queue ready to be sent. The Agent simply needs to keep one up-to-date
+StatusReport message and send it at the first opportunity. This of course
+requires the StatusReport message to contain all changes since it was last
+reported and to correctly reflect the current (last) state of the Agent.
+
+Similarly, all other Agent reporting capabilities, such as Addon Status
+Reporting or Agent Package Installation Status Reporting require the Agent to
+only keep one up-to-date status message and send it at the earliest opportunity.
+
+The exact same logic is true in the opposite direction: the Server normally only
+needs to keep one up-to-date message of a particular kind that it wants to
+deliver to the Agent and send it as soon as the connection to the Agent is
+available.
+
 
 <h2 id="throttling">Throttling</h2>
 
