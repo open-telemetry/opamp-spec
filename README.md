@@ -237,7 +237,7 @@ message DataForAgent {
     AddonsAvailable addons_available = 3;
     AgentPackageAvailable agent_package_available = 4;
     Flags flags = 5;
-    Capabilities capabilities = 6;
+    ServerCapabilities capabilities = 6;
 }
 ```
 
@@ -307,7 +307,7 @@ be set in the first DataForAgent sent by the Server and MAY be omitted in
 subsequent DataForAgent messages by setting it to Unspecified value.
 
 ```protobuf
-enum Capabilities {
+enum ServerCapabilities {
   // The capabilities field is unspecified.
   Unspecified = 0;
   // The Server can accept status reports. This bit MUST be set, since all Server
@@ -513,7 +513,7 @@ message StatusReport {
     EffectiveConfig effective_config = 2;
     RemoteConfigStatus remote_config_status = 3;
     bytes server_provided_all_addons_hash = 4;
-    Capabilities capabilities = 5;
+    AgentCapabilities capabilities = 5;
 }
 ```
 
@@ -568,7 +568,7 @@ be set in the first StatusReport sent by the Agent and MAY be omitted in
 subsequent StatusReport messages by setting it to Unspecified value.
 
 ```protobuf
-enum Capabilities {
+enum AgentCapabilities {
     // The capabilities field is unspecified.
     Unspecified = 0;
     // The Agent can report status. This bit MUST be set, since all Agents MUST
