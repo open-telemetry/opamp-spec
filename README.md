@@ -577,6 +577,24 @@ The version number of the agent build. The Server can use this information for
 example to decide if it wants to offer a package of a different version to the
 agent via AgentPackageAvailable message.
 
+#### agent_attributes
+
+Attributes that describe the agent and the environment it runs in. Keys/values
+are according to OpenTelemetry semantic conventions, see:
+https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/resource/semantic_conventions
+
+The following attributes SHOULD be included:
+- os.type, os.version - to describe where the agent runs.
+- host.* to describe the host the agent runs on.
+- cloud.* to describe the cloud where the host is located.
+- any other relevant Resource attributes that describe this agent and the
+  environment it runs in.
+- any user-defined attributes that the end user would like to associate with
+  this agent.
+
+Other attributes MAY be included to describe the Agent.
+
+
 <h3 id="effectiveconfig-message">EffectiveConfig Message</h3>
 
 
