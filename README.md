@@ -2224,6 +2224,7 @@ strategy to gradually increase the interval between retries.
 When the Server is overloaded it may also be unable to upgrade the HTTP
 connection to WebSocket. The Server MAY return
 [HTTP 503 Service Unavailable](https://datatracker.ietf.org/doc/html/rfc7231#page-63)
+or [HTTP 429 Too Many Requests](https://datatracker.ietf.org/doc/html/rfc6585#section-4)
 response and MAY optionally set
 [Retry-After](https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.3)
 header to indicate when SHOULD the Agent attempt to reconnect. The Agent SHOULD
