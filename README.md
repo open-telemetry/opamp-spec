@@ -812,15 +812,17 @@ The AgentAddonStatus has the following structure:
 ```protobuf
 message AgentAddonStatus {
     string name = 1;
-    bytes agent_has_hash = 2;
-    bytes server_offered_hash = 3;
+    string agent_has_version = 2;
+    bytes agent_has_hash = 3;
+    string server_offered_version = 4;
+    bytes server_offered_hash = 5;
     enum Status {
         INSTALLED = 0;
         INSTALLING = 1;
         INSTALL_FAILED = 2;
     }
-    Status status = 4;
-    string error_message = 5;
+    Status status = 6;
+    string error_message = 7;
 }
 ```
 
@@ -831,8 +833,17 @@ message AgentAddonStatus {
 Addon name. MUST be always set and MUST match the key in the addons field of
 AgentAddonStatuses message.
 
-<h4 id="agent_has_hash">agent_has_hash</h4>
+#### agent_has_version
 
+The version of the addon that the Agent has.
+
+MUST be set if the Agent has this addon.
+
+MUST be empty if the Agent does not have this addon. This may be the case for
+example if the addon was offered by the Server but failed to install and the
+agent did not have this addon previously.
+
+#### agent_has_hash
 
 The hash of the addon that the Agent has.
 
@@ -842,8 +853,22 @@ MUST be empty if the Agent does not have this addon. This may be the case for
 example if the addon was offered by the Server but failed to install and the
 agent did not have this addon previously.
 
-<h4 id="server_offered_hash">server_offered_hash</h4>
+#### server_offered_version
 
+The version of the addon that the server offered to the agent.
+
+MUST be set if the installation of the addon is initiated by an earlier offer
+from the server to install this addon.
+
+MUST be empty if the Agent has this addon but it was installed locally and was
+not offered by the server.
+
+Note that it is possible for both agent_has_version and server_offered_version
+fields to be set and to have different values. This is for example possible if
+the agent already has a version of the addon successfully installed, the server
+offers a different version, but the agent fails to install that version.
+
+#### server_offered_hash
 
 The hash of the addon that the server offered to the agent.
 
@@ -1926,19 +1951,26 @@ message has the following structure:
 
 ```protobuf
 message AddonAvailable {
-    DownloadableFile file = 1;
-    bytes hash = 2;
+    string version = 1;
+    DownloadableFile file = 2;
+    bytes hash = 3;
 }
 ```
 
 
-TODO: do we need other fields, e.g. addon version or description?
+TODO: do we need other fields, e.g. description?
 
-<h4 id="file">file</h4>
+#### version
+
+The addon version that is available on the server side. The agent may for
+example use this information to avoid downloading an addon that was previously
+already downloaded and failed to install.
+
+#### file
 
 The downloadable file of the addon.
 
-<h4 id="hash">hash</h4>
+#### hash
 
 The hash of the addon. SHOULD be calculated based on addon name and
 content of the file of the addon.
