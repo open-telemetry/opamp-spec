@@ -2071,13 +2071,19 @@ The downloadable file of the package.
 <h1 id="connection-management">Connection Management</h1>
 
 
-<h2 id="establishing-connection">Establishing Connection</h2>
+## Establishing Connection
 
-
-The Agent connects to the Server by establishing an HTTP connection, then
+The Agent connects to the Server by establishing an HTTP(S) connection, then
 upgrading the connection to WebSocket as defined by WebSocket standard. After
-the WebSocket connection is open the Agent MUST send the first
+the WebSocket connection is established the Agent MUST send the first
 [status report](#status-reporting) and expect a response to it.
+
+If the Agent is unable to establish a WebSocket connection to the Server it
+SHOULD retry connection attempts and use exponential backoff strategy with
+jitter to avoid overwhelming the Server.
+
+When retrying connection attempts the Agent SHOULD honour any
+[throttling](#throttling) responses it receives from the Server.
 
 <h2 id="closing-connection">Closing Connection</h2>
 
@@ -2096,6 +2102,14 @@ frame and follow the procedure defined by WebSocket standard.
 To close a connection the Server MUST then send a WebSocket
 [Close](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1) control
 frame and follow the procedure defined by WebSocket standard.
+
+## Restoring Connection
+
+If an established WebSocket connection is broken (disconnected) unexpectedly the
+Agent SHOULD immediately try to re-connect. If the re-connection fails the Agent
+SHOULD continue connection attempts with backoff as described in
+[Establishing Connection](#establishing-connection).
+
 
 <h2 id="duplicate-connections">Duplicate Connections</h2>
 
@@ -2183,8 +2197,7 @@ deliver to the Agent and send it as soon as the connection to the Agent is
 available.
 
 
-<h2 id="throttling">Throttling</h2>
-
+## Throttling
 
 When the Server is overloaded and is unstable to process the AgentToServer
 message it SHOULD respond with an ServerToAgent message with error_response
