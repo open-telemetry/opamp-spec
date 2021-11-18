@@ -552,13 +552,14 @@ https://github.com/open-telemetry/opentelemetry-specification/tree/main/specific
 
 The following attributes SHOULD be included:
 - os.type, os.version - to describe where the agent runs.
-- any other os.* attributes known.
 - host.* to describe the host the agent runs on.
 - cloud.* to describe the cloud where the host is located.
 - any other relevant Resource attributes that describe this agent and the
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
   this agent.
+
+Other attributes MAY be included to describe the Agent.
 
 
 <h3 id="effectiveconfig-message">EffectiveConfig Message</h3>
