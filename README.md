@@ -270,6 +270,7 @@ message DataForAgent {
     AddonsAvailable addons_available = 3;
     AgentPackageAvailable agent_package_available = 4;
     Flags flags = 5;
+    ServerCapabilities capabilities = 6;
 }
 ```
 
@@ -316,11 +317,51 @@ enum Flags {
 
     // DataForAgentFlags is a bit mask. Values below define individual bits.
 
-    // The server asks the agent to report effective config.
+    // The server asks the agent to report effective config. This bit MUST NOT be
+    // set if the Agent indicated it cannot report effective config by setting
+    // the ReportsEffectiveConfig bit to 0 in StatusReport.capabilities field.
     ReportEffectiveConfig = 0x00000001;
 
-    // The server asks the agent to report addon statuses.
+    // The server asks the agent to report addon statuses. This bit MUST NOT be
+    // set if the Agent indicated it cannot report addon status by setting
+    // the ReportsAddonStatus bit to 0 in StatusReport.capabilities field.
     ReportAddonStatus     = 0x00000002;
+}
+```
+
+
+#### capabilities
+
+Bitmask of flags defined by Capabilities enum. All bits that are not defined in
+Capabilities enum MUST be set to 0 by the Server. This allows extending the
+protocol and the Capabilities enum in the future such that old Servers
+automatically report that they don't support the new capability. This field MUST
+be set in the first DataForAgent sent by the Server and MAY be omitted in
+subsequent DataForAgent messages by setting it to Unspecified value.
+
+```protobuf
+enum ServerCapabilities {
+  // The capabilities field is unspecified.
+  Unspecified = 0;
+  // The Server can accept status reports. This bit MUST be set, since all Server
+  // MUST be able to accept status reports.
+  AcceptsStatus                  = 0x00000001;
+  // The Server can offer remote configuration to the Agent.
+  OffersRemoteConfig             = 0x00000002;
+  // The Server can accept EffectiveConfig in StatusReport.
+  AcceptsEffectiveConfig         = 0x00000004;
+  // The Server can offer Addons.
+  OffersAddons                   = 0x00000008;
+  // The Server can accept Addon status.
+  AcceptsAddonsStatus            = 0x00000010;
+  // The Server can offer packages to install.
+  OffersAgentPackage             = 0x00000020;
+  // The Server can accept the installation status of the package.
+  AcceptsAgentPackageStatus      = 0x00000040;
+  // The Server can offer connection settings.
+  OffersConnectionSettings       = 0x00000080;
+
+  // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
 
@@ -505,6 +546,7 @@ message StatusReport {
     EffectiveConfig effective_config = 2;
     RemoteConfigStatus remote_config_status = 3;
     bytes server_provided_all_addons_hash = 4;
+    AgentCapabilities capabilities = 5;
 }
 ```
 
@@ -548,6 +590,54 @@ server via AddonsAvailable message.
 The server SHOULD compare this hash to the aggregate hash of all addons that it
 has for this Agent and if the hashes are different the server SHOULD send an
 AddonsAvailable message to the agent.
+
+#### capabilities
+
+Bitmask of flags defined by Capabilities enum. All bits that are not defined in
+Capabilities enum MUST be set to 0 by the Agent. This allows extending the
+protocol and the Capabilities enum in the future such that old Agents
+automatically report that they don't support the new capability. This field MUST
+be set in the first StatusReport sent by the Agent and MAY be omitted in
+subsequent StatusReport messages by setting it to Unspecified value.
+
+```protobuf
+enum AgentCapabilities {
+    // The capabilities field is unspecified.
+    Unspecified = 0;
+    // The Agent can report status. This bit MUST be set, since all Agents MUST
+    // report status.
+    ReportsStatus                  = 0x00000001;
+    // The Agent can accept remote configuration from the Server.
+    AcceptsRemoteConfig            = 0x00000002;
+    // The Agent will report EffectiveConfig in StatusReport.
+    ReportsEffectiveConfig         = 0x00000004;
+    // The Agent can accept Addon offers.
+    AcceptsAddons                  = 0x00000008;
+    // The Agent can report Addon status.
+    ReportsAddonsStatus            = 0x00000010;
+    // The Agent can accept packages to install.
+    AcceptsAgentPackage            = 0x00000020;
+    // The Agent can report the installation status of the package.
+    ReportsAgentPackageStatus      = 0x00000040;
+    // The Agent can report own traces to the destination specified by
+    // the Server via ConnectionSettingsOffers.own_traces field.
+    ReportsOwnTraces               = 0x00000080;
+    // The Agent can report own metrics to the destination specified by
+    // the Server via ConnectionSettingsOffers.own_metrics field.
+    ReportsOwnMetrics              = 0x00000100;
+    // The Agent can report own logs to the destination specified by
+    // the Server via ConnectionSettingsOffers.own_logs field.
+    ReportsOwnLogs                 = 0x00000200;
+    // The can accept connections settings for OpAMP via
+    // ConnectionSettingsOffers.opamp field.
+    AcceptsOpAMPConnectionSettings = 0x00000400;
+    // The can accept connections settings for other destinations via
+    // ConnectionSettingsOffers.other_connections field.
+    AcceptsOtherConnectionSettings = 0x00000800;
+
+    // Add new capabilities here, continuing with the least significant unused bit.
+}
+```
 
 <h3 id="agentdescription-message">AgentDescription Message</h3>
 
@@ -913,6 +1003,21 @@ destinations:
    it is known to the agent). For example OpenTelemetry Collector can use the
    named connection settings for its exporters, one named connection setting per
    correspondingly named exporter.
+
+The Server may make an offer for the particular connection class only if the
+corresponding capability to use the connection is reported by the Agent via
+StatusReport.capabilities field:
+
+- If ReportsOwnTraces capability bit is set the Server may offer connection
+  settings for traces using own_traces field.
+- If ReportsOwnMetrics capability bit is set the Server may offer connection
+  settings for metrics using own_metrics field.
+- If ReportsOwnLogs capability bit is set the Server may offer connection
+  settings for logs using own_logs field.
+- If AcceptsOpAMPConnectionSettings capability bit is set the Server may offer
+  connection settings for OpAMP connection using opamp field.
+- If AcceptsOtherConnectionSettings capability bit is set the Server may offer
+  connection settings for other destinations using other_connections field.
 
 Depending on which connection settings are offered the sequence of operations is
 slightly different. The handling of connection settings for own telemetry is
@@ -1406,6 +1511,10 @@ DataForAgent message is normally sent by the Server in response to a status
 report the Server has the Agent's description and may tailor the configuration
 it offers to the specific Agent if necessary.
 
+The Agent MUST set the AcceptsRemoteConfig bit of StatusReport.capabilities if
+the Agent is capable of accepting remote configuration. If the bit is not set
+the Server MUST not offer a remote configuration to the Agent.
+
 The Agent's actual configuration that it uses for running may be different from
 the Remote Configuration that is offered by the Server. This actual
 configuration is called the Effective Configuration of the Agent. The Effective
@@ -1418,6 +1527,11 @@ and will also report the Effective Configuration to the OpAMP Server via the
 [effective_config](#effective_config) field of status report. The Server
 typically allows the end user to see the effective configuration alongside other
 data reported in the status reported by the Agent.
+
+The Agent MUST set the ReportsEffectiveConfig bit of StatusReport.capabilities
+if the Agent is capable of reporting effective configuration. If the bit is not
+set the Server should not expect the StatusReport.effective_config field to be
+set.
 
 Here is the typical configuration sequence diagram:
 
@@ -1597,6 +1711,9 @@ agree to store the files in any file format that allows storing multiple files
 in a single file, e.g. a zip or tar file. After downloading the single addon
 file the Agent may extract the files contained in it. How exactly this is done
 is Agent specific and is beyond the scope of the protocol.
+
+The Server is allowed to make an addon offer only if the Agent indicated that it
+can accept addons via AcceptsAddons bit of StatusReport.capabilities field.
 
 <h3 id="downloading-addons">Downloading Addons</h3>
 
@@ -1867,6 +1984,10 @@ the file that is contains the package and provides the URL from which the file
 can be downloaded using an HTTP GET request. The URLs point to a file on a
 Download Server (which may be on the same host as the OpAMP Server or a
 different host).
+
+The Server is allowed to make an package offer only if the Agent indicated that
+it can accept packages via AcceptsAgentPackage bit of StatusReport.capabilities
+field.
 
 <h3 id="downloading-agent-package">Downloading Agent Package</h3>
 
@@ -2188,6 +2309,70 @@ recommend the following:
   code that it runs as external processes) at the minimum possible privilege to
   prevent the code from accessing sensitive files or perform high privilege
   operations. The Agent SHOULD NOT run downloaded code as root user.
+
+# Interoperability
+
+## Interoperability of Partial Implementations
+
+OpAMP defines a number of capabilities for the Agent and the Server. Most of
+these capabilities are optional. The Agent or the Server should be prepared that
+the peer does not support a particular capability.
+
+Both the Agent and the Server indicate the capabilities that they support during
+the initial message exchange. The Agent sets the capabilities bit-field in the
+StatusReport message, the Server sets the capabilities bit-field in the
+DataForAgent message.
+
+Each set bit in the capabilities field indicates that the particular capability
+is supported. The list of Agent capabilities is [here](#statusreport-message).
+The list of Server capabilities is [here](#dataforagent-message).
+
+After the Server learns about the capabilities of the particular Agent the
+Server MUST stop using the capabilities that the Agent does not support.
+
+Similarly, after the Agent learns about the capabilities of the Server the Agent
+MUST stop using the capabilities that the Server does not support.
+
+The specifics of what in the behavior of the Agent and the Server needs to
+change when they detect that the peer does not support a particular capability
+are described in this document where relevant.
+
+## Interoperability of Future Capabilities
+
+There are 2 ways OpAMP enables interoperability between an implementation of the
+current version of this specification and an implementation of a future,
+extended version of OpAMP that adds more capabilities that are not described in
+this specification.
+
+### Ignorable Capability Extensions
+
+For the new capabilities that extend the functionality in such a manner that
+they can be silently ignored by the peer a new field may be added to any
+Protobuf message. The sender that implements this new capability will set the
+new field. A recipient that implements an older version of the specification
+that is unaware of the new capability will simply ignore the new field. The
+Protobuf encoding ensures that the rest of the fields are still successfully
+deserialized by the recipient.
+
+### Non-Ignorable Capability Extensions 
+
+For the new capabilities that extend the functionality in such a manner that
+they cannot be silently ignored by the peer a different approach is used.
+
+The capabilities fields in StatusReport and DataForAgent messages contains a
+number of reserved bits. These bits SHOULD be used for indicating support of new
+capabilities that will be added to OpAMP in the future.
+
+The Agent and the Server MUST set these reserved bits to 0 when sending the
+message. This allows the recipient, which implements a newer version of OpAMP to
+learn that the sender does not support the new capability and adjust its
+behavior correspondingly.
+
+The StatusReport and DataForAgent messages are the first messages exchanged by
+the Agent and Server which allows them to learn about the capabilities of the
+peer and adjust their behavior appropriately. How exactly the behavior is
+adjusted for future capabilities MUST be defined in the future specification of
+the new capabilities.
 
 <h1 id="performance-and-scale">Performance and Scale</h1>
 
