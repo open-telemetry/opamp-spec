@@ -130,10 +130,10 @@ triggering event and the StatusReport is the initiating message.
 Both the Agent and the Server may begin a sequence by sending an initiating
 message.
 
-The initiating message may trigger the recipient to send one or messages back,
-which in turn may trigger messages in the opposite direction and so on. This
-exchange of messages in both directions continues until the sequence is over
-because the goal of the exchange is achieved or the sequence failed with an
+The initiating message may trigger the recipient to send one or more messages
+back, which in turn may trigger messages in the opposite direction and so on.
+This exchange of messages in both directions continues until the sequence is
+over because the goal of the exchange is achieved or the sequence failed with an
 error.
 
 Note that the same message may in some cases be the initiating message of the
