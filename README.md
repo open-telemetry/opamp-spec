@@ -151,8 +151,7 @@ configuration.
 See sections under the [Operation](#operation) section for the details of the
 message sequences.
 
-<h2 id="agenttoserver-message">AgentToServer Message</h2>
-
+## AgentToServer Message
 
 The body of the WebSocket message is a binary serialized Protobuf message
 AgentToServer as defined below (all messages in this document are specified in
@@ -162,18 +161,18 @@ AgentToServer as defined below (all messages in this document are specified in
 ```protobuf
 message AgentToServer {
     string instance_uid = 1;
-    oneof Body {
-        StatusReport status_report = 2;
-        AgentAddonStatuses addon_statuses = 3;
-        AgentInstallStatus agent_install_status = 4;
-        AgentDisconnect agent_disconnect = 5;
-    }
+    StatusReport status_report = 2;
+    AgentAddonStatuses addon_statuses = 3;
+    AgentInstallStatus agent_install_status = 4;
+    AgentDisconnect agent_disconnect = 5;
 }
 ```
 
+One or more of the fields (status_report, addon_statuses, agent_install_status,
+agent_disconnect) MUST be set. The Server should process each field as it is
+described in the corresponding [Operation](#operation) section.
 
-<h4 id="instance_uid">instance_uid</h4>
-
+#### instance_uid
 
 The instance_uid field is a globally unique identifier of the running instance
 of the Agent. The Agent SHOULD self-generate this identifier and make the best
@@ -182,12 +181,30 @@ created by other Agents. The instance_uid SHOULD remain unchanged for the
 lifetime of the agent process. The recommended format for the instance_uid is
 [ULID](https://github.com/ulid/spec).
 
-<h4 id="body">Body</h4>
+#### status_report
 
+The status of the Agent. MUST be set in the first AgentToServer message that the
+Agent sends after connecting. This field SHOULD be unset if this information is
+unchanged since the last AgentToServer message for this agent was sent in the
+stream.
 
-The Body of the message is a Protobuf oneof field, meaning that only one of the
-choices can be present. See later for descriptions of messages that can be in
-the Body.
+#### addon_statuses
+
+The list of the agent addons, including addon statuses. This field SHOULD be
+unset if this information is unchanged since the last AgentToServer message for
+this agent was sent in the stream.
+
+#### agent_install_status
+
+The status of the installation operation that was previously offered by the
+server. This field SHOULD be unset if the installation status is unchanged since
+the last AgentToServer message.
+
+#### agent_disconnect
+
+AgentDisconnect MUST be set in the last AgentToServer message sent from the
+agent to the server.
+
 
 ## ServerToAgent Message
 
