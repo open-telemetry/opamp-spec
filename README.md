@@ -189,26 +189,58 @@ The Body of the message is a Protobuf oneof field, meaning that only one of the
 choices can be present. See later for descriptions of messages that can be in
 the Body.
 
-<h2 id="servertoagent-message">ServerToAgent Message</h2>
-
+## ServerToAgent Message
 
 The body of the WebSocket message is a binary serialized Protobuf message
-ServerToAgent as defined below:
+ServerToAgent.
 
+ServerToAgent message is sent from the Server to the Agent either in response to
+the AgentToServer message or when the Server has data to deliver to the Agent.
+
+If the Server receives an AgentToServer message and the Server has no data to
+send back to the Agent then ServerToAgent message will still be sent, but all
+fields except instance_uid will be unset (in that case ServerToAgent serves
+simply as an acknowledgement of receipt).
+
+Upon receiving a ServerToAgent message the Agent MUST process it. The processing
+that needs to be performed depends on what fields in the message are set. For
+details see links to the corresponding sections of this specification from the
+field descriptions below.
+
+As a result of this processing the Agent may need to send status reports to the
+Server. The Agent is free to perform all the processing of the ServerToAgent
+message completely and then send one status report or it may send multiple
+status reports as it processes the portions of ServerToAgent message to indicate
+the progress (see e.g. [Addon processing](#downloading-addons)). Multiple status
+reports may be desirable when processing takes a long time, in which case the
+status reports allow the Server to stay informed.
+
+Note that the Server will reply to each status report with a ServerToAgent
+message (or with an ServerErrorResponse if something goes wrong). These
+ServerToAgent messages may have the same content as the one received earlier or
+the content may be different if the situation on the Server has changed. The
+Agent SHOULD be ready to process these additional ServerToAgent messages as they
+arrive.
+
+The Agent SHOULD NOT send any status reports at all if the status of the Agent
+did not change as a result of processing.
+
+The ServerToAgent message has the following structure:
 
 ```protobuf
 message ServerToAgent {
     string instance_uid = 1;
-    oneof Body {
-        DataForAgent data_for_agent = 2;
-        ServerErrorResponse error_response = 3;
-    }
+    ServerErrorResponse error_response = 2;
+    AgentRemoteConfig remote_config = 3;
+    ConnectionSettingsOffers connection_settings = 4;
+    AddonsAvailable addons_available = 5;
+    AgentPackageAvailable agent_package_available = 6;
+    Flags flags = 7;
 }
 ```
 
 
-<h4 id="instance_uid">instance_uid</h4>
-
+#### instance_uid
 
 The Agent instance identifier. MUST match the instance_uid field previously
 received in the AgentToServer message. When communication with multiple Agents
@@ -216,91 +248,39 @@ is multiplexed into one WebSocket connection (for example when a terminating
 proxy is used) the instance_uid field allows to distinguish which Agent the
 ServerToAgent message is addressed to.
 
-<h4 id="body">Body</h4>
+#### error_response
 
+error_response is set if the Server wants to indicate that something went wrong
+during processing of an AgentToServer message. If error_response is set then all
+other fields below must be unset and vice versa, if any of the fields below is
+set then error_response must be unset.
 
-The Body of the message is a Protobuf oneof field, meaning that only one of the
-choices can be present. See later for [DataForAgent](#dataforagent-message) and
-[ServerErrorResponse](#servererrorresponse-message) descriptions.
-
-<h2 id="dataforagent-message">DataForAgent Message</h2>
-
-
-DataForAgent message is set as the Body of all non-erroneous ServerToAgent
-messages.
-
-DataForAgent message is sent from the Server to the Agent either in response to
-the AgentToServer message or when the Server has data to deliver to the Agent.
-
-If the Server receives an AgentToServer message and the Server has no data to
-send back to the Agent then DataForAgent message will still be sent, but all
-fields will be unset (in that case DataForAgent serves simply as an
-acknowledgement of receipt).
-
-Upon receiving a DataForAgent message the Agent MUST process it. The processing
-that needs to be performed depends on what fields in the message are set. For
-details see links to the corresponding sections of this specification from the
-field descriptions below.
-
-As a result of this processing the Agent may need to send status reports to the
-Server. The Agent is free to perform all the processing the DataForAgent message
-completely and then send one status report or it may send multiple status
-reports as it processes the portions of DataForAgent message to indicate the
-progress (see e.g. [Addon processing](#downloading-addons)). Multiple status
-reports may be desirable when processing takes a long time, in which case the
-status reports allow the Server to stay informed.
-
-Note that the Server will reply to each status report with a DataForAgent
-message (or with an ServerErrorResponse if something goes wrong). These
-DataForAgent messages may have the same content as the one received earlier or
-the content may be different if the situation on the Server has changed. The
-Agent SHOULD be ready to process these additional DataForAgent messages as they
-arrive.
-
-The Agent SHOULD NOT send any status reports at all if the status of the Agent
-did not change as a result of processing.
-
-The DataForAgent message has the following structure:
-
-
-```protobuf
-message DataForAgent {
-    AgentRemoteConfig remote_config = 1;
-    ConnectionSettingsOffers connection_settings = 2;
-    AddonsAvailable addons_available = 3;
-    AgentPackageAvailable agent_package_available = 4;
-    Flags flags = 5;
-    ServerCapabilities capabilities = 6;
-}
-```
-
-
-<h4 id="remote_config">remote_config</h4>
+#### remote_config
 
 
 This field is set when the Server has a remote config offer for the Agent. See
 [Configuration](#configuration) for details.
 
-<h4 id="connection_settings">connection_settings</h4>
+#### connection_settings
 
 
 This field is set when the Server wants the Agent to change one or more of its
 client connection settings (destination, headers, certificate, etc). See
 [Connection Settings Management](#connection-settings-management) for details.
 
-<h4 id="addons_available">addons_available</h4>
+#### addons_available
 
 
 This field is set when the Server has addons to offer to the Agent. See
 [Addons](#addons) for details.
 
-<h4 id="agent_package_available">agent_package_available</h4>
+#### agent_package_available
 
 
 This field is set when the server has a different version of an agent package
 available for download. See [Agent Updates](#agent-package-updates) for details.
 
-<h4 id="flags">flags</h4>
+#### flags
 
 
 Bit flags as defined by Flags bit masks.
@@ -315,7 +295,7 @@ state).
 enum Flags {
     FlagsUnspecified = 0;
 
-    // DataForAgentFlags is a bit mask. Values below define individual bits.
+    // Flags is a bit mask. Values below define individual bits.
 
     // The server asks the agent to report effective config. This bit MUST NOT be
     // set if the Agent indicated it cannot report effective config by setting
@@ -329,15 +309,14 @@ enum Flags {
 }
 ```
 
-
 #### capabilities
 
 Bitmask of flags defined by Capabilities enum. All bits that are not defined in
 Capabilities enum MUST be set to 0 by the Server. This allows extending the
 protocol and the Capabilities enum in the future such that old Servers
 automatically report that they don't support the new capability. This field MUST
-be set in the first DataForAgent sent by the Server and MAY be omitted in
-subsequent DataForAgent messages by setting it to Unspecified value.
+be set in the first ServerToAgent sent by the Server and MAY be omitted in
+subsequent ServerToAgent messages by setting it to Unspecified value.
 
 ```protobuf
 enum ServerCapabilities {
@@ -434,10 +413,13 @@ field is set to [StatusReport](#statusreport-message) message.
 The Server MUST respond to the status report by sending a
 [ServerToAgent](#servertoagent-message) message.
 
+If the status report processing failed then the
+[error_response](#error_response) field MUST be set to ServerErrorResponse
+message.
+
 If the status report is processed successfully by the Server then the
-[Body](#body) field MUST be set to [DataForAgent](#dataforagent-message)
-message. If the status report processing failed then the [Body](#body) field
-MUST be set to ServerErrorResponse message.
+[error_response](#error_response) field MUST be unset and the other fields can
+be populated as necessary.
 
 Here is the sequence diagram that shows how status reporting works (assuming
 server-side processing is successful):
@@ -451,18 +433,18 @@ server-side processing is successful):
           │          WebSocket Connect            │
           ├──────────────────────────────────────►│
           │                                       │
-          │   AgentToServer{StatusReport}         │   ┌─────────┐
+          │     AgentToServer{StatusReport}       │   ┌─────────┐
           ├──────────────────────────────────────►├──►│         │
           │                                       │   │ Process │
-          │     ServerToAgent{DataForAgent}       │   │ Status  │
+          │           ServerToAgent{}             │   │ Status  │
           │◄──────────────────────────────────────┤◄──┤         │
           │                                       │   └─────────┘
           .                 ...                   .
 
-          │   AgentToServer{StatusReport}         │   ┌─────────┐
+          │     AgentToServer{StatusReport}       │   ┌─────────┐
           ├──────────────────────────────────────►├──►│         │
           │                                       │   │ Process │
-          │     ServerToAgent{DataForAgent}       │   │ Status  │
+          │           ServerToAgent{}             │   │ Status  │
           │◄──────────────────────────────────────┤◄──┤         │
           │                                       │   └─────────┘
           │                                       │
@@ -481,7 +463,7 @@ So, essentially in such cases the sequence of messages may look like this:
 ```
                    Agent                                  Server
 
-                    │      ServerToAgent{DataForAgent}      │
+                    │         ServerToAgent{}               │
             ┌───────┤◄──────────────────────────────────────┤
             │       │                                       │
             ▼       │                                       │
@@ -495,7 +477,7 @@ So, essentially in such cases the sequence of messages may look like this:
             │Changed│   AgentToServer{StatusReport}         │   ┌─────────┐
             └──────►├──────────────────────────────────────►├──►│         │
                     │                                       │   │ Process │
-                    │      ServerToAgent{DataForAgent}      │   │ Status  │
+                    │         ServerToAgent{}               │   │ Status  │
                     │◄──────────────────────────────────────┤◄──┤         │
                     │                                       │   └─────────┘
 ```
@@ -510,7 +492,7 @@ changed). The sequence diagram in this case look like this:
 ```
                      Agent                                  Server
 
-                       │      ServerToAgent{DataForAgent}      │
+                       │         ServerToAgent{}               │
                 ┌──────┤◄──────────────────────────────────────┤
                 │      │                                       │
                 ▼      │                                       │
@@ -712,7 +694,7 @@ bandwidth.
 
 The Server SHOULD compare this hash with the last hash of effective config it
 received from the Agent and if the hashes are different the Server SHOULD ask
-the Agent to report its full effective config by sending a DataForAgent message
+the Agent to report its full effective config by sending a ServerToAgent message
 with ReportEffectiveConfig flag set.
 
 <h4 id="config_map">config_map</h4>
@@ -722,7 +704,7 @@ The effective config of the Agent. SHOULD be omitted if unchanged since last
 reported.
 
 MUST be set if the Agent has received the ReportEffectiveConfig flag in the
-DataForAgent message.
+ServerToAgent message.
 
 See AgentConfigMap message definition in the [Configuration](#configuration)
 section.
@@ -759,7 +741,7 @@ message RemoteConfigStatus {
 The hash of the remote config that was last received by this agent from the
 management server. The server SHOULD compare this hash with the config hash it
 has for the agent and if the hashes are different the server MUST include the
-remote_config field in the response in the DataForAgent message.
+remote_config field in the response in the ServerToAgent message.
 
 <h4 id="status">status</h4>
 
@@ -1035,29 +1017,29 @@ Here is how the OpAMP connection settings change happens:
 ```
                    Agent                                 Server
 
-                     │                                      │    Initiate
-                     │    Connect                           │    Settings
-                     ├─────────────────────────────────────►│     Change
-                     │                 ...                  │        │
-                     │                                      │◄───────┘
-                     │                                      │          ┌───────────┐
-                     │                                      ├─────────►│           │
-                     │                                      │ Generate │Credentials│
-┌───────────┐        │DataForAgent{ConnectionSettingsOffers}│ and Save │   Store   │
-│           │◄───────┤◄─────────────────────────────────────┤◄─────────┤           │
-│Credentials│ Save   │                                      │          └───────────┘
-│   Store   │        │             Disconnect               │
-│           ├───────►├─────────────────────────────────────►│
-└───────────┘        │                                      │
-                     │    Connect, New settings             │          ┌───────────┐
-                     ├─────────────────────────────────────►├─────────►│           │
-                     │                                      │ Delete   │Credentials│
-┌───────────┐        │    Connection established            │ old      │   Store   │
-│           │◄───────┤◄────────────────────────────────────►│◄─────────┤           │
-│Credentials│Delete  │                                      │          └───────────┘
-│   Store   │old     │                                      │
-│           ├───────►│                                      │
-└───────────┘        │                                      │
+                     │                                       │    Initiate
+                     │    Connect                            │    Settings
+                     ├──────────────────────────────────────►│     Change
+                     │                 ...                   │        │
+                     │                                       │◄───────┘
+                     │                                       │          ┌───────────┐
+                     │                                       ├─────────►│           │
+                     │                                       │ Generate │Credentials│
+┌───────────┐        │ServerToAgent{ConnectionSettingsOffers}│ and Save │   Store   │
+│           │◄───────┤◄──────────────────────────────────────┤◄─────────┤           │
+│Credentials│ Save   │                                       │          └───────────┘
+│   Store   │        │             Disconnect                │
+│           ├───────►├──────────────────────────────────────►│
+└───────────┘        │                                       │
+                     │    Connect, New settings              │          ┌───────────┐
+                     ├──────────────────────────────────────►├─────────►│           │
+                     │                                       │ Delete   │Credentials│
+┌───────────┐        │    Connection established             │ old      │   Store   │
+│           │◄───────┤◄─────────────────────────────────────►│◄─────────┤           │
+│Credentials│Delete  │                                       │          └───────────┘
+│   Store   │old     │                                       │
+│           ├───────►│                                       │
+└───────────┘        │                                       │
 
 ```
 
@@ -1065,7 +1047,7 @@ Here is how the OpAMP connection settings change happens:
 
 1. Server generates new connection settings and saves it in Server's credentials
    store, associating the new settings with the Agent instance UID.
-2. Server sends the DataForAgent message that includes
+2. Server sends the ServerToAgent message that includes
    [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
    [opamp](#opamp) field contains the new
    [ConnectionSettings](#connectionsettings-message) offered. The server sets
@@ -1433,19 +1415,19 @@ destination using OTLP/HTTP protocol:
 ```
 
 
-The Server makes the offer by sending a [DataForAgent](#dataforagent-message)
+The Server makes the offer by sending a [ServerToAgent](#servertoagent-message)
 message with a populated [connection_settings](#connection_settings) field that
 contains one or more of the own_metrics, own_traces, own_logs fields set. Each
 of these fields describes a destination, which can receive telemetry using OTLP
 protocol.
 
 The Server SHOULD populate the [connection_settings](#connection_settings) field
-when it sends the first DataForAgent message to the particular Agent (normally
+when it sends the first ServerToAgent message to the particular Agent (normally
 in response to the first status report from the Agent), unless there is no OTLP
 backend that can be used. The Server SHOULD also populate the field on
-subsequent DataForAgent if the destination has changed. If the destination is
+subsequent ServerToAgent if the destination has changed. If the destination is
 unchanged the connection_settings field SHOULD NOT be set. When the Agent
-receives a DataForAgent with an unset connection_settings field the Agent SHOULD
+receives a ServerToAgent with an unset connection_settings field the Agent SHOULD
 continue sending its telemetry to the previously offered destination.
 
 The Agent SHOULD periodically report its metrics to the destination offered in
@@ -1455,12 +1437,11 @@ seconds. Here is the diagram that shows the operation sequence:
 
 ```
                 Agent                          Server
-                                                           Metric
-                  │                               │        Backend
-                  │  ServerToAgent{DataForAgent}  │
-                  │    (ConnectionSettingsOffer)  │           │
-                  │◄──────────────────────────────┤           │
-                  │                               │           │
+                                                            Metric
+                  │                                      │  Backend
+                  │ServerToAgent{ConnectionSettingsOffer}│
+                  │◄─────────────────────────────────────┤    │
+                  │                                      │    │
                   │                                           │
     ┌────────┐    │                                           │
     │Collect │    │                OTLP Metrics               │ ──┐
@@ -1506,8 +1487,8 @@ existing configuration capabilities of an orchestration system such as
 Kubernetes).
 
 The Server can offer a Remote Configuration to the Agent by setting the
-[remote_config](#remote_config) field in the DataForAgent message. Since the
-DataForAgent message is normally sent by the Server in response to a status
+[remote_config](#remote_config) field in the ServerToAgent message. Since the
+ServerToAgent message is normally sent by the Server in response to a status
 report the Server has the Agent's description and may tailor the configuration
 it offers to the specific Agent if necessary.
 
@@ -1543,7 +1524,7 @@ Here is the typical configuration sequence diagram:
                  ├──────────────────────────────────►├──►│ Process │
                  │                                   │   │ Status  │
 Local     Remote │                                   │   │ and     │
-Config    Config │    ServerToAgent{DataForAgent}    │   │ Fetch   │
+Config    Config │ ServerToAgent{AgentRemoteConfig}  │   │ Fetch   │
   │     ┌────────┤◄──────────────────────────────────┤◄──┤ Config  │
   ▼     ▼        │                                   │   └─────────┘
 ┌─────────┐      │                                   │
@@ -1577,7 +1558,7 @@ sequence diagram in this case looks like this:
                  │                                   │
                  │                                   │   ┌────────┐
 Local     Remote │                                   │   │Initiate│
-Config    Config │    ServerToAgent{DataForAgent}    │   │and     │
+Config    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
   │     ┌────────┤◄──────────────────────────────────┤◄──┤Send    │
   ▼     ▼        │                                   │   │Config  │
 ┌─────────┐      │                                   │   └────────┘
@@ -1586,7 +1567,7 @@ Config    Config │    ServerToAgent{DataForAgent}    │   │and     │
 └────┬────┘      │                                   │
      │           │                                   │
      │Effective  │                                   │
-     │Config     │ AgentToServer{StatusReport}  │
+     │Config     │ AgentToServer{StatusReport}       │
      └──────────►├──────────────────────────────────►│
                  │                                   │
                  │                                   │
@@ -1694,7 +1675,7 @@ may be also offered to the Agent remotely by the Server, in which case the Agent
 may download and install the addons.
 
 To offer addons to the Agent the Server sets the
-[addons_available](#dataforagent-message) field in the DataForAgent message that
+[addons_available](#servertoagent-message) field in the ServerToAgent message that
 is sent either in response to an status report form the Agent or by Server's
 initiative if the Server wants to push addons to the Agent.
 
@@ -1793,7 +1774,7 @@ reporting process:
     Download           Agent                             OpAMP
      Server                                              Server
        │                 │                                  │
-       │                 │   DataForAgent{AddonsAvailable}  │
+       │                 │  ServerToAgent{AddonsAvailable}  │
        │                 │◄─────────────────────────────────┤
        │   HTTP GET      │                                  │
        │◄────────────────┤                                  │
@@ -1974,7 +1955,7 @@ is installed on the Agent side is agent type-specific and is outside the
 concerns of the OpAMP protocol.
 
 To offer a package to the Agent the Server sets the
-[agent_package_available](#agent_package_available) field in the DataForAgent
+[agent_package_available](#agent_package_available) field in the ServerToAgent
 message that is sent either in response to an status report form the Agent or by
 Server's initiative if the Server wants to push a package to the Agent.
 
@@ -2005,16 +1986,16 @@ following:
 ```
     Download           Agent                              OpAMP
      Server                                               Server
-       │                 │                                   │
-       │                 │DataForAgent{AgentPackageAvailable}│
-       │                 │◄──────────────────────────────────┤
-       │   HTTP GET      │                                   │
-       │◄────────────────┤                                   │
-       │ Download file   │                                   │
-       ├────────────────►│                                   │
-       │                 │ AgentToServer{StatusReport}       │
-       │                 ├──────────────────────────────────►│
-       │                 │                                   │
+       │                 │                                    │
+       │                 │ServerToAgent{AgentPackageAvailable}│
+       │                 │◄───────────────────────────────────┤
+       │   HTTP GET      │                                    │
+       │◄────────────────┤                                    │
+       │ Download file   │                                    │
+       ├────────────────►│                                    │
+       │                 │ AgentToServer{StatusReport}        │
+       │                 ├───────────────────────────────────►│
+       │                 │                                    │
 ```
 
 
@@ -2335,11 +2316,11 @@ the peer does not support a particular capability.
 Both the Agent and the Server indicate the capabilities that they support during
 the initial message exchange. The Agent sets the capabilities bit-field in the
 StatusReport message, the Server sets the capabilities bit-field in the
-DataForAgent message.
+ServerToAgent message.
 
 Each set bit in the capabilities field indicates that the particular capability
 is supported. The list of Agent capabilities is [here](#statusreport-message).
-The list of Server capabilities is [here](#dataforagent-message).
+The list of Server capabilities is [here](#servertoagent-message).
 
 After the Server learns about the capabilities of the particular Agent the
 Server MUST stop using the capabilities that the Agent does not support.
@@ -2373,7 +2354,7 @@ deserialized by the recipient.
 For the new capabilities that extend the functionality in such a manner that
 they cannot be silently ignored by the peer a different approach is used.
 
-The capabilities fields in StatusReport and DataForAgent messages contains a
+The capabilities fields in StatusReport and ServerToAgent messages contains a
 number of reserved bits. These bits SHOULD be used for indicating support of new
 capabilities that will be added to OpAMP in the future.
 
@@ -2382,7 +2363,7 @@ message. This allows the recipient, which implements a newer version of OpAMP to
 learn that the sender does not support the new capability and adjust its
 behavior correspondingly.
 
-The StatusReport and DataForAgent messages are the first messages exchanged by
+The StatusReport and ServerToAgent messages are the first messages exchanged by
 the Agent and Server which allows them to learn about the capabilities of the
 peer and adjust their behavior appropriately. How exactly the behavior is
 adjusted for future capabilities MUST be defined in the future specification of
