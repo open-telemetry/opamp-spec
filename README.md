@@ -253,6 +253,7 @@ message ServerToAgent {
     AddonsAvailable addons_available = 5;
     AgentPackageAvailable agent_package_available = 6;
     Flags flags = 7;
+    ServerCapabilities capabilities = 8;
 }
 ```
 
