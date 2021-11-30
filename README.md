@@ -527,8 +527,7 @@ message StatusReport {
     AgentDescription agent_description = 1;
     EffectiveConfig effective_config = 2;
     RemoteConfigStatus remote_config_status = 3;
-    bytes server_provided_all_addons_hash = 4;
-    AgentCapabilities capabilities = 5;
+    AgentCapabilities capabilities = 4;
 }
 ```
 
@@ -562,16 +561,6 @@ See [RemoteConfigStatus](#remoteconfigstatus-message) message for details.
 
 This field SHOULD be unset if the remote config status is unchanged since the
 last StatusReport message was sent.
-
-<h4 id="server_provided_all_addons_hash">server_provided_all_addons_hash</h4>
-
-
-The aggregate hash of all addons that this Agent previously received from the
-server via AddonsAvailable message.
-
-The server SHOULD compare this hash to the aggregate hash of all addons that it
-has for this Agent and if the hashes are different the server SHOULD send an
-AddonsAvailable message to the agent.
 
 #### capabilities
 
