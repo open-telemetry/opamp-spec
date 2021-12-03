@@ -329,36 +329,37 @@ enum Flags {
 
 #### capabilities
 
-Bitmask of flags defined by Capabilities enum. All bits that are not defined in
-Capabilities enum MUST be set to 0 by the Server. This allows extending the
-protocol and the Capabilities enum in the future such that old Servers
-automatically report that they don't support the new capability. This field MUST
-be set in the first ServerToAgent sent by the Server and MAY be omitted in
-subsequent ServerToAgent messages by setting it to Unspecified value.
+Bitmask of flags defined by ServerCapabilities enum. All bits that are not
+defined in ServerCapabilities enum MUST be set to 0 by the Server. This allows
+extending the protocol and the ServerCapabilities enum in the future such that
+old Servers automatically report that they don't support the new capability.
+This field MUST be set in the first ServerToAgent sent by the Server and MAY be
+omitted in subsequent ServerToAgent messages by setting it to
+UnspecifiedServerCapability value.
 
 ```protobuf
 enum ServerCapabilities {
-  // The capabilities field is unspecified.
-  Unspecified = 0;
-  // The Server can accept status reports. This bit MUST be set, since all Server
-  // MUST be able to accept status reports.
-  AcceptsStatus                  = 0x00000001;
-  // The Server can offer remote configuration to the Agent.
-  OffersRemoteConfig             = 0x00000002;
-  // The Server can accept EffectiveConfig in StatusReport.
-  AcceptsEffectiveConfig         = 0x00000004;
-  // The Server can offer Addons.
-  OffersAddons                   = 0x00000008;
-  // The Server can accept Addon status.
-  AcceptsAddonsStatus            = 0x00000010;
-  // The Server can offer packages to install.
-  OffersAgentPackage             = 0x00000020;
-  // The Server can accept the installation status of the package.
-  AcceptsAgentPackageStatus      = 0x00000040;
-  // The Server can offer connection settings.
-  OffersConnectionSettings       = 0x00000080;
+    // The capabilities field is unspecified.
+    UnspecifiedServerCapability = 0;
+    // The Server can accept status reports. This bit MUST be set, since all Server
+    // MUST be able to accept status reports.
+    AcceptsStatus                  = 0x00000001;
+    // The Server can offer remote configuration to the Agent.
+    OffersRemoteConfig             = 0x00000002;
+    // The Server can accept EffectiveConfig in StatusReport.
+    AcceptsEffectiveConfig         = 0x00000004;
+    // The Server can offer Addons.
+    OffersAddons                   = 0x00000008;
+    // The Server can accept Addon status.
+    AcceptsAddonsStatus            = 0x00000010;
+    // The Server can offer packages to install.
+    OffersAgentPackage             = 0x00000020;
+    // The Server can accept the installation status of the package.
+    AcceptsAgentPackageStatus      = 0x00000040;
+    // The Server can offer connection settings.
+    OffersConnectionSettings       = 0x00000080;
 
-  // Add new capabilities here, continuing with the least significant unused bit.
+    // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
 
@@ -582,17 +583,18 @@ last StatusReport message was sent.
 
 #### capabilities
 
-Bitmask of flags defined by Capabilities enum. All bits that are not defined in
-Capabilities enum MUST be set to 0 by the Agent. This allows extending the
-protocol and the Capabilities enum in the future such that old Agents
-automatically report that they don't support the new capability. This field MUST
-be set in the first StatusReport sent by the Agent and MAY be omitted in
-subsequent StatusReport messages by setting it to Unspecified value.
+Bitmask of flags defined by AgentCapabilities enum. All bits that are not
+defined in AgentCapabilities enum MUST be set to 0 by the Agent. This allows
+extending the protocol and the AgentCapabilities enum in the future such that
+old Agents automatically report that they don't support the new capability. This
+field MUST be set in the first StatusReport sent by the Agent and MAY be omitted
+in subsequent StatusReport messages by setting it to UnspecifiedAgentCapability
+value.
 
 ```protobuf
 enum AgentCapabilities {
     // The capabilities field is unspecified.
-    Unspecified = 0;
+    UnspecifiedAgentCapability = 0;
     // The Agent can report status. This bit MUST be set, since all Agents MUST
     // report status.
     ReportsStatus                  = 0x00000001;
