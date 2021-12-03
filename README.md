@@ -632,39 +632,47 @@ enum AgentCapabilities {
 
 <h3 id="agentdescription-message">AgentDescription Message</h3>
 
-
 The AgentDescription message has the following structure:
-
 
 ```protobuf
 message AgentDescription {
-    string agent_type = 1;
-    string agent_version = 3;
-    repeated KeyValue agent_attributes = 4;
+    repeated KeyValue identifying_attributes = 1;
+    repeated KeyValue non_identifying_attributes = 2;
 }
 ```
 
+#### identifying_attributes
 
-<h4 id="agent_type">agent_type</h4>
+Attributes that identify the agent.
 
-
-The reverse FQDN that uniquely identifies the agent type, e.g.
-"io.opentelemetry.collector".
-
-<h4 id="agent_version">agent_version</h4>
-
-
-The version number of the agent build. The Server can use this information for
-example to decide if it wants to offer a package of a different version to the
-agent via AgentPackageAvailable message.
-
-#### agent_attributes
-
-Attributes that describe the agent and the environment it runs in. Keys/values
-are according to OpenTelemetry semantic conventions, see:
+Keys/values are according to OpenTelemetry semantic conventions, see:
 https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/resource/semantic_conventions
 
+For standalone running Agents (such as OpenTelemetry Collector) the following
+attributes SHOULD be specified:
+
+- service.name should be set to a reverse FQDN that uniquely identifies the
+  agent type, e.g. "io.opentelemetry.collector"
+- service.namespace if it is used in the environment where the Agent runs.
+- service.version should be set to version number of the Agent build.
+- service.instance.id should be set. It may be be set equal to the Agent's
+  instance uid (equal to ServerToAgent.instance_uid field) or any other value
+  that uniquely identifies the Agent in combination with other attributes.
+- any other attributes that are necessary for uniquely identifying the Agent's
+  own telemetry.
+
+The Agent SHOULD also include these attributes in the Resource of its own
+telemetry. The combination of identifying attributes SHOULD be sufficient to
+uniquely identify the Agent's own telemetry in the destination system to which
+the Agent sends its own telemetry.
+
+#### non_identifying_attributes
+
+Attributes that do not necessarily identify the Agent but help describe where it
+runs.
+
 The following attributes SHOULD be included:
+
 - os.type, os.version - to describe where the agent runs.
 - host.* to describe the host the agent runs on.
 - cloud.* to describe the cloud where the host is located.
@@ -672,9 +680,6 @@ The following attributes SHOULD be included:
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
   this agent.
-
-Other attributes MAY be included to describe the Agent.
-
 
 <h3 id="effectiveconfig-message">EffectiveConfig Message</h3>
 
@@ -1213,14 +1218,12 @@ message ConnectionSettingsOffers {
 ```
 
 
-<h4 id="hash">hash</h4>
-
+#### hash
 
 Hash of all settings, including settings that may be omitted from this message
 because they are unchanged.
 
-<h4 id="opamp">opamp</h4>
-
+#### opamp
 
 Settings to connect to the OpAMP server. If this field is not set then the agent
 should assume that the settings are unchanged and should continue using existing
@@ -1228,29 +1231,25 @@ settings. The agent MUST verify the offered connection settings by actually
 connecting before accepting the setting to ensure it does not lose access to
 the OpAMP server due to invalid settings.
 
-<h4 id="own_metrics">own_metrics</h4>
-
+#### own_metrics
 
 Settings to connect to an OTLP metrics backend to send agent's own metrics to.
 If this field is not set then the agent should assume that the settings are
 unchanged.
 
-<h4 id="own_traces">own_traces</h4>
-
+#### own_traces
 
 Settings to connect to an OTLP metrics backend to send agent's own traces to. If
 this field is not set then the agent should assume that the settings are
 unchanged.
 
-<h4 id="own_logs">own_logs</h4>
-
+#### own_logs
 
 Settings to connect to an OTLP metrics backend to send agent's own logs to. If
 this field is not set then the agent should assume that the settings are
 unchanged.
 
-<h4 id="other_connections">other_connections</h4>
-
+#### other_connections
 
 Another set of connection settings, with a string name associated with each. How
 the agent uses these is agent-specific. Typically the name represents the name
@@ -1496,21 +1495,19 @@ custom metrics that describe the agent state. Reported process metrics MUST
 follow the OpenTelemetry
 [conventions for processes](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/semantic_conventions/process-metrics.md).
 
- The Resource in the reported telemetry SHOULD describe the Agent in the
- following way:
+Similarly, the Agent SHOULD report its traces to the destination offered in the
+[own_traces](#own_traces) field and logs to the destination offered in the
+[own_logs](#own_logs) field.
 
+All attributes specified in the
+[identifying_attributes](#identifying_attributes) field in AgentDescription
+message SHOULD be also specified in the Resource of the reported OTLP telemetry.
 
+Attributes specified in the
+[non_identifying_attributes](#non_identifying_attributes) field in
+AgentDescription message may be also specified in the Resource of the reported
+OTLP telemetry, in which case they SHOULD have exactly the same values.
 
-* service.instance.id attribute SHOULD be set to Agent's
-  [instance_uid](#instance_uid) that is used in the OpAMP messages.
-* service.name attribute SHOULD be set to Agent's type, matching the value of
-  [agent_type](#agent_type) field in AgentDescription message.
-* service.version SHOULD be set to Agent's version, matching the value of
-  [agent_version](#agent_version) field in AgentDescription message.
-* any other applicable Resource attributes that describe the agent SHOULD be
-  set, for example attributes that describe the
-  [Operating System](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/os.md)
-  on which the Agent runs.
 
 <h2 id="configuration">Configuration</h2>
 
