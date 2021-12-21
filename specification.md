@@ -84,10 +84,28 @@ for OpAMP Agents and Servers. The OTLP/HTTP protocol is
 The protocols used by the Agent to connect to other destinations are agent
 type-specific and are outside the scope of this specification.
 
-OpAMP protocol uses [WebSocket](https://datatracker.ietf.org/doc/html/rfc6455)
-as the transport. The Agent is a WebSocket client and the Server is a WebSocket
-server. The Agent and the Server communicate using binary data WebSocket
-messages. The payload of each WebSocket message is a
+OpAMP protocol works over one of the 2 supported transports: plain HTTP
+connections and WebSocket connections. Server implementations SHOULD accept both
+plain HTTP connections and WebSocket connections. Client implementations may
+choose to support either plain HTTP or WebSocket transport, depending on their
+needs.
+
+Typically a single Server accepts connections from many agents. Agents
+are identified by self-assigned globally unique instance identifiers (or
+instance_uid for short). The instance_uid is recorded in each message sent from
+the Agent to the Server and from the Server to the Agent.
+
+The default URL path for the connection is /v1/opamp. The URL path MAY be
+configurable on the Agent and on the Server.
+
+
+## WebSocket Transport
+
+One of the supported transports for OpAMP protocol is
+[WebSocket](https://datatracker.ietf.org/doc/html/rfc6455). The Agent is a
+WebSocket client and the Server is a WebSocket server. The Agent and the Server
+communicate using binary data WebSocket messages. The payload of each WebSocket
+message is a
 [binary serialized Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
 message. The Agent sends AgentToServer Protobuf messages and the Server sends
 ServerToAgent Protobuf messages:
@@ -145,10 +163,47 @@ configuration.
 See sections under the [Operation](#operation) section for the details of the
 message sequences.
 
+The WebSocket transport is typically used when it is necessary to have instant
+communication ability from the Server to the Agent without waiting for the Agent
+to poll the Server like it is done when using the HTTP transport (see below).
+
+## Plain HTTP Transport
+
+The second supported transport for OpAMP protocol is plain HTTP connection. The
+Agent is an HTTP client and the Server is an HTTP client server. The Agent makes
+POST requests to the Server. The body of the POST request and response is a
+[binary serialized Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
+message. The Agent sends AgentToServer Protobuf messages in the request body and
+the Server sends ServerToAgent Protobuf messages in the response body.
+
+OpAMP over HTTP is a synchronous, half-duplex message exchange protocol. The
+Agent initiates an HTTP request when it has an AgentToServer message to deliver.
+The Server responds to each HTTP request with a ServerToAgent message it wants
+to deliver to the Agent. If the Agent has nothing to deliver to the Server the
+Agent MUST periodically poll the Server by sending an AgentToServer message
+where only [instance_uid](#instance_uid) field is set. This gives the Server an
+opportunity to send back in the response any messages that the Server wants to
+deliver to the Agent (such as for example a new remote configuration).
+
+The default polling interval when the Agent does have anything to deliver is 30
+seconds. This polling interval SHOULD be configurable on the Agent.
+
+When using HTTP transport the sequence messages is exactly the same as it is
+when using the WebSocket transport. The only difference is in the timing in the
+situation when the Server wants to send a message to the Agent but the Server
+needs to wait for the Agent to poll the Server and establish an HTTP request
+over which the Server's message can be sent back.
+
+The Agent MUST set "Content-Type: application/x-protobuf" request header when
+using plain HTTP transport. When the Server receives an HTTP request with this
+header set it SHOULD assume this is a plain HTTP transport request, otherwise it
+SHOULD assume this is a WebSocket transport initiation.
+
 ## AgentToServer Message
 
-The body of the WebSocket message is a binary serialized Protobuf message
-AgentToServer as defined below (all messages in this document are specified in
+The body of the OpAMP WebSocket message or HTTP body of the request is a binary
+serialized Protobuf message AgentToServer as defined below (all messages in this
+document are specified in
 [Protobuf 3 language](https://developers.google.com/protocol-buffers/docs/proto3)):
 
 
@@ -202,8 +257,8 @@ agent to the server.
 
 ## ServerToAgent Message
 
-The body of the WebSocket message is a binary serialized Protobuf message
-ServerToAgent.
+The body of the WebSocket message or HTTP response body is a binary serialized
+Protobuf message ServerToAgent.
 
 ServerToAgent message is sent from the Server to the Agent either in response to
 the AgentToServer message or when the Server has data to deliver to the Agent.
@@ -1280,8 +1335,8 @@ message ConnectionSettings {
 
 A URL, host:port or some other destination specifier.
 
-For OpAMP destination this MUST be a WebSocket URL and MUST be non-empty, for
-example: "wss://example.com:4318/v1/opamp"
+For OpAMP destination this MUST be a HTTP or WebSocket URL and MUST be
+non-empty, for example: "wss://example.com:4318/v1/opamp"
 
 For Agent's own telemetry destination this MUST be the full HTTP URL to an
 OTLP/HTTP/Protobuf receiver. The value MUST be a full URL with path and schema
@@ -2086,37 +2141,52 @@ The downloadable file of the package.
 
 ## Establishing Connection
 
-The Agent connects to the Server by establishing an HTTP(S) connection, then
-upgrading the connection to WebSocket as defined by WebSocket standard. After
-the WebSocket connection is established the Agent MUST send the first
+The Agent connects to the Server by establishing an HTTP(S) connection.
+
+If WebSocket transport is used then the connection is upgraded to WebSocket as
+defined by WebSocket standard.
+
+After the connection is established the Agent MUST send the first
 [status report](#status-reporting) and expect a response to it.
 
-If the Agent is unable to establish a WebSocket connection to the Server it
-SHOULD retry connection attempts and use exponential backoff strategy with
-jitter to avoid overwhelming the Server.
+If the Agent is unable to establish a connection to the Server it SHOULD retry
+connection attempts and use exponential backoff strategy with jitter to avoid
+overwhelming the Server.
 
 When retrying connection attempts the Agent SHOULD honour any
 [throttling](#throttling) responses it receives from the Server.
 
-<h2 id="closing-connection">Closing Connection</h2>
+## Closing Connection
 
-
-<h3 id="agent-initiated">Agent Initiated</h3>
-
+### WebSocket Transport, Agent Initiated
 
 To close a connection the Agent MUST first send an AgentToServer message with
 agent_disconnect field set. The Agent MUST then send a WebSocket
 [Close](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1) control
 frame and follow the procedure defined by WebSocket standard.
 
-<h3 id="server-initiated">Server Initiated</h3>
-
+### WebSocket Transport, Server Initiated
 
 To close a connection the Server MUST then send a WebSocket
 [Close](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1) control
 frame and follow the procedure defined by WebSocket standard.
 
-## Restoring Connection
+### Plain HTTP Transport
+
+The Agent is considered logically disconnected as soon as the OpAMP HTTP
+response is completed. It is not necessary for the Agent to send AgentToServer
+message with agent_disconnect field set since it is always implied anyway that
+the Agent is gone after the HTTP response is completed.
+
+HTTP keep-alive may be used by the Agent and the Server but it has no effect on
+the logical operation of the OpAMP protocol.
+
+The Server may use its own business logic to decide what it considers an active
+Agent (e.g. an Agent that continuously polls) vs an inactive Agent (e.g. an
+Agent that has no made an HTTP for a specific period of time). This business
+logic is outside the scope of OpAMP specification.
+
+## Restoring WebSocket Connection
 
 If an established WebSocket connection is broken (disconnected) unexpectedly the
 Agent SHOULD immediately try to re-connect. If the re-connection fails the Agent
@@ -2124,8 +2194,7 @@ SHOULD continue connection attempts with backoff as described in
 [Establishing Connection](#establishing-connection).
 
 
-<h2 id="duplicate-connections">Duplicate Connections</h2>
-
+## Duplicate WebSocket Connections
 
 Each Agent instance SHOULD connect no more than once to the Server. If the Agent
 needs to re-connect to the Server the Agent MUST ensure that it sends an
@@ -2212,6 +2281,8 @@ available.
 
 ## Throttling
 
+### WebSocket Transport
+
 When the Server is overloaded and is unstable to process the AgentToServer
 message it SHOULD respond with an ServerToAgent message with error_response
 field set in the [Body](#body) and the [type](#type) of
@@ -2234,10 +2305,14 @@ message RetryInfo {
 If retry_info is not set then the Agent SHOULD implement an exponential backoff
 strategy to gradually increase the interval between retries.
 
-When the Server is overloaded it may also be unable to upgrade the HTTP
-connection to WebSocket. The Server MAY return
+### Plain HTTP Transport
+
+In the case when plain HTTP transport is used as well as when WebSocket is used
+and the Server is overloaded and is unable to upgrade the HTTP connection to
+WebSocket the Server MAY return
 [HTTP 503 Service Unavailable](https://datatracker.ietf.org/doc/html/rfc7231#page-63)
-or [HTTP 429 Too Many Requests](https://datatracker.ietf.org/doc/html/rfc6585#section-4)
+or
+[HTTP 429 Too Many Requests](https://datatracker.ietf.org/doc/html/rfc6585#section-4)
 response and MAY optionally set
 [Retry-After](https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.3)
 header to indicate when SHOULD the Agent attempt to reconnect. The Agent SHOULD
@@ -2487,8 +2562,7 @@ custom TCP-based solution would be more work to design, more work to implement
 and more work to troubleshoot since existing network tools would not recognize
 it.
 
-<h3 id="why-not-use-http-instead-of-websocket">Why not Use HTTP Instead of WebSocket?</h3>
-
+### Why not always Use HTTP Instead of WebSocket?
 
 Regular HTTP is a half-duplex protocol, which makes delivery of messages from
 the server to the client tied to the request time of the client. This means that
