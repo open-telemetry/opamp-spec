@@ -1,22 +1,16 @@
 <h1>OpAMP: Open Agent Management Protocol</h1>
 
-
 Author: Tigran Najaryan, Splunk
 
 Contributors: Chris Green, Splunk
 
-Copyright 2021 Splunk Inc., Apache License, Version 2.0
-
 Status: Early Draft (see Open Questions).
 
-September 2021
+Date: September 2021
 
-Note: address all TODO and Open Questions before considering the document ready
-for final review.
+Note: address all TODO and Open Questions before considering the document ready for final review.
 
-Note 2: this document requires a simplification pass to reduce the scope, size
-and complexity.
-
+Note 2: this document requires a simplification pass to reduce the scope, size and complexity.
 
 [TOC]
 
