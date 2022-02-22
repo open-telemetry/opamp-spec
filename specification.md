@@ -248,6 +248,7 @@ message ServerToAgent {
     AgentPackageAvailable agent_package_available = 6;
     Flags flags = 7;
     ServerCapabilities capabilities = 8;
+    ServerToAgentCommand command = 9
 }
 ```
 
@@ -354,6 +355,31 @@ enum ServerCapabilities {
     OffersConnectionSettings       = 0x00000080;
 
     // Add new capabilities here, continuing with the least significant unused bit.
+}
+```
+
+#### command
+
+This field is set when the server wants the agent to
+perform a restart or shutdown command. This field must not be set with other fields
+besides instance_uid or capabilities. All other fields will be ignored and the
+agent will execute the command.
+
+```protobuf
+// ServerToAgentCommand is sent from the server to the agent to request that the agent
+// perform a command.
+message ServerToAgentCommand {
+    enum CommandType {
+        // The agent should restart. This request will be ignored if the agent does not
+        // support restart.
+        Restart = 0;
+
+        // The agent should shutdown. This request will be ignored if the agent does not
+        // support shutdown. Shutdown is permanent and the agent will no longer be running
+        // or connected to the management server.
+        Shutdown = 1;
+    }
+    CommandType type = 1;
 }
 ```
 
@@ -619,6 +645,10 @@ enum AgentCapabilities {
     // The can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
     AcceptsOtherConnectionSettings = 0x00000800;
+    // The Agent can accept restart requests.
+    AcceptsRestartRequests         = 0x00001000;
+    // The Agent can accept shutdown requests.
+    AcceptsShutdownRequests        = 0x00002000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -2423,7 +2453,7 @@ TBD
 * Do we need to define OpenTelemetry semantic conventions for reporting typical
   collection Agent-specific metrics (e.g. input/processing/output data rates,
   throughput, latency, etc)?
-* Do we need a capability for the Server to order the Agent to restart?
+* ~~Do we need a capability for the Server to order the Agent to restart?~~ Added.
 * Do we need Agent-initiated client certificate rotation capability (in addition
   to Server-initiated that we already have)?
 * Do we need to recommend the Agent to cache the remote config and OTLP metric
