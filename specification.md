@@ -331,7 +331,7 @@ enum Flags {
     ReportAddonStatus     = 0x00000002;
 
     // The server requests the agent to change its instance_uid to the provided value.
-    UpdateInstanceUid     = 0x00000003;
+    UpdateInstanceUid     = 0x00000004;
 }
 ```
 
