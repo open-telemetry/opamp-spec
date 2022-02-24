@@ -659,7 +659,7 @@ enum AgentCapabilities {
     // The Agent can accept restart requests.
     AcceptsRestartCommand         = 0x00001000;
     // The Agent can accept shutdown requests.
-    AcceptsShutdownRequests        = 0x00002000;
+    AcceptsShutdownCommand        = 0x00002000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
