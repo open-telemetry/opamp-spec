@@ -646,7 +646,7 @@ enum AgentCapabilities {
     // ConnectionSettingsOffers.other_connections field.
     AcceptsOtherConnectionSettings = 0x00000800;
     // The Agent can accept restart requests.
-    AcceptsRestartRequests         = 0x00001000;
+    AcceptsRestartCommand         = 0x00001000;
     // The Agent can accept shutdown requests.
     AcceptsShutdownRequests        = 0x00002000;
 
