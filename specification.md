@@ -248,7 +248,7 @@ message ServerToAgent {
     AgentPackageAvailable agent_package_available = 6;
     Flags flags = 7;
     ServerCapabilities capabilities = 8;
-    ServerToAgentCommand command = 9
+    ServerToAgentCommand command = 9;
 }
 ```
 
