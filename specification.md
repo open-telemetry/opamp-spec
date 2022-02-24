@@ -361,27 +361,11 @@ enum ServerCapabilities {
 #### command
 
 This field is set when the server wants the agent to
-perform a restart or shutdown command. This field must not be set with other fields
+perform a restart or shutdown. This field must not be set with other fields
 besides instance_uid or capabilities. All other fields will be ignored and the
-agent will execute the command.
+agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
+for details.
 
-```protobuf
-// ServerToAgentCommand is sent from the server to the agent to request that the agent
-// perform a command.
-message ServerToAgentCommand {
-    enum CommandType {
-        // The agent should restart. This request will be ignored if the agent does not
-        // support restart.
-        Restart = 0;
-
-        // The agent should shutdown. This request will be ignored if the agent does not
-        // support shutdown. Shutdown is permanent and the agent will no longer be running
-        // or connected to the management server.
-        Shutdown = 1;
-    }
-    CommandType type = 1;
-}
-```
 
 
 <h2 id="servererrorresponse-message">ServerErrorResponse Message</h2>
@@ -431,6 +415,33 @@ Error message, typically human readable.
 
 
 Additional [RetryInfo](#throttling) message about retrying if type==UNAVAILABLE.
+
+<h2 id="servertoagentcommand-message">ServerToAgentCommand Message</h2>
+ 
+
+The message has the following structure:
+
+```protobuf
+// ServerToAgentCommand is sent from the server to the agent to request that the agent
+// perform a command.
+message ServerToAgentCommand {
+    enum CommandType {
+        // The agent should restart. This request will be ignored if the agent does not
+        // support restart.
+        Restart = 0;
+
+        // The agent should shutdown. This request will be ignored if the agent does not
+        // support shutdown. Shutdown is permanent and the agent will no longer be running
+        // or connected to the management server.
+        Shutdown = 1;
+    }
+    CommandType type = 1;
+}
+```
+
+The ServerToAgentCommand message is sent when the Server wants the Agent to restart or shutdown.
+This message must only contain the command, instance_uid, and capabilities fields.  All other fields
+will be ignored.
 
 # Operation
 
