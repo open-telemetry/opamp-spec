@@ -1851,7 +1851,7 @@ There are 3 levels of hashes:
 
 <h4 id="file-hash">File Hash</h4>
 
-The hash of the addon file content. This is stored in the [hash](#hash) field in
+The hash of the addon file content. This is stored in the [content_hash](#content_hash) field in
 the [DownloadableFile](#downloadablefile-message) message. This value SHOULD be
 used by the Agent to determine if the particular file it has is different on the
 Server and needs to be re-downloaded.
@@ -1974,9 +1974,9 @@ The URL from which the file can be downloaded using HTTP GET request. The server
 at the specified URL SHOULD support range requests to allow for resuming
 downloads.
 
-<h4 id="content_hash">content_hash</h4>
+#### content_hash
 
-The hash of the file content. Can be used by the Agent to verify that the file
+The SHA256 hash of the file content. Can be used by the Agent to verify that the file
 was downloaded correctly.
 
 #### signature
