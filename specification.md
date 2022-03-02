@@ -1964,6 +1964,7 @@ The message has the following structure:
 message DownloadableFile {
     string download_url = 1;
     bytes content_hash = 2;
+    bytes signature = 3;
 }
 ```
 
@@ -1977,6 +1978,14 @@ downloads.
 
 The hash of the file content. Can be used by the Agent to verify that the file
 was downloaded correctly.
+
+#### signature
+
+Optional signature of the file content. Can be used by the Agent to verify the
+authenticity of the downloaded file, for example can be the 
+[detached GPG signature](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
+The exact signing and verification method is Agent specific. See 
+[Code Signing](#code-signing) for recommendations.
 
 <h2 id="agent-package-updates">Agent Package Updates</h2>
 
@@ -2315,7 +2324,7 @@ these restrictions by sending a remote config from the Server to the agent.
 It is recommended that remote configuration capabilities are not enabled in the
 Agent by default. The capabilities should be opt-in by the user.
 
-<h2 id="code-signing">Code Signing</h2>
+## Code Signing
 
 
 Any executable code that is part of an addon or agent package should be signed
@@ -2329,6 +2338,10 @@ recommend the following:
   agent specific and is outside the concerns of the OpAMP specification.
 * The Agent SHOULD verify executable code in downloaded files to ensure the code
   signature is valid.
+* The downloadable code can be signed with the signature included in the file content or 
+  have a detached signature recorded in the DownloadableFile
+  message's [signature](#signature) field. Detached signatures may be used for example
+  with [GPG signing](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
 * If Certificate Authority is used for code signing it is recommended that the
   Certificate Authority and its private key is not co-located with the OpAMP
   Server, so that a compromised Server cannot sign malicious code.
