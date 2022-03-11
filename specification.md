@@ -269,6 +269,7 @@ message ServerToAgent {
     AgentPackageAvailable agent_package_available = 6;
     Flags flags = 7;
     ServerCapabilities capabilities = 8;
+    AgentIdentification agent_identification = 9;
 }
 ```
 
@@ -281,9 +282,9 @@ is multiplexed into one WebSocket connection (for example when a terminating
 proxy is used) the instance_uid field allows to distinguish which Agent the
 ServerToAgent message is addressed to.
 
-Note: If UpdateInstanceUid flag is set then Agent MUST update its instance_uid to
-the value provided in AgentRemoteConfig and use it for further communication.
-value.
+Note: the value can be overriden by server by sending a new one in the
+AgentIdentification field. When this happens then Agent MUST update its
+instance_uid to the value provided and use it for all further communication.
 
 #### error_response
 
@@ -343,9 +344,6 @@ enum Flags {
     // set if the Agent indicated it cannot report addon status by setting
     // the ReportsAddonStatus bit to 0 in StatusReport.capabilities field.
     ReportAddonStatus     = 0x00000002;
-
-    // The server requests the agent to change its instance_uid to the provided value.
-    UpdateInstanceUid     = 0x00000004;
 }
 ```
 
@@ -385,6 +383,17 @@ enum ServerCapabilities {
 }
 ```
 
+#### agent_identification
+
+Properties related to identification of the agent, which can be overriden by the
+server if needed. When new_instance_uid is set, Agent MUST update instance_uid
+to the value provided and use it for all further communication.
+
+```protobuf
+message AgentIdentification {
+  string new_instance_uid = 1;
+}
+```
 
 <h2 id="servererrorresponse-message">ServerErrorResponse Message</h2>
 
@@ -1706,13 +1715,8 @@ The message has the following structure:
 ```protobuf
 message AgentRemoteConfig {
   AgentConfigMap config = 1;
-  string new_instance_uid = 2;
 }
 ```
-
-When UpdateInstanceUid flag is set, new_instance_uid MUST be not empty, Agent
-MUST update instance_uid to the value provided in it and use it for all further
-communication.
 
 
 <h2 id="addons">Addons</h2>
@@ -2172,8 +2176,7 @@ instances are using the same instance_uid.
 The Server SHOULD detect duplicate instance_uids (which may happen for example
 when Agents are using bad UID generators or due to cloning of the VMs where the
 Agent runs). When a duplicate instance_uid is detected, Server SHOULD generate
-a new instance_uid, set UpdateInstanceUid flag of ServerToAgent message and
-set the new_instance_uid value in AgentRemoteConfig.
+a new instance_uid, and send it as new_instance_uid value of AgentIdentification.
 
 <h2 id="authentication">Authentication</h2>
 
