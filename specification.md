@@ -361,7 +361,7 @@ enum ServerCapabilities {
 #### command
 
 This field is set when the server wants the agent to
-perform a restart or shutdown. This field must not be set with other fields
+perform a restart. This field must not be set with other fields
 besides instance_uid or capabilities. All other fields will be ignored and the
 agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
 for details.
@@ -429,17 +429,12 @@ message ServerToAgentCommand {
         // The agent should restart. This request will be ignored if the agent does not
         // support restart.
         Restart = 0;
-
-        // The agent should shutdown. This request will be ignored if the agent does not
-        // support shutdown. Shutdown is permanent and the agent will no longer be running
-        // or connected to the management server.
-        Shutdown = 1;
     }
     CommandType type = 1;
 }
 ```
 
-The ServerToAgentCommand message is sent when the Server wants the Agent to restart or shutdown.
+The ServerToAgentCommand message is sent when the Server wants the Agent to restart.
 This message must only contain the command, instance_uid, and capabilities fields.  All other fields
 will be ignored.
 
@@ -658,8 +653,6 @@ enum AgentCapabilities {
     AcceptsOtherConnectionSettings = 0x00000800;
     // The Agent can accept restart requests.
     AcceptsRestartCommand         = 0x00001000;
-    // The Agent can accept shutdown requests.
-    AcceptsShutdownCommand        = 0x00002000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
