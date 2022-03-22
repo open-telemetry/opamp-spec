@@ -270,6 +270,7 @@ message ServerToAgent {
     Flags flags = 7;
     ServerCapabilities capabilities = 8;
     AgentIdentification agent_identification = 9;
+    ServerToAgentCommand command = 10;
 }
 ```
 
@@ -383,6 +384,7 @@ enum ServerCapabilities {
 }
 ```
 
+
 #### agent_identification
 
 Properties related to identification of the agent, which can be overriden by the
@@ -394,6 +396,14 @@ message AgentIdentification {
   string new_instance_uid = 1;
 }
 ```
+
+#### command
+
+This field is set when the server wants the agent to
+perform a restart. This field must not be set with other fields
+besides instance_uid or capabilities. All other fields will be ignored and the
+agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
+for details.
 
 <h2 id="servererrorresponse-message">ServerErrorResponse Message</h2>
 
@@ -415,6 +425,7 @@ message ServerErrorResponse {
     }
 }
 ```
+
 
 
 <h4 id="type">type</h4>
@@ -442,6 +453,28 @@ Error message, typically human readable.
 
 
 Additional [RetryInfo](#throttling) message about retrying if type==UNAVAILABLE.
+
+<h2 id="servertoagentcommand-message">ServerToAgentCommand Message</h2>
+ 
+
+The message has the following structure:
+
+```protobuf
+// ServerToAgentCommand is sent from the server to the agent to request that the agent
+// perform a command.
+message ServerToAgentCommand {
+    enum CommandType {
+        // The agent should restart. This request will be ignored if the agent does not
+        // support restart.
+        Restart = 0;
+    }
+    CommandType type = 1;
+}
+```
+
+The ServerToAgentCommand message is sent when the Server wants the Agent to restart.
+This message must only contain the command, instance_uid, and capabilities fields.  All other fields
+will be ignored.
 
 # Operation
 
@@ -656,6 +689,8 @@ enum AgentCapabilities {
     // The can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
     AcceptsOtherConnectionSettings = 0x00000800;
+    // The Agent can accept restart requests.
+    AcceptsRestartCommand         = 0x00001000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -2473,7 +2508,7 @@ TBD
 * Do we need to define OpenTelemetry semantic conventions for reporting typical
   collection Agent-specific metrics (e.g. input/processing/output data rates,
   throughput, latency, etc)?
-* Do we need a capability for the Server to order the Agent to restart?
+* ~~Do we need a capability for the Server to order the Agent to restart?~~ Added.
 * Do we need Agent-initiated client certificate rotation capability (in addition
   to Server-initiated that we already have)?
 * Do we need to recommend the Agent to cache the remote config and OTLP metric
