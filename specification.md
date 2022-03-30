@@ -490,8 +490,8 @@ The Agent MUST send a status report:
   be the first message sent by the Agent.
 * Subsequently every time the status of the Agent changes.
 
-The status report is sent as an AgentToServer message, where the [Body](#body)
-field is set to [StatusReport](#statusreport-message) message.
+The status report is set as a [status_report](#statusreport-message) field in the
+AgentToServer message.
 
 The Server MUST respond to the status report by sending a
 [ServerToAgent](#servertoagent-message) message.
@@ -1857,8 +1857,8 @@ that is specific to the agent).
 
 During the downloading and installation process the Agent MAY periodically
 report the status of the process. To do this the Agent SHOULD send an
-[AgentToServer](#agenttoserver-message) message and set the [Body](#body) to
-[AgentAddonStatuses](#agentaddonstatuses-message) message.
+[AgentToServer](#agenttoserver-message) message and set the
+[addon_statuses](#agentaddonstatuses-message) field accordingly.
 
 Once the downloading and installation of all addons is done (succeeded or
 failed) the Agent SHOULD report the status of all addons to the Server.
@@ -2239,11 +2239,10 @@ the Agent authentication fails.
 
 
 If the Server receives a malformed AgentToServer message the Server SHOULD
-respond with a ServerToAgent message with error_response field set in the
-[Body](#body) and the [Type](#type) of
-[ServerErrorResponse](#errorresponse-message) message set to BAD_REQUEST. The
-[error_message](#error_message) field SHOULD be a human readable description of
-the problem with the AgentToServer message.
+respond with a ServerToAgent message with [error_response](#errorresponse-message)
+set accordingly. The [type](#type) field MUST be set to BAD_REQUEST and
+[error_message](#error_message) SHOULD be a human readable description of the
+problem with the AgentToServer message.
 
 The Agent SHOULD NOT retry sending an AgentToServer message to which it received
 a BAD_REQUEST response.
@@ -2294,9 +2293,9 @@ available.
 ## Throttling
 
 When the Server is overloaded and is unstable to process the AgentToServer
-message it SHOULD respond with an ServerToAgent message with error_response
-field set in the [Body](#body) and the [type](#type) of
-[ServerErrorResponse](#servererrorresponse-message) message set to UNAVAILABLE.
+message it SHOULD respond with an ServerToAgent message, where
+[error_response](#servererrorresponse-message) is filled with [type](#type) field
+set to UNAVAILABLE.
 ~~The agent SHOULD retry the message.~~ _(Note: retrying individual messages is
 not possible since we no longer have sequence ids and don't know which message
 failed)._ The agent SHOULD disconnect, wait, then reconnect again and resume its
