@@ -188,16 +188,31 @@ deliver to the Agent (such as for example a new remote configuration).
 The default polling interval when the Agent does have anything to deliver is 30
 seconds. This polling interval SHOULD be configurable on the Agent.
 
-When using HTTP transport the sequence messages is exactly the same as it is
-when using the WebSocket transport. The only difference is in the timing in the
-situation when the Server wants to send a message to the Agent but the Server
-needs to wait for the Agent to poll the Server and establish an HTTP request
-over which the Server's message can be sent back.
+When using HTTP transport the sequence of messages is exactly the same as it is
+when using the WebSocket transport. The only difference is in the timing:
+- When the Server wants to send a message to the Agent, the Server needs to wait
+  for the Agent to poll the Server and establish an HTTP request over which the Server's
+  message can be sent back as an HTTP response.
+- When the Agent wants to send a message to the Server and the Agent has previously sent
+  a request to the Server that is not yet responded, the Agent MUST wait until the
+  response is received before a new request can be made. Note that the new request in
+  this case can be made immediately after the previous response is received, the Agent
+  does not need to wait for the polling period between requests.
 
 The Agent MUST set "Content-Type: application/x-protobuf" request header when
 using plain HTTP transport. When the Server receives an HTTP request with this
 header set it SHOULD assume this is a plain HTTP transport request, otherwise it
 SHOULD assume this is a WebSocket transport initiation.
+
+Open Question: do we want to also allow JSON-encoded Protobuf messages? This can
+be fairly trivially achieved by requiring "Content-Type: application/json" header.
+
+The Agent MAY compress the request body using gzip method and MUST specify
+"Content-Encoding: gzip" in that case. Server implementations MUST honour the 
+"Content-Encoding" header and MUST support gzipped or uncompressed request bodies.
+
+The Server MAY compress the response if the Agent indicated it can accept compressed
+response via the "Accept-Encoding" header.
 
 ## AgentToServer Message
 
