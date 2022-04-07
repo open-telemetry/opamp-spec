@@ -1,4 +1,4 @@
-<h1>OpAMP: Open Agent Management Protocol</h1>
+# OpAMP: Open Agent Management Protocol
 
 Author: Tigran Najaryan, Splunk
 
@@ -12,11 +12,171 @@ Note: address all TODO and Open Questions before considering the document ready 
 
 Note 2: this document requires a simplification pass to reduce the scope, size and complexity.
 
-[TOC]
+#
 
+<!-- toc -->
 
-<h1 id="introduction">Introduction</h1>
+- [Introduction](#introduction)
+- [Communication Model](#communication-model)
+  * [WebSocket Transport](#websocket-transport)
+  * [Plain HTTP Transport](#plain-http-transport)
+  * [AgentToServer Message](#agenttoserver-message)
+      - [instance_uid](#instance_uid)
+      - [status_report](#status_report)
+      - [addon_statuses](#addon_statuses)
+      - [agent_install_status](#agent_install_status)
+      - [agent_disconnect](#agent_disconnect)
+      - [flags](#flags)
+  * [ServerToAgent Message](#servertoagent-message)
+      - [instance_uid](#instance_uid-1)
+      - [error_response](#error_response)
+      - [remote_config](#remote_config)
+      - [connection_settings](#connection_settings)
+      - [addons_available](#addons_available)
+      - [agent_package_available](#agent_package_available)
+      - [flags](#flags-1)
+      - [capabilities](#capabilities)
+      - [agent_identification](#agent_identification)
+      - [command](#command)
+  * [ServerErrorResponse Message](#servererrorresponse-message)
+      - [type](#type)
+      - [error_message](#error_message)
+      - [retry_info](#retry_info)
+  * [ServerToAgentCommand Message](#servertoagentcommand-message)
+- [Operation](#operation)
+  * [Status Reporting](#status-reporting)
+    + [StatusReport Message](#statusreport-message)
+      - [agent_description](#agent_description)
+      - [effective_config](#effective_config)
+      - [remote_config_status](#remote_config_status)
+      - [capabilities](#capabilities-1)
+    + [AgentDescription Message](#agentdescription-message)
+      - [identifying_attributes](#identifying_attributes)
+      - [non_identifying_attributes](#non_identifying_attributes)
+    + [EffectiveConfig Message](#effectiveconfig-message)
+      - [hash](#hash)
+      - [config_map](#config_map)
+    + [RemoteConfigStatus Message](#remoteconfigstatus-message)
+      - [last_remote_config_hash](#last_remote_config_hash)
+      - [status](#status)
+      - [error_message](#error_message-1)
+    + [AgentAddonStatuses Message](#agentaddonstatuses-message)
+      - [addons](#addons)
+      - [server_provided_all_addons_hash](#server_provided_all_addons_hash)
+    + [AgentAddonStatus Message](#agentaddonstatus-message)
+      - [name](#name)
+      - [agent_has_version](#agent_has_version)
+      - [agent_has_hash](#agent_has_hash)
+      - [server_offered_version](#server_offered_version)
+      - [server_offered_hash](#server_offered_hash)
+      - [status](#status-1)
+      - [error_message](#error_message-2)
+    + [AgentInstallStatus Message](#agentinstallstatus-message)
+      - [server_offered_version](#server_offered_version-1)
+      - [server_offered_hash](#server_offered_hash-1)
+      - [status](#status-2)
+      - [error_message](#error_message-3)
+  * [Connection Settings Management](#connection-settings-management)
+    + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
+    + [Trust On First Use](#trust-on-first-use)
+    + [Registration On First Use](#registration-on-first-use)
+    + [Revoking Access](#revoking-access)
+    + [Certificate Generation](#certificate-generation)
+    + [Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations)
+    + [ConnectionSettingsOffers Message](#connectionsettingsoffers-message)
+      - [hash](#hash-1)
+      - [opamp](#opamp)
+      - [own_metrics](#own_metrics)
+      - [own_traces](#own_traces)
+      - [own_logs](#own_logs)
+      - [other_connections](#other_connections)
+    + [ConnectionSettings Message](#connectionsettings-message)
+      - [destination_endpoint](#destination_endpoint)
+      - [headers](#headers)
+      - [proxy_endpoint](#proxy_endpoint)
+      - [proxy_headers](#proxy_headers)
+      - [certificate](#certificate)
+      - [flags](#flags-2)
+    + [Headers Message](#headers-message)
+    + [TLSCertificate Message](#tlscertificate-message)
+      - [public_key](#public_key)
+      - [private_key](#private_key)
+      - [ca_public_key](#ca_public_key)
+  * [Own Telemetry Reporting](#own-telemetry-reporting)
+  * [Configuration](#configuration)
+    + [Configuration Files](#configuration-files)
+    + [Security Considerations](#security-considerations)
+    + [AgentRemoteConfig Message](#agentremoteconfig-message)
+  * [Addons](#addons)
+    + [Downloading Addons](#downloading-addons)
+      - [Step 1](#step-1)
+      - [Step 2](#step-2)
+      - [Step 3](#step-3)
+    + [Addon Status Reporting](#addon-status-reporting)
+    + [Calculating Hashes](#calculating-hashes)
+      - [File Hash](#file-hash)
+      - [Addon Hash](#addon-hash)
+      - [All Addons Hash](#all-addons-hash)
+    + [Security Considerations](#security-considerations-1)
+    + [AddonsAvailable Message](#addonsavailable-message)
+      - [addons](#addons-1)
+      - [all_addons_hash](#all_addons_hash)
+    + [AddonAvailable Message](#addonavailable-message)
+      - [version](#version)
+      - [file](#file)
+      - [hash](#hash-2)
+    + [DownloadableFile Message](#downloadablefile-message)
+      - [download_url](#download_url)
+      - [content_hash](#content_hash)
+      - [signature](#signature)
+  * [Agent Package Updates](#agent-package-updates)
+    + [Downloading Agent Package](#downloading-agent-package)
+    + [Security Considerations](#security-considerations-2)
+    + [AgentPackageAvailable Message](#agentpackageavailable-message)
+      - [version](#version-1)
+      - [file](#file-1)
+- [Connection Management](#connection-management)
+  * [Establishing Connection](#establishing-connection)
+  * [Closing Connection](#closing-connection)
+    + [WebSocket Transport, Agent Initiated](#websocket-transport-agent-initiated)
+    + [WebSocket Transport, Server Initiated](#websocket-transport-server-initiated)
+    + [Plain HTTP Transport](#plain-http-transport-1)
+  * [Restoring WebSocket Connection](#restoring-websocket-connection)
+  * [Duplicate WebSocket Connections](#duplicate-websocket-connections)
+  * [Authentication](#authentication)
+  * [Bad Request](#bad-request)
+  * [Retrying Messages](#retrying-messages)
+  * [Throttling](#throttling)
+    + [WebSocket Transport](#websocket-transport-1)
+    + [Plain HTTP Transport](#plain-http-transport-2)
+- [Security](#security)
+  * [General Recommendations](#general-recommendations)
+  * [Configuration Restrictions](#configuration-restrictions)
+  * [Opt-in Remote Configuration](#opt-in-remote-configuration)
+  * [Code Signing](#code-signing)
+- [Interoperability](#interoperability)
+  * [Interoperability of Partial Implementations](#interoperability-of-partial-implementations)
+  * [Interoperability of Future Capabilities](#interoperability-of-future-capabilities)
+    + [Ignorable Capability Extensions](#ignorable-capability-extensions)
+    + [Non-Ignorable Capability Extensions](#non-ignorable-capability-extensions)
+- [Performance and Scale](#performance-and-scale)
+- [Open Questions](#open-questions)
+- [FAQ for Reviewers](#faq-for-reviewers)
+    + [What is WebSocket?](#what-is-websocket)
+    + [Why not Use TCP Instead of WebSocket?](#why-not-use-tcp-instead-of-websocket)
+    + [Why not alwaysUse HTTP Instead of WebSocket?](#why-not-alwaysuse-http-instead-of-websocket)
+    + [Why not Use gRPC Instead of WebSocket?](#why-not-use-grpc-instead-of-websocket)
+- [Future Possibilities](#future-possibilities)
+- [References](#references)
+  * [Agent Management](#agent-management)
+  * [Configuration Management](#configuration-management)
+  * [Security and Certificate Management](#security-and-certificate-management)
+  * [Cloud Provider Support](#cloud-provider-support)
+  * [Other](#other)
 
+<!-- tocstop -->
+
+# Introduction
 
 Open Agent Management Protocol (OpAMP) is a network protocol for remote
 management of large fleets of data collection Agents.
@@ -49,7 +209,7 @@ OpAMP supports the following functionality:
 The functionality listed above enables a 'single pane of glass' management view
 of a large fleet of mixed agents (e.g. OpenTelemetry Collector, Fluentd, etc).
 
-<h1 id="communication-model">Communication Model</h1>
+# Communication Model
 
 
 The OpAMP Server manages Agents that implement the client-side of OpAMP
@@ -475,7 +635,7 @@ besides instance_uid or capabilities. All other fields will be ignored and the
 agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
 for details.
 
-<h2 id="servererrorresponse-message">ServerErrorResponse Message</h2>
+## ServerErrorResponse Message
 
 
 The message has the following structure:
@@ -498,7 +658,7 @@ message ServerErrorResponse {
 
 
 
-<h4 id="type">type</h4>
+#### type
 
 
 This field defines the type of the error that the Server encountered when trying
@@ -514,17 +674,17 @@ message and indicates that the AgentToServer message was malformed. See
 UNAVAILABLE: The server is overloaded and unable to process the request. See
 [Throttling](#throttling).
 
-<h4 id="error_message">error_message</h4>
+#### error_message
 
 
 Error message, typically human readable.
 
-<h4 id="retry_info">retry_info</h4>
+#### retry_info
 
 
 Additional [RetryInfo](#throttling) message about retrying if type==UNAVAILABLE.
 
-<h2 id="servertoagentcommand-message">ServerToAgentCommand Message</h2>
+## ServerToAgentCommand Message
  
 
 The message has the following structure:
@@ -549,7 +709,7 @@ will be ignored.
 # Operation
 
 
-<h2 id="status-reporting">Status Reporting</h2>
+## Status Reporting
 
 
 The Agent MUST send a status report:
@@ -669,7 +829,7 @@ Server. TODO: add a section explaining how infinite oscillations between remote
 config and status reporting are possible if an attribute is reported in the
 status that can be changed via remote config and how to prevent it.
 
-<h3 id="statusreport-message">StatusReport Message</h3>
+### StatusReport Message
 
 
 StatusReport message has the following structure:
@@ -685,7 +845,7 @@ message StatusReport {
 ```
 
 
-<h4 id="agent_description">agent_description</h4>
+#### agent_description
 
 
 The description of the agent, its type, where it runs, etc. See
@@ -694,7 +854,7 @@ The description of the agent, its type, where it runs, etc. See
 This field SHOULD be unset if no Agent description fields have changed since the
 last StatusReport was sent.
 
-<h4 id="effective_config">effective_config</h4>
+#### effective_config
 
 
 The current effective configuration of the Agent. The effective configuration is
@@ -706,7 +866,7 @@ because the agent uses a local configuration instead (or in addition). See
 This field SHOULD be unset if the effective configuration has not changed since
 the last StatusReport message was sent.
 
-<h4 id="remote_config_status">remote_config_status</h4>
+#### remote_config_status
 
 
 The status of the remote config that was previously received from the server.
@@ -766,7 +926,7 @@ enum AgentCapabilities {
 }
 ```
 
-<h3 id="agentdescription-message">AgentDescription Message</h3>
+### AgentDescription Message
 
 The AgentDescription message has the following structure:
 
@@ -817,7 +977,7 @@ The following attributes SHOULD be included:
 - any user-defined attributes that the end user would like to associate with
   this agent.
 
-<h3 id="effectiveconfig-message">EffectiveConfig Message</h3>
+### EffectiveConfig Message
 
 
 The EffectiveConfig message has the following structure:
@@ -831,7 +991,7 @@ message EffectiveConfig {
 ```
 
 
-<h4 id="hash">hash</h4>
+#### hash
 
 The hash of the effective config. The hash is calculated by the Agent from the
 content of the effective config (from the names and content of all items in the
@@ -847,7 +1007,7 @@ received from the Agent and if the hashes are different the Server SHOULD ask
 the Agent to report its full effective config by sending a ServerToAgent message
 with ReportEffectiveConfig flag set.
 
-<h4 id="config_map">config_map</h4>
+#### config_map
 
 
 The effective config of the Agent. SHOULD be omitted if unchanged since last
@@ -859,7 +1019,7 @@ ServerToAgent message.
 See AgentConfigMap message definition in the [Configuration](#configuration)
 section.
 
-<h3 id="remoteconfigstatus-message">RemoteConfigStatus Message</h3>
+### RemoteConfigStatus Message
 
 
 The RemoteConfigStatus message has the following structure:
@@ -885,7 +1045,7 @@ message RemoteConfigStatus {
 ```
 
 
-<h4 id="last_remote_config_hash">last_remote_config_hash</h4>
+#### last_remote_config_hash
 
 
 The hash of the remote config that was last received by this agent from the
@@ -893,18 +1053,18 @@ management server. The server SHOULD compare this hash with the config hash it
 has for the agent and if the hashes are different the server MUST include the
 remote_config field in the response in the ServerToAgent message.
 
-<h4 id="status">status</h4>
+#### status
 
 
 The status of the Agent's attempt to apply a previously received remote
 configuration.
 
-<h4 id="error_message">error_message</h4>
+#### error_message
 
 
 Optional error message if status==FAILED.
 
-<h3 id="agentaddonstatuses-message">AgentAddonStatuses Message</h3>
+### AgentAddonStatuses Message
 
 
 The AgentAddonStatuses message describes the status of all addons that the agent
@@ -919,13 +1079,13 @@ message AgentAddonStatuses {
 ```
 
 
-<h4 id="addons">addons</h4>
+#### addons
 
 
 A map of AgentAddonStatus messages, where the keys are addon names. The key MUST
 match the name field of [AgentAddonStatus](#agentaddonstatus-message) message.
 
-<h4 id="server_provided_all_addons_hash">server_provided_all_addons_hash</h4>
+#### server_provided_all_addons_hash
 
 
 The aggregate hash of all addons that this Agent previously received from the
@@ -935,7 +1095,7 @@ The server SHOULD compare this hash to the aggregate hash of all addons that it
 has for this Agent and if the hashes are different the server SHOULD send an
 AddonsAvailable message to the agent.
 
-<h3 id="agentaddonstatus-message">AgentAddonStatus Message</h3>
+### AgentAddonStatus Message
 
 
 The AgentAddonStatus has the following structure:
@@ -959,7 +1119,7 @@ message AgentAddonStatus {
 ```
 
 
-<h4 id="name">name</h4>
+#### name
 
 
 Addon name. MUST be always set and MUST match the key in the addons field of
@@ -1015,7 +1175,7 @@ to be set and to have different values. This is for example possible if the
 agent already has a version of the addon successfully installed, the server
 offers a different version, but the agent fails to install that version.
 
-<h4 id="status">status</h4>
+#### status
 
 
 The status of this addon. The possible values are:
@@ -1032,12 +1192,12 @@ server_offered_hash field MUST be set to indicate the version that the agent
 tried to install. The error_message may also contain more details about the
 failure.
 
-<h4 id="error_message">error_message</h4>
+#### error_message
 
 
 An error message if the status is erroneous.
 
-<h3 id="agentinstallstatus-message">AgentInstallStatus Message</h3>
+### AgentInstallStatus Message
 
 
 This message contains the status of the last agent package install status
@@ -1059,21 +1219,21 @@ message AgentInstallStatus {
 }
 ```
 
-<h4 id="server_offered_version">server_offered_version</h4>
+#### server_offered_version
 
 The version field from the AgentPackageAvailable that the server offered to the
 agent. MUST be set if the agent previously received an offer from the server to
 install this agent.
 
 
-<h4 id="server_offered_hash">server_offered_hash</h4>
+#### server_offered_hash
 
 
 The hash of the agent package file that the server offered to the agent. MUST be
 set if the agent previously received an offer from the server to install this
 agent.
 
-<h4 id="status">status</h4>
+#### status
 
 
 The status of the agent package installation operation. The possible values are:
@@ -1095,12 +1255,12 @@ prevent the agent from self-updating or when self-updating is disabled by the
 user. error_message may also contain more details about what exactly is not
 permitted.
 
-<h4 id="error_message">error_message</h4>
+#### error_message
 
 
 Optional human readable error message if the status is erroneous.
 
-<h2 id="connection-settings-management">Connection Settings Management</h2>
+## Connection Settings Management
 
 
 OpAMP includes features that allow the Server to manage Agent's connection
@@ -1183,7 +1343,7 @@ of connection settings for "other" destinations is described in
 [Connection Settings for "Other" Destinations](#connection-settings-for-"other"-destinations).
 The handling of OpAMP connection settings is described below.
 
-<h3 id="opamp-connection-setting-offer-flow">OpAMP Connection Setting Offer Flow</h3>
+### OpAMP Connection Setting Offer Flow
 
 
 Here is how the OpAMP connection settings change happens:
@@ -1249,7 +1409,7 @@ Note: Agents which are unable to persist new connection settings and have access
 only to ephemeral storage SHOULD reject certificate offers otherwise they risk
 losing access after restarting and losing the offered certificate.
 
-<h3 id="trust-on-first-use">Trust On First Use</h3>
+### Trust On First Use
 
 
 Agents that want to use TLS with a client certificate but do not initially have
@@ -1277,7 +1437,7 @@ Exact same TOFU approach can be also used for Agents that don't have the
 necessary authorization headers to access the Server. The Server can detect such
 access and upon approval send the authorization headers to the Agent.
 
-<h3 id="registration-on-first-use">Registration On First Use</h3>
+### Registration On First Use
 
 
 In some use cases it may be desirable to equip newly installed Agents with an
@@ -1296,7 +1456,7 @@ immediately after successful connection each Agent will acquire their own unique
 connection credentials. This way individual Agent's credentials may be revoked
 without disrupting the access to all other Agents.
 
-<h3 id="revoking-access">Revoking Access</h3>
+### Revoking Access
 
 
 Since the Server knows what access headers and a client certificate the Agent
@@ -1315,7 +1475,7 @@ For own telemetry and "other" destinations the Server MUST also communicate the
 revocation fact to the corresponding destinations so that they can begin
 rejecting access to connections that use the revoked credentials.
 
-<h3 id="certificate-generation">Certificate Generation</h3>
+### Certificate Generation
 
 
 Client certificates that the Server generates may be self-signed, signed by a
@@ -1330,12 +1490,12 @@ verified.
 How exactly the client certificates are generated is outside the scope of the
 OpAMP specification.
 
-<h3 id="connection-settings-for-"other"-destinations">Connection Settings for "Other" Destinations</h3>
+### Connection Settings for "Other" Destinations
 
 
 TBD
 
-<h3 id="connectionsettingsoffers-message">ConnectionSettingsOffers Message</h3>
+### ConnectionSettingsOffers Message
 
 
 ConnectionSettingsOffers message describes connection settings for the agent to
@@ -1393,7 +1553,7 @@ of the destination to connect to (as it is known to the agent). If this field is
 not set then the agent should assume that the other_connections settings are
 unchanged.
 
-<h3 id="connectionsettings-message">ConnectionSettings Message</h3>
+### ConnectionSettings Message
 
 
 ConnectionSettings describes connection settings for one destination. The
@@ -1417,7 +1577,7 @@ message ConnectionSettings {
 ```
 
 
-<h4 id="destination_endpoint">destination_endpoint</h4>
+#### destination_endpoint
 
 
 A URL, host:port or some other destination specifier.
@@ -1433,7 +1593,7 @@ The Agent MAY refuse to send the telemetry if the URL begins with "http://".
 
 The field is considered unset if (flags & DestinationEndpointSet)==0.
 
-<h4 id="headers">headers</h4>
+#### headers
 
 
 Headers to use when connecting. Typically used to set access tokens or other
@@ -1447,7 +1607,7 @@ key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
 if the field is unset then the agent SHOULD continue using the headers that it
 currently has (if any).
 
-<h4 id="proxy_endpoint">proxy_endpoint</h4>
+#### proxy_endpoint
 
 
 A URL, host:port or some other specifier of an intermediary proxy. Empty if no
@@ -1463,7 +1623,7 @@ For example: "https://proxy.example.com:5678"
 
 The field is considered unset if (flags & ProxyEndpointSet)==0.
 
-<h4 id="proxy_headers">proxy_headers</h4>
+#### proxy_headers
 
 
 Headers to use when connecting to a proxy. For HTTP-based protocols the agent
@@ -1477,7 +1637,7 @@ key="Proxy-Authorization", value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
 if the field is unset then the agent SHOULD continue using the proxy headers
 that it currently has (if any).
 
-<h4 id="certificate">certificate</h4>
+#### certificate
 
 
 The agent should use the offered certificate to connect to the destination from
@@ -1489,7 +1649,7 @@ This field is used to perform a client certificate revocation/rotation. if the
 field is unset then the agent SHOULD continue using the certificate that it
 currently has (if any).
 
-<h4 id="flags">flags</h4>
+#### flags
 
 
 ​​Bitfield of Flags enum:
@@ -1504,7 +1664,7 @@ enum Flags {
 ```
 
 
-<h3 id="headers-message">Headers Message</h3>
+### Headers Message
 
 
 
@@ -1519,7 +1679,7 @@ message Header {
 ```
 
 
-<h3 id="tlscertificate-message">TLSCertificate Message</h3>
+### TLSCertificate Message
 
 
 The message carries a TLS certificate that can be used as a client-side
@@ -1541,17 +1701,17 @@ message TLSCertificate {
 ```
 
 
-<h4 id="public_key">public_key</h4>
+#### public_key
 
 
 PEM-encoded public key of the certificate. Required.
 
-<h4 id="private_key">private_key</h4>
+#### private_key
 
 
 PEM-encoded private key of the certificate. Required.
 
-<h4 id="ca_public_key">ca_public_key</h4>
+#### ca_public_key
 
 
 PEM-encoded public key of the CA that signed this certificate. Optional, MUST be
@@ -1559,7 +1719,7 @@ specified if the certificate is CA-signed. Can be stored by intermediary
 TLS-terminating proxies in order to verify the connecting client's certificate
 in the future.
 
-<h2 id="own-telemetry-reporting">Own Telemetry Reporting</h2>
+## Own Telemetry Reporting
 
 
 Own Telemetry Reporting is an optional capability of OpAMP protocol. The Server
@@ -1645,7 +1805,7 @@ AgentDescription message may be also specified in the Resource of the reported
 OTLP telemetry, in which case they SHOULD have exactly the same values.
 
 
-<h2 id="configuration">Configuration</h2>
+## Configuration
 
 
 Agent configuration is an optional capability of OpAMP protocol. Remote
@@ -1744,7 +1904,7 @@ Config    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
 The Agent may ignore the Remote Configuration offer if it does not want its
 configuration to be remotely controlled by the Server.
 
-<h3 id="configuration-files">Configuration Files</h3>
+### Configuration Files
 
 
 The configuration of the Agent is a collection of named configuration files
@@ -1798,7 +1958,7 @@ reported in the Effective Configuration in the Agent's status report may be used
 for example by the Server to visualize the reported configuration nicely in a
 UI.
 
-<h3 id="security-considerations">Security Considerations</h3>
+### Security Considerations
 
 
 Remote Configuration is a potentially dangerous functionality that may be
@@ -1811,7 +1971,7 @@ See Security section for [general recommendations](#general-recommendations) and
 recommendations specifically for
 [remote reconfiguration](#configuration-restrictions) capabilities.
 
-<h3 id="agentremoteconfig-message">AgentRemoteConfig Message</h3>
+### AgentRemoteConfig Message
 
 
 The message has the following structure:
@@ -1824,7 +1984,7 @@ message AgentRemoteConfig {
 ```
 
 
-<h2 id="addons">Addons</h2>
+## Addons
 
 
 An Addon has a name and content stored in a file. The content of the file,
@@ -1863,13 +2023,13 @@ is Agent specific and is beyond the scope of the protocol.
 The Server is allowed to make an addon offer only if the Agent indicated that it
 can accept addons via AcceptsAddons bit of StatusReport.capabilities field.
 
-<h3 id="downloading-addons">Downloading Addons</h3>
+### Downloading Addons
 
 
 After receiving the [AddonsAvailable](#addonsavailable-message) message the
 Agent SHOULD follow this download procedure:
 
-<h4 id="step-1">Step 1</h4>
+#### Step 1
 
 
 Compare the aggregate hash of all addons it has with the aggregate hash offered
@@ -1879,7 +2039,7 @@ If the aggregate hash is the same then consider the download procedure done,
 since it means all addons on the Agent are the same as offered by the Server.
 Otherwise go to Step 2.
 
-<h4 id="step-2">Step 2</h4>
+#### Step 2
 
 
 For each addon offered by the Server the Agent SHOULD check if it should
@@ -1899,7 +2059,7 @@ download the particular addon:
 Finally, if the Agent has any addons that are not offered by the Server the
 addons SHOULD be deleted by the Agent.
 
-<h4 id="step-3">Step 3</h4>
+#### Step 3
 
 For the file of the addon offered by the Server the Agent SHOULD check if it
 should download the file:
@@ -1922,7 +2082,7 @@ After downloading the addons the Agent can perform any additional processing
 that is agent type-specific (e.g. "install" or "activate" the addons in any way
 that is specific to the agent).
 
-<h3 id="addon-status-reporting">Addon Status Reporting</h3>
+### Addon Status Reporting
 
 
 During the downloading and installation process the Agent MAY periodically
@@ -1975,7 +2135,7 @@ Note that the Agent MAY also report the status of addons it has installed
 locally, not only the addons it was offered and downloaded from the Server.
 [TODO: is this necessary?]
 
-<h3 id="calculating-hashes">Calculating Hashes</h3>
+### Calculating Hashes
 
 
 The Agent and the Server use hashes to identify content of files and addons such
@@ -1991,14 +2151,14 @@ stores and compares them.
 
 There are 3 levels of hashes: 
 
-<h4 id="file-hash">File Hash</h4>
+#### File Hash
 
 The hash of the addon file content. This is stored in the [content_hash](#content_hash) field in
 the [DownloadableFile](#downloadablefile-message) message. This value SHOULD be
 used by the Agent to determine if the particular file it has is different on the
 Server and needs to be re-downloaded.
 
-<h4 id="addon-hash">Addon Hash</h4>
+#### Addon Hash
 
 The addon hash that identifies the entire addon (addon name and file content).
 This hash is stored in the [hash](#hash) field in the
@@ -2007,7 +2167,7 @@ This hash is stored in the [hash](#hash) field in the
 This value SHOULD be used by the Agent to determine if the particular addon it
 has is different on the Server and needs to be re-downloaded.
 
-<h4 id="all-addons-hash">All Addons Hash</h4>
+#### All Addons Hash
 
 
 The all addons hash is the aggregate hash of all addons for the particular
@@ -2022,7 +2182,7 @@ re-downloaded.
 Note that the aggregate hash does not include the addons that are available on
 the Agent locally and were not downloaded from the download server.
 
-<h3 id="security-considerations">Security Considerations</h3>
+### Security Considerations
 
 
 Downloading addons remotely is a potentially dangerous functionality that may be
@@ -2033,7 +2193,7 @@ Agent to execute arbitrary code.
 See Security section for [general recommendations](#general-recommendations) and
 recommendations specifically for [code signing](#code-signing) capabilities.
 
-<h3 id="addonsavailable-message">AddonsAvailable Message</h3>
+### AddonsAvailable Message
 
 
 The message has the following structure:
@@ -2047,12 +2207,12 @@ message AddonsAvailable {
 ```
 
 
-<h4 id="addons">addons</h4>
+#### addons
 
 
 A map of addons. Keys are addon names.
 
-<h4 id="all_addons_hash">all_addons_hash</h4>
+#### all_addons_hash
 
 
 Aggregate hash of all remotely installed addons.
@@ -2064,7 +2224,7 @@ specify the available addons in the next DataToAgent message.
 
 This field MUST be always set if the Server supports addons of agents.
 
-<h3 id="addonavailable-message">AddonAvailable Message</h3>
+### AddonAvailable Message
 
 
 This message is an offer from the Server to the agent to install a new addon or
@@ -2098,7 +2258,7 @@ The downloadable file of the addon.
 The hash of the addon. SHOULD be calculated based on addon name and
 content of the file of the addon.
 
-<h3 id="downloadablefile-message">DownloadableFile Message</h3>
+### DownloadableFile Message
 
 The message has the following structure:
 
@@ -2110,7 +2270,7 @@ message DownloadableFile {
 }
 ```
 
-<h4 id="download_url">download_url</h4>
+#### download_url
 
 The URL from which the file can be downloaded using HTTP GET request. The server
 at the specified URL SHOULD support range requests to allow for resuming
@@ -2129,7 +2289,7 @@ authenticity of the downloaded file, for example can be the
 The exact signing and verification method is Agent specific. See 
 [Code Signing](#code-signing) for recommendations.
 
-<h2 id="agent-package-updates">Agent Package Updates</h2>
+## Agent Package Updates
 
 Agent package is a downloadable file. The package can be downloaded by the Agent
 and installed to replace the Agent itself, either to upgrade it to a newer
@@ -2153,7 +2313,7 @@ The Server is allowed to make an package offer only if the Agent indicated that
 it can accept packages via AcceptsAgentPackage bit of StatusReport.capabilities
 field.
 
-<h3 id="downloading-agent-package">Downloading Agent Package</h3>
+### Downloading Agent Package
 
 After receiving the [AgentPackageAvailable](#agentpackageavailable-message)
 message the Agent SHOULD follow the download procedure that is similar to
@@ -2195,7 +2355,7 @@ multiple files in a single file, e.g. a zip or tar file. After downloading the
 single package file the Agent may extract the files contained in it. How exactly
 this is done is Agent specific and is beyond the scope of the protocol.
 
-<h3 id="security-considerations">Security Considerations</h3>
+### Security Considerations
 
 
 Downloading executable agent packages remotely is a potentially dangerous
@@ -2206,7 +2366,7 @@ execute arbitrary code.
 See Security section for [general recommendations](#general-recommendations) and
 recommendations specifically for [code signing](#code-signing) capabilities.
 
-<h3 id="agentpackageavailable-message">AgentPackageAvailable Message</h3>
+### AgentPackageAvailable Message
 
 
 The message is sent from the server to the agent to indicate that there is an
@@ -2222,17 +2382,17 @@ message AgentPackageAvailable {
 ```
 
 
-<h4 id="version">version</h4>
+#### version
 
 The agent version that is available on the server side. The agent may for
 example use this information to avoid downloading a package that was previously
 already downloaded and failed to install.
 
-<h4 id="file">file</h4>
+#### file
 
 The downloadable file of the package.
 
-<h1 id="connection-management">Connection Management</h1>
+# Connection Management
 
 
 ## Establishing Connection
@@ -2306,7 +2466,7 @@ when Agents are using bad UID generators or due to cloning of the VMs where the
 Agent runs). When a duplicate instance_uid is detected, Server SHOULD generate
 a new instance_uid, and send it as new_instance_uid value of AgentIdentification.
 
-<h2 id="authentication">Authentication</h2>
+## Authentication
 
 
 The Agent and the Server MAY use authentication methods supported by HTTP, such
@@ -2319,7 +2479,7 @@ The Server MUST respond with
 [401 Unauthorized](https://datatracker.ietf.org/doc/html/rfc7235#section-3.1) if
 the Agent authentication fails.
 
-<h2 id="bad-request">Bad Request</h2>
+## Bad Request
 
 
 If the Server receives a malformed AgentToServer message the Server SHOULD
@@ -2331,7 +2491,7 @@ problem with the AgentToServer message.
 The Agent SHOULD NOT retry sending an AgentToServer message to which it received
 a BAD_REQUEST response.
 
-<h2 id="retrying-messages">Retrying Messages</h2>
+## Retrying Messages
 
 
 The Agent MAY retry sending AgentToServer message if:
@@ -2415,7 +2575,7 @@ honour the corresponding requirements of HTTP specification.
 
 The minimum recommended retry interval is 30 seconds.
 
-<h1 id="security">Security</h1>
+# Security
 
 
 Remote configuration, downloadable addons and agent packages are a significant
@@ -2426,7 +2586,7 @@ defines recommendations that reduce the security risks for the Agent.
 Guidelines in this section are optional for implementation, but are highly
 recommended for sensitive applications.
 
-<h2 id="general-recommendations">General Recommendations</h2>
+## General Recommendations
 
 
 We recommend that the Agent employs the zero-trust security model and does not
@@ -2454,7 +2614,7 @@ malicious actors. We recommend the following:
   this rule is not followed the remote configuration functionality may be
   exploited to perform arbitrary code execution on the Agent's machine.
 
-<h2 id="configuration-restrictions">Configuration Restrictions</h2>
+## Configuration Restrictions
 
 
 The Agent is recommended to restrict what it may be compelled to do via remote
@@ -2479,7 +2639,7 @@ list" instead of the "deny list". The restrictions may be hard-coded or may be
 end-user definable in a local config file. It should not be possible to override
 these restrictions by sending a remote config from the Server to the agent.
 
-<h2 id="opt-in-remote-configuration">Opt-in Remote Configuration</h2>
+## Opt-in Remote Configuration
 
 
 It is recommended that remote configuration capabilities are not enabled in the
@@ -2575,12 +2735,12 @@ peer and adjust their behavior appropriately. How exactly the behavior is
 adjusted for future capabilities MUST be defined in the future specification of
 the new capabilities.
 
-<h1 id="performance-and-scale">Performance and Scale</h1>
+# Performance and Scale
 
 
 TBD
 
-<h1 id="open-questions">Open Questions</h1>
+# Open Questions
 
 
 
@@ -2637,10 +2797,10 @@ TBD
   may be exchanged between the Agent and the Server in the same WebSocket
   connection?
 
-<h1 id="faq-for-reviewers">FAQ for Reviewers</h1>
+# FAQ for Reviewers
 
 
-<h3 id="what-is-websocket">What is WebSocket?</h3>
+### What is WebSocket?
 
 
 WebSocket is a bidirectional, message-oriented protocol that uses plain HTTP for
@@ -2652,7 +2812,7 @@ libraries in virtually all popular programming languages, is supported by
 network inspection and debugging tools, is secure and efficient and provides the
 exact message-oriented semantics that we need for OpAMP.
 
-<h3 id="why-not-use-tcp-instead-of-websocket">Why not Use TCP Instead of WebSocket?</h3>
+### Why not Use TCP Instead of WebSocket?
 
 
 We could roll out our own message-oriented implementation over TCP but there are
@@ -2661,7 +2821,7 @@ custom TCP-based solution would be more work to design, more work to implement
 and more work to troubleshoot since existing network tools would not recognize
 it.
 
-### Why not always Use HTTP Instead of WebSocket?
+### Why not alwaysUse HTTP Instead of WebSocket?
 
 Regular HTTP is a half-duplex protocol, which makes delivery of messages from
 the server to the client tied to the request time of the client. This means that
@@ -2682,7 +2842,7 @@ connection for client-to-server delivery direction. The dual connection needed
 for a long polling approach would make the protocol more complicated to design
 and implement without much gains compared to WebSocket approach.
 
-<h3 id="why-not-use-grpc-instead-of-websocket">Why not Use gRPC Instead of WebSocket?</h3>
+### Why not Use gRPC Instead of WebSocket?
 
 
 gRPC is a big dependency that some implementations are reluctant to take. gRPC
@@ -2698,7 +2858,7 @@ requirements with no additional benefits for our use case (benefits of gRPC like
 ability to multiplex multiple streams over one connection are of no use to
 OpAMP).
 
-<h1 id="future-possibilities">Future Possibilities</h1>
+# Future Possibilities
 
 
 Define specification for Concentrating Proxy that can serve as intermediary to
@@ -2708,10 +2868,10 @@ reduce the number of connections to the Server when a very large number
 OpAMP may be extended by a polling-based HTTP standard. It will have somewhat
 worse latency characteristics but may be desirable for some implementation.
 
-<h1 id="references">References</h1>
+# References
 
 
-<h2 id="agent-management">Agent Management</h2>
+## Agent Management
 
 
 
@@ -2724,7 +2884,7 @@ worse latency characteristics but may be desirable for some implementation.
   [Guest Agent](https://github.com/GoogleCloudPlatform/guest-agent) uses HTTP
   [long polling](https://cloud.google.com/compute/docs/metadata/querying-metadata#waitforchange).
 
-<h2 id="configuration-management">Configuration Management</h2>
+## Configuration Management
 
 
 
@@ -2734,7 +2894,7 @@ worse latency characteristics but may be desirable for some implementation.
   [Holistic Configuration Management](https://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdfhttps://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdf)
   (push).
 
-<h2 id="security-and-certificate-management">Security and Certificate Management</h2>
+## Security and Certificate Management
 
 
 
@@ -2748,7 +2908,7 @@ worse latency characteristics but may be desirable for some implementation.
 * ACME for client certificates
   [http://www.watersprings.org/pub/id/draft-moriarty-acme-client-01.html](http://www.watersprings.org/pub/id/draft-moriarty-acme-client-01.html)
 
-<h2 id="cloud-provider-support">Cloud Provider Support</h2>
+## Cloud Provider Support
 
 
 
@@ -2760,7 +2920,7 @@ worse latency characteristics but may be desirable for some implementation.
 * Azure:
   [https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket](https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket)
 
-<h2 id="other">Other</h2>
+## Other
 
 
 
