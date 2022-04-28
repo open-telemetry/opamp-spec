@@ -2159,10 +2159,6 @@ enum PackageType {
 }
 ```
 
-TODO: is there a need to prescribe any specific behavior or explain what happens if there
-are more than one top-level packages in the server's offer or we can leave it out and
-allow agent-specific behavior?
-
 #### version
 
 The package version that is available on the server side. The agent may for
