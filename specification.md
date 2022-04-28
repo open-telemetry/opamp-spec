@@ -23,8 +23,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
   * [AgentToServer Message](#agenttoserver-message)
       - [instance_uid](#instance_uid)
       - [status_report](#status_report)
-      - [addon_statuses](#addon_statuses)
-      - [agent_install_status](#agent_install_status)
+      - [package_statuses](#package_statuses)
       - [agent_disconnect](#agent_disconnect)
       - [flags](#flags)
   * [ServerToAgent Message](#servertoagent-message)
@@ -32,8 +31,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [error_response](#error_response)
       - [remote_config](#remote_config)
       - [connection_settings](#connection_settings)
-      - [addons_available](#addons_available)
-      - [agent_package_available](#agent_package_available)
+      - [packages_available](#packages_available)
       - [flags](#flags-1)
       - [capabilities](#capabilities)
       - [agent_identification](#agent_identification)
@@ -60,10 +58,10 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [last_remote_config_hash](#last_remote_config_hash)
       - [status](#status)
       - [error_message](#error_message-1)
-    + [AgentAddonStatuses Message](#agentaddonstatuses-message)
-      - [addons](#addons)
-      - [server_provided_all_addons_hash](#server_provided_all_addons_hash)
-    + [AgentAddonStatus Message](#agentaddonstatus-message)
+    + [PackageStatuses Message](#packagestatuses-message)
+      - [packages](#packages)
+      - [server_provided_all_packages_hash](#server_provided_all_packages_hash)
+    + [PackageStatus Message](#packagestatus-message)
       - [name](#name)
       - [agent_has_version](#agent_has_version)
       - [agent_has_hash](#agent_has_hash)
@@ -71,11 +69,6 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [server_offered_hash](#server_offered_hash)
       - [status](#status-1)
       - [error_message](#error_message-2)
-    + [AgentInstallStatus Message](#agentinstallstatus-message)
-      - [server_offered_version](#server_offered_version-1)
-      - [server_offered_hash](#server_offered_hash-1)
-      - [status](#status-2)
-      - [error_message](#error_message-3)
   * [Connection Settings Management](#connection-settings-management)
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
@@ -107,21 +100,22 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
     + [Configuration Files](#configuration-files)
     + [Security Considerations](#security-considerations)
     + [AgentRemoteConfig Message](#agentremoteconfig-message)
-  * [Addons](#addons)
-    + [Downloading Addons](#downloading-addons)
+  * [Packages](#packages)
+    + [Downloading Packages](#downloading-packages)
       - [Step 1](#step-1)
       - [Step 2](#step-2)
       - [Step 3](#step-3)
-    + [Addon Status Reporting](#addon-status-reporting)
+    + [Package Status Reporting](#package-status-reporting)
     + [Calculating Hashes](#calculating-hashes)
       - [File Hash](#file-hash)
-      - [Addon Hash](#addon-hash)
-      - [All Addons Hash](#all-addons-hash)
+      - [Package Hash](#package-hash)
+      - [All Packages Hash](#all-packages-hash)
     + [Security Considerations](#security-considerations-1)
-    + [AddonsAvailable Message](#addonsavailable-message)
-      - [addons](#addons-1)
-      - [all_addons_hash](#all_addons_hash)
-    + [AddonAvailable Message](#addonavailable-message)
+    + [PackagesAvailable Message](#packagesavailable-message)
+      - [packages](#packages-1)
+      - [all_packages_hash](#all_packages_hash)
+    + [PackageAvailable Message](#packageavailable-message)
+      - [type](#type-1)
       - [version](#version)
       - [file](#file)
       - [hash](#hash-2)
@@ -129,12 +123,6 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [download_url](#download_url)
       - [content_hash](#content_hash)
       - [signature](#signature)
-  * [Agent Package Updates](#agent-package-updates)
-    + [Downloading Agent Package](#downloading-agent-package)
-    + [Security Considerations](#security-considerations-2)
-    + [AgentPackageAvailable Message](#agentpackageavailable-message)
-      - [version](#version-1)
-      - [file](#file-1)
 - [Connection Management](#connection-management)
   * [Establishing Connection](#establishing-connection)
   * [Closing Connection](#closing-connection)
@@ -182,7 +170,7 @@ Open Agent Management Protocol (OpAMP) is a network protocol for remote
 management of large fleets of data collection Agents.
 
 OpAMP allows Agents to report their status to and receive configuration from a
-Server and to receive addons and agent installation package updates from the
+Server and to receive agent installation package updates from the
 server. The protocol is vendor-agnostic, so the Server can remotely monitor and
 manage a fleet of different Agents that implement OpAMP, including a fleet of
 mixed agents from different vendors.
@@ -200,7 +188,7 @@ OpAMP supports the following functionality:
   [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md)-compatible
   backend to monitor agent's process metrics such as CPU or RAM usage, as well
   as agent-specific metrics such as rate of data processing.
-* Management of downloadable agent-specific addons.
+* Management of downloadable agent-specific packages.
 * Secure auto-updating capabilities (both upgrading and downgrading of the
   agents).
 * Connection credentials management, including client-side TLS certificate
@@ -386,14 +374,13 @@ document are specified in
 message AgentToServer {
     string instance_uid = 1;
     StatusReport status_report = 2;
-    AgentAddonStatuses addon_statuses = 3;
-    AgentInstallStatus agent_install_status = 4;
-    AgentDisconnect agent_disconnect = 5;
-    AgentToServerFlags flags = 6;
+    PackageStatuses package_statuses = 3;
+    AgentDisconnect agent_disconnect = 4;
+    AgentToServerFlags flags = 5;
 }
 ```
 
-One or more of the fields (status_report, addon_statuses, agent_install_status,
+One or more of the fields (status_report, package_statuses, 
 agent_disconnect) MUST be set. The Server should process each field as it is
 described in the corresponding [Operation](#operation) section.
 
@@ -416,17 +403,11 @@ Agent sends after connecting. This field SHOULD be unset if this information is
 unchanged since the last AgentToServer message for this agent was sent in the
 stream.
 
-#### addon_statuses
+#### package_statuses
 
-The list of the agent addons, including addon statuses. This field SHOULD be
+The list of the agent packages, including package statuses. This field SHOULD be
 unset if this information is unchanged since the last AgentToServer message for
 this agent was sent in the stream.
-
-#### agent_install_status
-
-The status of the installation operation that was previously offered by the
-server. This field SHOULD be unset if the installation status is unchanged since
-the last AgentToServer message.
 
 #### agent_disconnect
 
@@ -434,7 +415,6 @@ AgentDisconnect MUST be set in the last AgentToServer message sent from the
 agent to the server.
 
 #### flags
-
 
 Bit flags as defined by AgentToServerFlags bit masks.
 
@@ -473,7 +453,7 @@ As a result of this processing the Agent may need to send status reports to the
 Server. The Agent is free to perform all the processing of the ServerToAgent
 message completely and then send one status report or it may send multiple
 status reports as it processes the portions of ServerToAgent message to indicate
-the progress (see e.g. [Addon processing](#downloading-addons)). Multiple status
+the progress (see e.g. [Downloading Packages](#downloading-packages)). Multiple status
 reports may be desirable when processing takes a long time, in which case the
 status reports allow the Server to stay informed.
 
@@ -495,12 +475,11 @@ message ServerToAgent {
     ServerErrorResponse error_response = 2;
     AgentRemoteConfig remote_config = 3;
     ConnectionSettingsOffers connection_settings = 4;
-    AddonsAvailable addons_available = 5;
-    AgentPackageAvailable agent_package_available = 6;
-    Flags flags = 7;
-    ServerCapabilities capabilities = 8;
-    AgentIdentification agent_identification = 9;
-    ServerToAgentCommand command = 10;
+    PackagesAvailable packages_available = 5;
+    Flags flags = 6;
+    ServerCapabilities capabilities = 7;
+    AgentIdentification agent_identification = 8;
+    ServerToAgentCommand command = 9;
 }
 ```
 
@@ -537,17 +516,10 @@ This field is set when the Server wants the Agent to change one or more of its
 client connection settings (destination, headers, certificate, etc). See
 [Connection Settings Management](#connection-settings-management) for details.
 
-#### addons_available
+#### packages_available
 
-
-This field is set when the Server has addons to offer to the Agent. See
-[Addons](#addons) for details.
-
-#### agent_package_available
-
-
-This field is set when the server has a different version of an agent package
-available for download. See [Agent Updates](#agent-package-updates) for details.
+This field is set when the Server has packages to offer to the Agent. See
+[Packages](#packages) for details.
 
 #### flags
 
@@ -571,10 +543,10 @@ enum Flags {
     // the ReportsEffectiveConfig bit to 0 in StatusReport.capabilities field.
     ReportEffectiveConfig = 0x00000001;
 
-    // The server asks the agent to report addon statuses. This bit MUST NOT be
-    // set if the Agent indicated it cannot report addon status by setting
-    // the ReportsAddonStatus bit to 0 in StatusReport.capabilities field.
-    ReportAddonStatus     = 0x00000002;
+    // The server asks the agent to report package statuses. This bit MUST NOT be
+    // set if the Agent indicated it cannot report package status by setting
+    // the ReportsPackagesStatus bit to 0 in StatusReport.capabilities field.
+    ReportPackagesStatus   = 0x00000002;
 }
 ```
 
@@ -599,16 +571,12 @@ enum ServerCapabilities {
     OffersRemoteConfig             = 0x00000002;
     // The Server can accept EffectiveConfig in StatusReport.
     AcceptsEffectiveConfig         = 0x00000004;
-    // The Server can offer Addons.
-    OffersAddons                   = 0x00000008;
-    // The Server can accept Addon status.
-    AcceptsAddonsStatus            = 0x00000010;
-    // The Server can offer packages to install.
-    OffersAgentPackage             = 0x00000020;
-    // The Server can accept the installation status of the package.
-    AcceptsAgentPackageStatus      = 0x00000040;
+    // The Server can offer Packages.
+    OffersPackages                 = 0x00000008;
+    // The Server can accept Packages status.
+    AcceptsPackagesStatus          = 0x00000010;
     // The Server can offer connection settings.
-    OffersConnectionSettings       = 0x00000080;
+    OffersConnectionSettings       = 0x00000020;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -896,31 +864,27 @@ enum AgentCapabilities {
     AcceptsRemoteConfig            = 0x00000002;
     // The Agent will report EffectiveConfig in StatusReport.
     ReportsEffectiveConfig         = 0x00000004;
-    // The Agent can accept Addon offers.
-    AcceptsAddons                  = 0x00000008;
-    // The Agent can report Addon status.
-    ReportsAddonsStatus            = 0x00000010;
-    // The Agent can accept packages to install.
-    AcceptsAgentPackage            = 0x00000020;
-    // The Agent can report the installation status of the package.
-    ReportsAgentPackageStatus      = 0x00000040;
-    // The Agent can report own traces to the destination specified by
+    // The Agent can accept package offers.
+    AcceptsPackages                = 0x00000008;
+    // The Agent can report package status.
+    ReportsPackagesStatus          = 0x00000010;
+    // The Agent can report own trace to the destination specified by
     // the Server via ConnectionSettingsOffers.own_traces field.
-    ReportsOwnTraces               = 0x00000080;
+    ReportsOwnTraces               = 0x00000020;
     // The Agent can report own metrics to the destination specified by
     // the Server via ConnectionSettingsOffers.own_metrics field.
-    ReportsOwnMetrics              = 0x00000100;
+    ReportsOwnMetrics              = 0x00000040;
     // The Agent can report own logs to the destination specified by
     // the Server via ConnectionSettingsOffers.own_logs field.
-    ReportsOwnLogs                 = 0x00000200;
+    ReportsOwnLogs                 = 0x00000080;
     // The can accept connections settings for OpAMP via
     // ConnectionSettingsOffers.opamp field.
-    AcceptsOpAMPConnectionSettings = 0x00000400;
+    AcceptsOpAMPConnectionSettings = 0x00000100;
     // The can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
-    AcceptsOtherConnectionSettings = 0x00000800;
+    AcceptsOtherConnectionSettings = 0x00000200;
     // The Agent can accept restart requests.
-    AcceptsRestartCommand         = 0x00001000;
+    AcceptsRestartCommand          = 0x00000400;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -1064,45 +1028,45 @@ configuration.
 
 Optional error message if status==FAILED.
 
-### AgentAddonStatuses Message
+### PackageStatuses Message
 
 
-The AgentAddonStatuses message describes the status of all addons that the agent
+The PackageStatuses message describes the status of all packages that the agent
 has or was offered. The message has the following structure:
 
 
 ```protobuf
-message AgentAddonStatuses {
-    map<string, AgentAddonStatus> addons = 1;
-    bytes server_provided_all_addons_hash = 2;
+message PackageStatuses {
+    map<string, PackageStatus> packages = 1;
+    bytes server_provided_all_packages_hash = 2;
 }
 ```
 
 
-#### addons
+#### packages
 
 
-A map of AgentAddonStatus messages, where the keys are addon names. The key MUST
-match the name field of [AgentAddonStatus](#agentaddonstatus-message) message.
+A map of PackageStatus messages, where the keys are package names. The key MUST
+match the name field of [PackageStatus](#packagestatus-message) message.
 
-#### server_provided_all_addons_hash
+#### server_provided_all_packages_hash
 
 
-The aggregate hash of all addons that this Agent previously received from the
-server via AddonsAvailable message.
+The aggregate hash of all packages that this Agent previously received from the
+server via PackagesAvailable message.
 
-The server SHOULD compare this hash to the aggregate hash of all addons that it
+The server SHOULD compare this hash to the aggregate hash of all packages that it
 has for this Agent and if the hashes are different the server SHOULD send an
-AddonsAvailable message to the agent.
+PackagesAvailable message to the agent.
 
-### AgentAddonStatus Message
+### PackageStatus Message
 
 
-The AgentAddonStatus has the following structure:
+The PackageStatus has the following structure:
 
 
 ```protobuf
-message AgentAddonStatus {
+message PackageStatus {
     string name = 1;
     string agent_has_version = 2;
     bytes agent_has_hash = 3;
@@ -1122,72 +1086,72 @@ message AgentAddonStatus {
 #### name
 
 
-Addon name. MUST be always set and MUST match the key in the addons field of
-AgentAddonStatuses message.
+Package name. MUST be always set and MUST match the key in the packages field of
+PackageStatuses message.
 
 #### agent_has_version
 
-The version of the addon that the Agent has.
+The version of the package that the Agent has.
 
-MUST be set if the Agent has this addon.
+MUST be set if the Agent has this package.
 
-MUST be empty if the Agent does not have this addon. This may be the case for
-example if the addon was offered by the Server but failed to install and the
-agent did not have this addon previously.
+MUST be empty if the Agent does not have this package. This may be the case for
+example if the package was offered by the Server but failed to install and the
+agent did not have this package previously.
 
 #### agent_has_hash
 
-The hash of the addon that the Agent has.
+The hash of the package that the Agent has.
 
-MUST be set if the Agent has this addon.
+MUST be set if the Agent has this package.
 
-MUST be empty if the Agent does not have this addon. This may be the case for
-example if the addon was offered by the Server but failed to install and the
-agent did not have this addon previously.
+MUST be empty if the Agent does not have this package. This may be the case for
+example if the package was offered by the Server but failed to install and the
+agent did not have this package previously.
 
 #### server_offered_version
 
-The version of the addon that the server offered to the agent.
+The version of the package that the server offered to the agent.
 
-MUST be set if the installation of the addon is initiated by an earlier offer
-from the server to install this addon.
+MUST be set if the installation of the package is initiated by an earlier offer
+from the server to install this package.
 
-MUST be empty if the Agent has this addon but it was installed locally and was
+MUST be empty if the Agent has this package but it was installed locally and was
 not offered by the server.
 
 Note that it is possible for both agent_has_version and server_offered_version
 fields to be set and to have different values. This is for example possible if
-the agent already has a version of the addon successfully installed, the server
+the agent already has a version of the package successfully installed, the server
 offers a different version, but the agent fails to install that version.
 
 #### server_offered_hash
 
-The hash of the addon that the server offered to the agent.
+The hash of the package that the server offered to the agent.
 
-MUST be set if the installation of the addon is initiated by an earlier offer
-from the server to install this addon.
+MUST be set if the installation of the package is initiated by an earlier offer
+from the server to install this package.
 
-MUST be empty if the Agent has this addon but it was installed locally and was
+MUST be empty if the Agent has this package but it was installed locally and was
 not offered by the server.
 
 Note that it is possible for both agent_has_hash and server_offered_hash fields
 to be set and to have different values. This is for example possible if the
-agent already has a version of the addon successfully installed, the server
+agent already has a version of the package successfully installed, the server
 offers a different version, but the agent fails to install that version.
 
 #### status
 
 
-The status of this addon. The possible values are:
+The status of this package. The possible values are:
 
-INSTALLED: Addon is successfully installed by the Agent. The error_message field
+INSTALLED: Package is successfully installed by the Agent. The error_message field
 MUST NOT be set.
 
-INSTALLING: Agent is currently downloading and installing the addon.
+INSTALLING: Agent is currently downloading and installing the package.
 server_offered_hash field MUST be set to indicate the version that the agent is
 installing. The error_message field MUST NOT be set.
 
-INSTALL_FAILED: Agent tried to install the addon but installation failed.
+INSTALL_FAILED: Agent tried to install the package but installation failed.
 server_offered_hash field MUST be set to indicate the version that the agent
 tried to install. The error_message may also contain more details about the
 failure.
@@ -1197,68 +1161,6 @@ failure.
 
 An error message if the status is erroneous.
 
-### AgentInstallStatus Message
-
-
-This message contains the status of the last agent package install status
-performed by the agent and has the following structure:
-
-
-```protobuf
-message AgentInstallStatus {
-    string server_offered_version = 1;
-    bytes server_offered_hash = 2;
-    enum Status {
-        INSTALLED = 0;
-        INSTALLING = 1;
-        INSTALL_FAILED = 2;
-        INSTALL_NO_PERMISSION = 3;
-    }
-    Status status = 3;
-    string error_message = 4;
-}
-```
-
-#### server_offered_version
-
-The version field from the AgentPackageAvailable that the server offered to the
-agent. MUST be set if the agent previously received an offer from the server to
-install this agent.
-
-
-#### server_offered_hash
-
-
-The hash of the agent package file that the server offered to the agent. MUST be
-set if the agent previously received an offer from the server to install this
-agent.
-
-#### status
-
-
-The status of the agent package installation operation. The possible values are:
-
-INSTALLED: Agent package was successfully installed. error_message MUST NOT be
-set.
-
-INSTALLING: Agent is currently downloading and installing the package.
-server_offered_hash MUST be set to indicate the version that the agent is
-installing. error_message MUST NOT be set.
-
-INSTALL_FAILED: Agent tried to install the package but installation failed.
-server_offered_hash MUST be set to indicate the package that the agent tried to
-install. error_message may also contain more details about the failure.
-
-INSTALL_NO_PERMISSION: Agent did not install the package because it is not
-permitted to. This may be for example the case when operating system permissions
-prevent the agent from self-updating or when self-updating is disabled by the
-user. error_message may also contain more details about what exactly is not
-permitted.
-
-#### error_message
-
-
-Optional human readable error message if the status is erroneous.
 
 ## Connection Settings Management
 
@@ -1984,84 +1886,93 @@ message AgentRemoteConfig {
 ```
 
 
-## Addons
+## Packages
 
+Each Agent is composed of one or more packages. A package has a name and content stored
+in a file. The content of the file, functionality provided by the packages, how they are
+stored and used by the Agent  side is agent type-specific and is outside the concerns of
+the OpAMP protocol.
 
-An Addon has a name and content stored in a file. The content of the file,
-functionality provided by the addons, how they are stored and used by the Agent
-side is agent type-specific and is outside the concerns of the OpAMP protocol.
+There are two types of packages: top-level and sub-packages.
 
-The Agent may have zero or more addons installed. Each addon has a name. The
-Agent cannot have more than one addon of the particular name installed.
+There is normally only one top-level package, which implements the primary
+functionality of the Agent. When there is only one top-level package it may have an
+empty name.
 
-Different addons may have files with the same name, file names are not globally
-unique, they are only unique within the scope of a particular addon.
+Sub-packages are also known as addons or plugins. The sub-packages can be installed at
+the Agent for added functionality (hence the name addons). 
 
-Addons may be provided and installed locally (e.g. by a local user). The addons
+The Agent may have one or more packages installed. Each package has a name. The
+Agent cannot have more than one package of the particular name installed.
+
+Different package may have files with the same name, file names are not globally
+unique, they are only unique within the scope of a particular package.
+
+Package may be provided and installed locally (e.g. by a local user). The packages
 may be also offered to the Agent remotely by the Server, in which case the Agent
-may download and install the addons.
+may download and install the packages.
 
-To offer addons to the Agent the Server sets the
-[addons_available](#servertoagent-message) field in the ServerToAgent message that
-is sent either in response to an status report form the Agent or by Server's
-initiative if the Server wants to push addons to the Agent.
+To offer packages to the Agent the Server sets the
+[packages_available](#packages_available) field in the ServerToAgent message that
+is sent either in response to a status report form the Agent or by Server's
+initiative if the Server wants to push packages to the Agent.
 
-The [AddonsAvailable](#addonsavailable-message) message describes the addons
-that are available on the Server for this Agent. For each addon the message
-describes the file that has the addon content and provides the URL from which
-the file can be downloaded using an HTTP GET request. The URLs point to addon
+The [PackagesAvailable](#packagesavailable-message) message describes the packages
+that are available on the Server for this Agent. For each package the message
+describes the file that has the package's content and provides the URL from which
+the file can be downloaded using an HTTP GET request. The URLs point to package
 files on a Download Server (which may be on the same host as the OpAMP Server or
 a different host).
 
-The protocol supports only a single downloadable file per addon. If the Agent's
-addons conceptually are composed of multiple files then the Agent and Server can
+The protocol supports only a single downloadable file per package. If the Agent's
+packages conceptually are composed of multiple files then the Agent and Server can
 agree to store the files in any file format that allows storing multiple files
-in a single file, e.g. a zip or tar file. After downloading the single addon
+in a single file, e.g. a zip or tar file. After downloading the single package
 file the Agent may extract the files contained in it. How exactly this is done
 is Agent specific and is beyond the scope of the protocol.
 
-The Server is allowed to make an addon offer only if the Agent indicated that it
-can accept addons via AcceptsAddons bit of StatusReport.capabilities field.
+The Server is allowed to make a package offer only if the Agent indicated that it
+can accept packages via AcceptsPackages bit of StatusReport.capabilities field.
 
-### Downloading Addons
+### Downloading Packages
 
 
-After receiving the [AddonsAvailable](#addonsavailable-message) message the
+After receiving the [PackagesAvailable](#packagesavailable-message) message the
 Agent SHOULD follow this download procedure:
 
 #### Step 1
 
 
-Compare the aggregate hash of all addons it has with the aggregate hash offered
-by the Server in the all_addons_hash field.
+Compare the aggregate hash of all packages it has with the aggregate hash offered
+by the Server in the all_packages_hash field.
 
 If the aggregate hash is the same then consider the download procedure done,
-since it means all addons on the Agent are the same as offered by the Server.
-Otherwise go to Step 2.
+since it means all packages on the Agent are the same as offered by the Server.
+Otherwise, go to Step 2.
 
 #### Step 2
 
 
-For each addon offered by the Server the Agent SHOULD check if it should
-download the particular addon:
+For each package offered by the Server the Agent SHOULD check if it should
+download the particular package:
 
 
 
-* If the Agent does not have an addon with the specified name then it SHOULD
-  download the addon. See Step 3 on how to download each addon file.
-* If the Agent has the addon the Agent SHOULD compare the hash of the addon that
-  the Agent has with the hash of the addon offered by the Server in the
-  [hash](#hash) field in the [AddonAvailable](#addonavailable-message) message.
-  If the hashes are the same then the addon is the same and processing for this
-  addon is done, proceed to the next addon. If the hashes are different then
-  check the addon file as described in Step 3.
+* If the Agent does not have a package with the specified name then it SHOULD
+  download the package. See Step 3 on how to download each package file.
+* If the Agent has the package the Agent SHOULD compare the hash of the package that
+  the Agent has with the hash of the package offered by the Server in the
+  [hash](#hash) field in the [PackageAvailable](#packageavailable-message) message.
+  If the hashes are the same then the package is the same and processing for this
+  package is done, proceed to the next package. If the hashes are different then
+  check the package file as described in Step 3.
 
-Finally, if the Agent has any addons that are not offered by the Server the
-addons SHOULD be deleted by the Agent.
+Finally, if the Agent has any packages that are not offered by the Server the
+packages SHOULD be deleted by the Agent.
 
 #### Step 3
 
-For the file of the addon offered by the Server the Agent SHOULD check if it
+For the file of the package offered by the Server the Agent SHOULD check if it
 should download the file:
 
 * If the Agent does not have a file with the specified name then it SHOULD
@@ -2069,31 +1980,31 @@ should download the file:
 * If the Agent has the file then the Agent SHOULD compare the hash of the file
   it has locally with the [hash](#hash) field in the
   [DownloadableFile](#downloadablefile-message) message. If hashes are the same
-  the processing of this file is done. Otherwise the offered file is different
+  the processing of this file is done. Otherwise, the offered file is different
   and the file SHOULD be downloaded from the location specified in the
   [download_url](#download_url) field of the
   [DownloadableFile](#downloadablefile-message) message. The Agent SHOULD use an
   HTTP GET message to download the file.
 
 The procedure outlined above allows the Agent to efficiently download only new
-or changed addons and only download new or changed files.
+or changed packages and only download new or changed files.
 
-After downloading the addons the Agent can perform any additional processing
-that is agent type-specific (e.g. "install" or "activate" the addons in any way
+After downloading the packages the Agent can perform any additional processing
+that is agent type-specific (e.g. "install" or "activate" the packages in any way
 that is specific to the agent).
 
-### Addon Status Reporting
+### Package Status Reporting
 
 
 During the downloading and installation process the Agent MAY periodically
 report the status of the process. To do this the Agent SHOULD send an
 [AgentToServer](#agenttoserver-message) message and set the
-[addon_statuses](#agentaddonstatuses-message) field accordingly.
+[package_statuses](#packagestatuses-message) field accordingly.
 
-Once the downloading and installation of all addons is done (succeeded or
-failed) the Agent SHOULD report the status of all addons to the Server.
+Once the downloading and installation of all packages is done (succeeded or
+failed) the Agent SHOULD report the status of all packages to the Server.
 
-Here is the typical sequence diagram for the addon downloading and status
+Here is the typical sequence diagram for the package downloading and status
 reporting process:
 
 
@@ -2101,13 +2012,13 @@ reporting process:
     Download           Agent                             OpAMP
      Server                                              Server
        │                 │                                  │
-       │                 │  ServerToAgent{AddonsAvailable}  │
+       │                 │  ServerToAgent{PackagesAvailable}│
        │                 │◄─────────────────────────────────┤
        │   HTTP GET      │                                  │
        │◄────────────────┤                                  │
        │ Download file #1│                                  │
        ├────────────────►│                                  │
-       │                 │ AgentToServer{AgentAddonStatuses}│
+       │                 │ AgentToServer{PackageStatuses}   │
        │                 ├─────────────────────────────────►│
        │   HTTP GET      │                                  │
        │◄────────────────┤                                  │
@@ -2122,24 +2033,24 @@ reporting process:
        │◄────────────────┤                                  │
        │ Download file #N│                                  │
        ├────────────────►│                                  │
-       │                 │ AgentToServer{AgentAddonStatuses}│
+       │                 │ AgentToServer{PackageStatuses}   │
        │                 ├─────────────────────────────────►│
        │                 │                                  │
 ```
 
 
-The Agent MUST always include all addons it has or is processing (downloading or
-installing) in AgentAddonStatuses message.
+The Agent MUST always include all packages it has or is processing (downloading or
+installing) in PackageStatuses message.
 
-Note that the Agent MAY also report the status of addons it has installed
-locally, not only the addons it was offered and downloaded from the Server.
+Note that the Agent MAY also report the status of packages it has installed
+locally, not only the packages it was offered and downloaded from the Server.
 [TODO: is this necessary?]
 
 ### Calculating Hashes
 
 
-The Agent and the Server use hashes to identify content of files and addons such
-that the Agent can decide what files and addons need to be downloaded.
+The Agent and the Server use hashes to identify content of files and packages such
+that the Agent can decide what files and packages need to be downloaded.
 
 The calculation of the hashes is performed by the Server. The server MUST choose
 a strong hash calculation method with minimal collision probability (and it may
@@ -2153,110 +2064,117 @@ There are 3 levels of hashes:
 
 #### File Hash
 
-The hash of the addon file content. This is stored in the [content_hash](#content_hash) field in
+The hash of the packages file content. This is stored in the [content_hash](#content_hash) field in
 the [DownloadableFile](#downloadablefile-message) message. This value SHOULD be
 used by the Agent to determine if the particular file it has is different on the
 Server and needs to be re-downloaded.
 
-#### Addon Hash
+#### Package Hash
 
-The addon hash that identifies the entire addon (addon name and file content).
+The package hash that identifies the entire package (package name and file content).
 This hash is stored in the [hash](#hash) field in the
-[AddonAvailable](#addonavailable-message) message.
+[PackageAvailable](#packageavailable-message) message.
 
-This value SHOULD be used by the Agent to determine if the particular addon it
+This value SHOULD be used by the Agent to determine if the particular package it
 has is different on the Server and needs to be re-downloaded.
 
-#### All Addons Hash
+#### All Packages Hash
 
 
-The all addons hash is the aggregate hash of all addons for the particular
-Agent. The hash is calculated as an aggregate of all addon names and content.
-This hash is stored in the [all_addons_hash](#all_addons_hash) field in the
-[AddonsAvailable](#addonsavailable-message) message.
+The all packages hash is the aggregate hash of all packages for the particular
+Agent. The hash is calculated as an aggregate of all package names and content.
+This hash is stored in the [all_packages_hash](#all_packages_hash) field in the
+[PackagesAvailable](#packagesavailable-message) message.
 
-This value SHOULD be used by the Agent to determine if any of the addons it has
+This value SHOULD be used by the Agent to determine if any of the packages it has
 are different from the ones available on the Server and need to be
 re-downloaded.
 
-Note that the aggregate hash does not include the addons that are available on
+Note that the aggregate hash does not include the packages that are available on
 the Agent locally and were not downloaded from the download server.
 
 ### Security Considerations
 
 
-Downloading addons remotely is a potentially dangerous functionality that may be
-exploited by malicious actors. If addons contain executable code then a
-compromised OpAMP Server may offer a malicious addon to the Agent and compel the
+Downloading packages remotely is a potentially dangerous functionality that may be
+exploited by malicious actors. If packages contain executable code then a
+compromised OpAMP Server may offer a malicious package to the Agent and compel the
 Agent to execute arbitrary code.
 
 See Security section for [general recommendations](#general-recommendations) and
 recommendations specifically for [code signing](#code-signing) capabilities.
 
-### AddonsAvailable Message
-
+### PackagesAvailable Message
 
 The message has the following structure:
 
-
 ```
-message AddonsAvailable {
-    map<string, AddonAvailable> addons = 1;
-    bytes all_addons_hash = 2;
+message PackagesAvailable {
+    map<string, PackageAvailable> packages = 1;
+    bytes all_packages_hash = 2;
 }
 ```
 
+#### packages
 
-#### addons
+A map of packages. Keys are package names.
 
+#### all_packages_hash
 
-A map of addons. Keys are addon names.
-
-#### all_addons_hash
-
-
-Aggregate hash of all remotely installed addons.
+Aggregate hash of all remotely installed packages.
 
 The agent SHOULD include this value in subsequent
 [StatusReport](#statusreport-message) messages. This in turn allows the Server
-to identify that a different set of addons is available for the agent and
-specify the available addons in the next DataToAgent message.
+to identify that a different set of packages is available for the agent and
+specify the available packages in the next DataToAgent message.
 
-This field MUST be always set if the Server supports addons of agents.
+This field MUST be always set if the Server supports sending packages to the agents
+and if the Agent indicated it is capable of accepting packages.
 
-### AddonAvailable Message
+### PackageAvailable Message
 
-
-This message is an offer from the Server to the agent to install a new addon or
-initiate an upgrade or downgrade of an addon that the Agent already has. The
+This message is an offer from the Server to the agent to install a new package or
+initiate an upgrade or downgrade of a package that the Agent already has. The
 message has the following structure:
 
-
 ```protobuf
-message AddonAvailable {
-    string version = 1;
-    DownloadableFile file = 2;
-    bytes hash = 3;
+message PackageAvailable {
+    PackageType type = 1;
+    string version = 2;
+    DownloadableFile file = 3;
+    bytes hash = 4;
 }
 ```
 
-
 TODO: do we need other fields, e.g. description?
+
+#### type
+
+The type of the package, either an addon or a top-level package.
+
+```protobuf
+enum PackageType {
+    TopLevelPackage = 0;
+    AddonPackage    = 1;
+}
+```
 
 #### version
 
-The addon version that is available on the server side. The agent may for
-example use this information to avoid downloading an addon that was previously
+The package version that is available on the server side. The agent may for
+example use this information to avoid downloading a package that was previously
 already downloaded and failed to install.
 
 #### file
 
-The downloadable file of the addon.
+The downloadable file of the package.
 
 #### hash
 
-The hash of the addon. SHOULD be calculated based on addon name and
-content of the file of the addon.
+The hash of the package. SHOULD be calculated based on all other fields of the 
+PackageAvailable message and content of the file of the package. The hash is used by
+the Agent to determine if the package it has is different from the package the Server
+is offering.
 
 ### DownloadableFile Message
 
@@ -2288,109 +2206,6 @@ authenticity of the downloaded file, for example can be the
 [detached GPG signature](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
 The exact signing and verification method is Agent specific. See 
 [Code Signing](#code-signing) for recommendations.
-
-## Agent Package Updates
-
-Agent package is a downloadable file. The package can be downloaded by the Agent
-and installed to replace the Agent itself, either to upgrade it to a newer
-version or to downgrade it to an older version. The content of the file, how it
-is installed on the Agent side is agent type-specific and is outside the
-concerns of the OpAMP protocol.
-
-To offer a package to the Agent the Server sets the
-[agent_package_available](#agent_package_available) field in the ServerToAgent
-message that is sent either in response to an status report form the Agent or by
-Server's initiative if the Server wants to push a package to the Agent.
-
-The [AgentPackageAvailable](#agentpackageavailable-message) message describes a
-package that is available on the Server for this Agent. The message points to
-the file that is contains the package and provides the URL from which the file
-can be downloaded using an HTTP GET request. The URLs point to a file on a
-Download Server (which may be on the same host as the OpAMP Server or a
-different host).
-
-The Server is allowed to make an package offer only if the Agent indicated that
-it can accept packages via AcceptsAgentPackage bit of StatusReport.capabilities
-field.
-
-### Downloading Agent Package
-
-After receiving the [AgentPackageAvailable](#agentpackageavailable-message)
-message the Agent SHOULD follow the download procedure that is similar to
-[Addon download procedure](#downloading-addons) and download the package file
-as necessary, using the hashes to avoid unnecessary downloads.
-
-The Agent MAY send status reports as it downloads the file. The Agent SHOULD
-send a status report when the downloading of the package is finished and the
-package is installed (or failed to install). The execution sequence is the
-following:
-
-
-```
-    Download           Agent                              OpAMP
-     Server                                               Server
-       │                 │                                    │
-       │                 │ServerToAgent{AgentPackageAvailable}│
-       │                 │◄───────────────────────────────────┤
-       │   HTTP GET      │                                    │
-       │◄────────────────┤                                    │
-       │ Download file   │                                    │
-       ├────────────────►│                                    │
-       │                 │ AgentToServer{StatusReport}        │
-       │                 ├───────────────────────────────────►│
-       │                 │                                    │
-```
-
-
-It is recommended that before applying the downloaded package the Agent saves
-the current state and is ready to rollback the installation if it fails, such
-that the Agent does not end up in a broken state due to a failed attempt to
-install the downloaded package. The exact mechanisms for such rollback are
-outside the scope of the OpAMP specification.
-
-The protocol supports only a single downloadable file per package. If the
-Agent's packages conceptually are composed of multiple files then the Agent and
-Server can agree to store the files in any file format that allows storing
-multiple files in a single file, e.g. a zip or tar file. After downloading the
-single package file the Agent may extract the files contained in it. How exactly
-this is done is Agent specific and is beyond the scope of the protocol.
-
-### Security Considerations
-
-
-Downloading executable agent packages remotely is a potentially dangerous
-functionality that may be exploited by malicious actors. A compromised OpAMP
-Server may offer a malicious executable to the Agent and compel the Agent to
-execute arbitrary code.
-
-See Security section for [general recommendations](#general-recommendations) and
-recommendations specifically for [code signing](#code-signing) capabilities.
-
-### AgentPackageAvailable Message
-
-
-The message is sent from the server to the agent to indicate that there is an
-agent package available for the agent to download and self-update. The message
-has the following structure:
-
-
-```protobuf
-message AgentPackageAvailable {
-    string version = 1;
-    DownloadableFile file = 2;
-}
-```
-
-
-#### version
-
-The agent version that is available on the server side. The agent may for
-example use this information to avoid downloading a package that was previously
-already downloaded and failed to install.
-
-#### file
-
-The downloadable file of the package.
 
 # Connection Management
 
@@ -2578,9 +2393,9 @@ The minimum recommended retry interval is 30 seconds.
 # Security
 
 
-Remote configuration, downloadable addons and agent packages are a significant
+Remote configuration, downloadable packages are a significant
 security risk. By sending a malicious server-side configuration or a malicious
-addon the Server may compel the Agent to perform undesirable work. This section
+package the Server may compel the Agent to perform undesirable work. This section
 defines recommendations that reduce the security risks for the Agent.
 
 Guidelines in this section are optional for implementation, but are highly
@@ -2648,13 +2463,13 @@ Agent by default. The capabilities should be opt-in by the user.
 ## Code Signing
 
 
-Any executable code that is part of an addon or agent package should be signed
+Any executable code that is part of a package should be signed
 to prevent a compromised Server from delivering malicious code to the Agent. We
 recommend the following:
 
 
 
-* Any downloadable executable code (e.g. executable addons or agent packages)
+* Any downloadable executable code (e.g. executable packages)
   need to be code-signed. The actual code-signing and verification mechanism is
   agent specific and is outside the concerns of the OpAMP specification.
 * The Agent SHOULD verify executable code in downloaded files to ensure the code
@@ -2666,7 +2481,7 @@ recommend the following:
 * If Certificate Authority is used for code signing it is recommended that the
   Certificate Authority and its private key is not co-located with the OpAMP
   Server, so that a compromised Server cannot sign malicious code.
-* The Agent SHOULD run any downloaded executable code (the addons and or any
+* The Agent SHOULD run any downloaded executable code (the packages and or any
   code that it runs as external processes) at the minimum possible privilege to
   prevent the code from accessing sensitive files or perform high privilege
   operations. The Agent SHOULD NOT run downloaded code as root user.
