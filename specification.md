@@ -27,6 +27,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [agent_disconnect](#agent_disconnect)
       - [flags](#flags)
   * [ServerToAgent Message](#servertoagent-message)
+  * [Agent to Server State Synchronization](#agent-to-server-state-synchronization)
       - [instance_uid](#instance_uid-1)
       - [error_response](#error_response)
       - [remote_config](#remote_config)
@@ -49,16 +50,19 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [remote_config_status](#remote_config_status)
       - [capabilities](#capabilities-1)
     + [AgentDescription Message](#agentdescription-message)
+      - [hash](#hash)
       - [identifying_attributes](#identifying_attributes)
       - [non_identifying_attributes](#non_identifying_attributes)
     + [EffectiveConfig Message](#effectiveconfig-message)
-      - [hash](#hash)
+      - [hash](#hash-1)
       - [config_map](#config_map)
     + [RemoteConfigStatus Message](#remoteconfigstatus-message)
+      - [hash](#hash-2)
       - [last_remote_config_hash](#last_remote_config_hash)
       - [status](#status)
       - [error_message](#error_message-1)
     + [PackageStatuses Message](#packagestatuses-message)
+      - [hash](#hash-3)
       - [packages](#packages)
       - [server_provided_all_packages_hash](#server_provided_all_packages_hash)
     + [PackageStatus Message](#packagestatus-message)
@@ -77,7 +81,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
     + [Certificate Generation](#certificate-generation)
     + [Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations)
     + [ConnectionSettingsOffers Message](#connectionsettingsoffers-message)
-      - [hash](#hash-1)
+      - [hash](#hash-4)
       - [opamp](#opamp)
       - [own_metrics](#own_metrics)
       - [own_traces](#own_traces)
@@ -118,7 +122,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [type](#type-1)
       - [version](#version)
       - [file](#file)
-      - [hash](#hash-2)
+      - [hash](#hash-5)
     + [DownloadableFile Message](#downloadablefile-message)
       - [download_url](#download_url)
       - [content_hash](#content_hash)
@@ -176,8 +180,6 @@ manage a fleet of different Agents that implement OpAMP, including a fleet of
 mixed agents from different vendors.
 
 OpAMP supports the following functionality:
-
-
 
 * Remote configuration of the agents.
 * Status reporting. The protocol allows the agent to report the properties of
@@ -483,6 +485,47 @@ message ServerToAgent {
 }
 ```
 
+## Agent to Server State Synchronization
+
+The Agent notifies the Server about Agent's state by sending AgentToServer messages.
+The state for example includes the agent description, its effective configuration,
+the status of the remote configuration it received from the server and the status
+of the packages. The Server tracks the state of the Agent using the data
+specified in the AgentToServer messages.
+
+The Agent MAY compress the sub-messages included in the ServerToAgent message by
+omitting the data that has not changed since that particular data was reported last time.
+The following messages can be subject to such compression:
+[AgentDescription](#agentdescription-message), [EffectiveConfig](#effectiveconfig-message),
+[RemoteConfigStatus](#remoteconfigstatus-message) and [PackageStatuses](#packagestatuses-message).
+The compression is done by omitting all fields in these messages, except
+the hash field which MUST always be present (see below for how the hash field is used).
+If any of the fields in the message has changed then the compression cannot be used
+and all fields MUST be present.
+
+If all AgentToServer messages are reliably delivered to the Server and the Server
+correctly processes them then such compression is safe and the Server should always
+have the correct latest state of the Agent. 
+
+However, it is possible that the Agent and Server lose the synchronization and the Agent
+believes the Server has the latest data while in reality the Server doesn't. This is
+possible for example if the Server is restarted while the Agent keeps running and sends
+AgentToServer messages, which the Server does not receive because it is temporarily down.
+
+In order to detect this situation and recover from it, every compressible message contains
+a hash field. The field is the hash of the content of every other field.
+The hash is computed on full, uncompressed message (as if no compression is used) and
+then unchanged fields may be unset from the message. Note that either all fields in the
+message must be present or all fields (except hash) must be omitted.
+
+The Server MUST store the hash value for each message type and when it receives a message
+with a different hash but with omitted data then the Server knows it has lost the state.
+The Server can then request the Agent to send the omitted data by responding to the Agent
+and setting the corresponding `Report*` bit in the [flags](#flags) field of
+[ServerToAgent message](#servertoagent-message).
+
+For more details see the descriptions of the flags and of the hash fields in the
+corresponding messages.
 
 #### instance_uid
 
@@ -523,7 +566,6 @@ This field is set when the Server has packages to offer to the Agent. See
 
 #### flags
 
-
 Bit flags as defined by Flags bit masks.
 
 Report* flags can be used by the server if the agent did not include the
@@ -538,15 +580,23 @@ enum Flags {
 
     // Flags is a bit mask. Values below define individual bits.
 
-    // The server asks the agent to report effective config. This bit MUST NOT be
+    // The server asks the agent to report full AgentDescription.
+    ReportAgentDescription   = 0x00000001;
+
+    // The server asks the agent to report full EffectiveConfig. This bit MUST NOT be
     // set if the Agent indicated it cannot report effective config by setting
     // the ReportsEffectiveConfig bit to 0 in StatusReport.capabilities field.
-    ReportEffectiveConfig = 0x00000001;
+    ReportEffectiveConfig    = 0x00000002;
+  
+    // The server asks the agent to report full RemoteConfigStatus. This bit MUST NOT be
+    // set if the Agent indicated it cannot accept remote config by setting
+    // the AcceptsRemoteConfig bit to 0 in StatusReport.capabilities field.
+    ReportRemoteConfigStatus = 0x00000004;
 
-    // The server asks the agent to report package statuses. This bit MUST NOT be
+    // The server asks the agent to report full PackageStatuses. This bit MUST NOT be
     // set if the Agent indicated it cannot report package status by setting
-    // the ReportsPackagesStatus bit to 0 in StatusReport.capabilities field.
-    ReportPackagesStatus   = 0x00000002;
+    // the ReportsPackageStatuses bit to 0 in StatusReport.capabilities field.
+    ReportPackageStatuses     = 0x00000008;
 }
 ```
 
@@ -799,9 +849,7 @@ status that can be changed via remote config and how to prevent it.
 
 ### StatusReport Message
 
-
 StatusReport message has the following structure:
-
 
 ```protobuf
 message StatusReport {
@@ -812,18 +860,12 @@ message StatusReport {
 }
 ```
 
-
 #### agent_description
-
 
 The description of the agent, its type, where it runs, etc. See
 [AgentDescription](#agentdescription-message) message for details.
 
-This field SHOULD be unset if no Agent description fields have changed since the
-last StatusReport was sent.
-
 #### effective_config
-
 
 The current effective configuration of the Agent. The effective configuration is
 the one that is currently used by the Agent. The effective configuration may be
@@ -831,17 +873,10 @@ different from the remote configuration received from the Server earlier, e.g.
 because the agent uses a local configuration instead (or in addition). See
 [EffectiveConfig](#effectiveconfig-message) message for details.
 
-This field SHOULD be unset if the effective configuration has not changed since
-the last StatusReport message was sent.
-
 #### remote_config_status
-
 
 The status of the remote config that was previously received from the server.
 See [RemoteConfigStatus](#remoteconfigstatus-message) message for details.
-
-This field SHOULD be unset if the remote config status is unchanged since the
-last StatusReport message was sent.
 
 #### capabilities
 
@@ -867,7 +902,7 @@ enum AgentCapabilities {
     // The Agent can accept package offers.
     AcceptsPackages                = 0x00000008;
     // The Agent can report package status.
-    ReportsPackagesStatus          = 0x00000010;
+    ReportsPackageStatuses         = 0x00000010;
     // The Agent can report own trace to the destination specified by
     // the Server via ConnectionSettingsOffers.own_traces field.
     ReportsOwnTraces               = 0x00000020;
@@ -896,10 +931,27 @@ The AgentDescription message has the following structure:
 
 ```protobuf
 message AgentDescription {
-    repeated KeyValue identifying_attributes = 1;
-    repeated KeyValue non_identifying_attributes = 2;
+    bytes hash = 1;
+    repeated KeyValue identifying_attributes = 2;
+    repeated KeyValue non_identifying_attributes = 3;
 }
 ```
+
+#### hash
+
+The hash of the content of all other fields (even if the other fields are omitted
+for compression).
+
+If the content of the other fields did not change since it was last reported the Agent is
+recommended to include only the hash field and omit the remaining fields.
+
+The Server SHOULD compare this hash with the last hash that it received from the Agent
+for this message type and if the hashes are different the Server SHOULD request the Agent
+to report the full content. To make such a request the Server SHOULD send a ServerToAgent
+message with ReportAgentDescription flag set.
+
+See [Agent To Server State Synchronization](#agent-to-server-state-synchronization) for
+details about the hash field is used.
 
 #### identifying_attributes
 
@@ -926,6 +978,9 @@ telemetry. The combination of identifying attributes SHOULD be sufficient to
 uniquely identify the Agent's own telemetry in the destination system to which
 the Agent sends its own telemetry.
 
+This field MUST be set if the Agent has received the ReportAgentDescription flag in the
+ServerToAgent message.
+
 #### non_identifying_attributes
 
 Attributes that do not necessarily identify the Agent but help describe where it
@@ -941,11 +996,12 @@ The following attributes SHOULD be included:
 - any user-defined attributes that the end user would like to associate with
   this agent.
 
+This field MUST be set if the Agent has received the ReportAgentDescription flag in the
+ServerToAgent message.
+
 ### EffectiveConfig Message
 
-
 The EffectiveConfig message has the following structure:
-
 
 ```protobuf
 message EffectiveConfig {
@@ -954,25 +1010,12 @@ message EffectiveConfig {
 }
 ```
 
-
 #### hash
 
-The hash of the effective config. The hash is calculated by the Agent from the
-content of the effective config (from the names and content of all items in the
-config_map field).
-
-After establishing the OpAMP connection if the effective config did not change
-since it was last reported during the previous connection sessions the Agent is
-recommended to include only the hash field and omit the config_map field to save
-bandwidth.
-
-The Server SHOULD compare this hash with the last hash of effective config it
-received from the Agent and if the hashes are different the Server SHOULD ask
-the Agent to report its full effective config by sending a ServerToAgent message
-with ReportEffectiveConfig flag set.
+The hash of the content of all other fields. See [hash field](#hash) in AgentDescription
+message for explanation.
 
 #### config_map
-
 
 The effective config of the Agent. SHOULD be omitted if unchanged since last
 reported.
@@ -985,32 +1028,43 @@ section.
 
 ### RemoteConfigStatus Message
 
-
 The RemoteConfigStatus message has the following structure:
-
 
 ```protobuf
 message RemoteConfigStatus {
-    bytes last_remote_config_hash = 1;
+    bytes hash = 1;
+    bytes last_remote_config_hash = 2;
     enum Status {
+        // The value of status field is not set.
+        UNSET = 0;
+      
         // Remote config was successfully applied by the Agent.
-        APPLIED = 0;
+        APPLIED = 1;
 
         // Agent is currently applying the remote config that it received earlier.
-        APPLYING = 1;
+        APPLYING = 2;
 
         // Agent tried to apply the config received earlier, but it failed.
         // See error_message for more details.
-        FAILED = 2;
+        FAILED = 3;
     }
-    Status status = 2;
-    string error_message = 3;
+    Status status = 3;
+    string error_message = 4;
 }
 ```
 
+#### hash
+
+The hash of the content of all other fields. See [hash field](#hash) in AgentDescription
+message for explanation.
+
+All other fields in this message SHOULD be unset if they are all unchanged since the
+message was sent the last time.
+
+All other fields in this message MUST be set if the Agent has received the
+ReportRemoteConfigStatus flag in the ServerToAgent message.
 
 #### last_remote_config_hash
-
 
 The hash of the remote config that was last received by this agent from the
 management server. The server SHOULD compare this hash with the config hash it
@@ -1019,38 +1073,43 @@ remote_config field in the response in the ServerToAgent message.
 
 #### status
 
-
 The status of the Agent's attempt to apply a previously received remote
 configuration.
 
 #### error_message
 
-
 Optional error message if status==FAILED.
 
 ### PackageStatuses Message
 
-
 The PackageStatuses message describes the status of all packages that the agent
 has or was offered. The message has the following structure:
 
-
 ```protobuf
 message PackageStatuses {
-    map<string, PackageStatus> packages = 1;
-    bytes server_provided_all_packages_hash = 2;
+    bytes hash = 1;
+    map<string, PackageStatus> packages = 2;
+    bytes server_provided_all_packages_hash = 3;
 }
 ```
 
+#### hash
+
+The hash of the content of all other fields. See [hash field](#hash) in AgentDescription
+message for explanation.
+
+All other fields in this message SHOULD be unset if they are unchanged since the
+message was sent the last time.
+
+All other fields in this message MUST be set if the Agent has received the
+ReportPackageStatuses flag in the ServerToAgent message.
 
 #### packages
-
 
 A map of PackageStatus messages, where the keys are package names. The key MUST
 match the name field of [PackageStatus](#packagestatus-message) message.
 
 #### server_provided_all_packages_hash
-
 
 The aggregate hash of all packages that this Agent previously received from the
 server via PackagesAvailable message.
@@ -1061,9 +1120,7 @@ PackagesAvailable message to the agent.
 
 ### PackageStatus Message
 
-
 The PackageStatus has the following structure:
-
 
 ```protobuf
 message PackageStatus {
@@ -1082,9 +1139,7 @@ message PackageStatus {
 }
 ```
 
-
 #### name
-
 
 Package name. MUST be always set and MUST match the key in the packages field of
 PackageStatuses message.
