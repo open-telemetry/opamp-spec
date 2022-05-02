@@ -491,14 +491,17 @@ The Agent notifies the Server about Agent's state by sending AgentToServer messa
 The state for example includes the agent description, its effective configuration,
 the status of the remote configuration it received from the server and the status
 of the packages. The Server tracks the state of the Agent using the data
-specified in the AgentToServer messages.
+specified in the messages referenced from AgentToServer message.
 
-The Agent MAY compress the sub-messages included in the ServerToAgent message by
-omitting the data that has not changed since that particular data was reported last time.
-The following messages can be subject to such compression:
-[AgentDescription](#agentdescription-message), [EffectiveConfig](#effectiveconfig-message),
-[RemoteConfigStatus](#remoteconfigstatus-message) and [PackageStatuses](#packagestatuses-message).
-The compression is done by omitting all fields in these messages, except
+The Agent MAY compress some of these messages by omitting the data that has not changed
+since that particular data was reported last time. The following messages can be subject
+to such compression:
+[AgentDescription](#agentdescription-message),
+[EffectiveConfig](#effectiveconfig-message),
+[RemoteConfigStatus](#remoteconfigstatus-message) and 
+[PackageStatuses](#packagestatuses-message).
+
+The compression is done by omitting all fields in the message, except
 the hash field which MUST always be present (see below for how the hash field is used).
 If any of the fields in the message has changed then the compression cannot be used
 and all fields MUST be present.
@@ -512,20 +515,24 @@ believes the Server has the latest data while in reality the Server doesn't. Thi
 possible for example if the Server is restarted while the Agent keeps running and sends
 AgentToServer messages, which the Server does not receive because it is temporarily down.
 
-In order to detect this situation and recover from it, every compressible message contains
-a hash field. The field is the hash of the content of every other field.
+In order to detect this situation and recover from it, every compressible message
+contains a hash field. The field is the hash of the content of every other field.
 The hash is computed on full, uncompressed message (as if no compression is used) and
-then unchanged fields may be unset from the message. Note that either all fields in the
+then unchanged fields may be omitted from the message. Note that either all fields in the
 message must be present or all fields (except hash) must be omitted.
 
-The Server MUST store the hash value for each message type and when it receives a message
-with a different hash but with omitted data then the Server knows it has lost the state.
-The Server can then request the Agent to send the omitted data by responding to the Agent
-and setting the corresponding `Report*` bit in the [flags](#flags) field of
-[ServerToAgent message](#servertoagent-message).
+The Server SHOULD store the received hash value for each message type. When the Server
+receives a message of the same type with a hash value that is different from the last
+stored hash and with omitted data then the Server knows it has lost the state of this
+particular message.
 
-For more details see the descriptions of the flags and of the hash fields in the
-corresponding messages.
+When this situation is encountered, to recover the lost state the Server MUST request
+the Agent to report the omitted data. To make this request the Server MUST send
+a ServerToAgent message to the Agent and set the corresponding `Report*` bit in
+the [flags](#flags-1) field of [ServerToAgent message](#servertoagent-message).
+The flags field contains one `Report*` bit per type of compressible message.
+
+For the details of the flags field see the [descriptions here](#flags-1).
 
 #### instance_uid
 
@@ -568,10 +575,11 @@ This field is set when the Server has packages to offer to the Agent. See
 
 Bit flags as defined by Flags bit masks.
 
-Report* flags can be used by the server if the agent did not include the
-particular bit of information in the last status report (which is an allowed
-optimization) but the server does not have it (e.g. was restarted and lost
-state).
+`Report*` flags can be used by the Server if the Agent did not include the
+particular portion of the data in the last AgentToServer message (which is an allowed
+compression approach) but the Server does not have that data, e.g. the Server was
+restarted and lost the state (see the details in
+[this section](#agent-to-server-state-synchronization)).
 
 
 ```protobuf
@@ -940,18 +948,8 @@ message AgentDescription {
 #### hash
 
 The hash of the content of all other fields (even if the other fields are omitted
-for compression).
-
-If the content of the other fields did not change since it was last reported the Agent is
-recommended to include only the hash field and omit the remaining fields.
-
-The Server SHOULD compare this hash with the last hash that it received from the Agent
-for this message type and if the hashes are different the Server SHOULD request the Agent
-to report the full content. To make such a request the Server SHOULD send a ServerToAgent
-message with ReportAgentDescription flag set.
-
-See [Agent To Server State Synchronization](#agent-to-server-state-synchronization) for
-details about the hash field is used.
+for compression). See [Agent To Server State Synchronization](#agent-to-server-state-synchronization)
+for details about hash field usage.
 
 #### identifying_attributes
 
@@ -1012,8 +1010,9 @@ message EffectiveConfig {
 
 #### hash
 
-The hash of the content of all other fields. See [hash field](#hash) in AgentDescription
-message for explanation.
+The hash of the content of all other fields (even if the other fields are omitted
+for compression). See [Agent To Server State Synchronization](#agent-to-server-state-synchronization)
+for details about hash field usage.
 
 #### config_map
 
@@ -1055,14 +1054,9 @@ message RemoteConfigStatus {
 
 #### hash
 
-The hash of the content of all other fields. See [hash field](#hash) in AgentDescription
-message for explanation.
-
-All other fields in this message SHOULD be unset if they are all unchanged since the
-message was sent the last time.
-
-All other fields in this message MUST be set if the Agent has received the
-ReportRemoteConfigStatus flag in the ServerToAgent message.
+The hash of the content of all other fields (even if the other fields are omitted
+for compression). See [Agent To Server State Synchronization](#agent-to-server-state-synchronization)
+for details about hash field usage.
 
 #### last_remote_config_hash
 
@@ -1095,14 +1089,9 @@ message PackageStatuses {
 
 #### hash
 
-The hash of the content of all other fields. See [hash field](#hash) in AgentDescription
-message for explanation.
-
-All other fields in this message SHOULD be unset if they are unchanged since the
-message was sent the last time.
-
-All other fields in this message MUST be set if the Agent has received the
-ReportPackageStatuses flag in the ServerToAgent message.
+The hash of the content of all other fields (even if the other fields are omitted
+for compression). See [Agent To Server State Synchronization](#agent-to-server-state-synchronization)
+for details about hash field usage.
 
 #### packages
 
@@ -1608,9 +1597,7 @@ currently has (if any).
 
 #### flags
 
-
-​​Bitfield of Flags enum:
-
+Bitfield of Flags enum:
 
 ```
 enum Flags {
