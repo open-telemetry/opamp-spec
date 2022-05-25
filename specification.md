@@ -65,6 +65,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [hash](#hash-3)
       - [packages](#packages)
       - [server_provided_all_packages_hash](#server_provided_all_packages_hash)
+      - [error_message](#error_message-2)
     + [PackageStatus Message](#packagestatus-message)
       - [name](#name)
       - [agent_has_version](#agent_has_version)
@@ -72,7 +73,7 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [server_offered_version](#server_offered_version)
       - [server_offered_hash](#server_offered_hash)
       - [status](#status-1)
-      - [error_message](#error_message-2)
+      - [error_message](#error_message-3)
   * [Connection Settings Management](#connection-settings-management)
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
@@ -1084,6 +1085,7 @@ message PackageStatuses {
     bytes hash = 1;
     map<string, PackageStatus> packages = 2;
     bytes server_provided_all_packages_hash = 3;
+    string error_message = 4;
 }
 ```
 
@@ -1106,6 +1108,14 @@ Server via PackagesAvailable message.
 The Server SHOULD compare this hash to the aggregate hash of all packages that it
 has for this Agent and if the hashes are different the Server SHOULD send an
 PackagesAvailable message to the Agent.
+
+#### error_message
+
+This field is set if the Agent encountered an error when processing the 
+[PackagesAvailable message](#packagesavailable-message)
+and that error is not related to any particular single package.
+
+The field must be unset is there were no processing errors.
 
 ### PackageStatus Message
 
