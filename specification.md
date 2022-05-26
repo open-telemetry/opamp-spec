@@ -86,18 +86,24 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [own_traces](#own_traces)
       - [own_logs](#own_logs)
       - [other_connections](#other_connections)
-    + [ConnectionSettings Message](#connectionsettings-message)
-      - [destination_endpoint](#destination_endpoint)
-      - [headers](#headers)
-      - [proxy_endpoint](#proxy_endpoint)
-      - [proxy_headers](#proxy_headers)
-      - [certificate](#certificate)
-      - [flags](#flags-2)
+    + [OpAMPConnectionSettings](#opampconnectionsettings)
+      - [OpAMPConnectionSettings.destination_endpoint](#opampconnectionsettingsdestination_endpoint)
+      - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
+      - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
+    + [TelemetryConnectionSettings](#telemetryconnectionsettings)
+      - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
+      - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
+      - [TelemetryConnectionSettings.certificate](#telemetryconnectionsettingscertificate)
+    + [OtherConnectionSettings](#otherconnectionsettings)
+      - [OtherConnectionSettings.destination_endpoint](#otherconnectionsettingsdestination_endpoint)
+      - [OtherConnectionSettings.headers](#otherconnectionsettingsheaders)
+      - [OtherConnectionSettings.certificate](#otherconnectionsettingscertificate)
+      - [OtherConnectionSettings.other_settings](#otherconnectionsettingsother_settings)
     + [Headers Message](#headers-message)
     + [TLSCertificate Message](#tlscertificate-message)
-      - [public_key](#public_key)
-      - [private_key](#private_key)
-      - [ca_public_key](#ca_public_key)
+      - [TLSCertificate.public_key](#tlscertificatepublic_key)
+      - [TLSCertificate.private_key](#tlscertificateprivate_key)
+      - [TLSCertificate.ca_public_key](#tlscertificateca_public_key)
   * [Own Telemetry Reporting](#own-telemetry-reporting)
   * [Configuration](#configuration)
     + [Configuration Files](#configuration-files)
@@ -1445,11 +1451,11 @@ use:
 ```protobuf
 message ConnectionSettingsOffers {
     bytes hash = 1;
-    ConnectionSettings opamp = 2;
-    ConnectionSettings own_metrics = 3;
-    ConnectionSettings own_traces = 4;
-    ConnectionSettings own_logs = 5;
-    map<string,ConnectionSettings> other_connections = 6;
+    OpAMPConnectionSettings opamp = 2;
+    TelemetryConnectionSettings own_metrics = 3;
+    TelemetryConnectionSettings own_traces = 4;
+    TelemetryConnectionSettings own_logs = 5;
+    map<string,OtherConnectionSettings> other_connections = 6;
 }
 ```
 
@@ -1493,118 +1499,138 @@ of the destination to connect to (as it is known to the Agent). If this field is
 not set then the Agent should assume that the other_connections settings are
 unchanged.
 
-### ConnectionSettings Message
+### OpAMPConnectionSettings
 
-
-ConnectionSettings describes connection settings for one destination. The
-message has the following structure:
-
+The OpAMPConnectionSettings message is a collection of fields which comprise an
+offer from the Server to the Agent to use the specified settings for OpAMP
+connection.
 
 ```protobuf
-message ConnectionSettings {
+message OpAMPConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
-    string proxy_endpoint = 3;
-    Headers proxy_headers = 4;
-    TLSCertificate certificate = 5;
-    enum Flags {
-        _ = 0;
-        DestinationEndpointSet = 0x01;
-        ProxyEndpointSet = 0x02;
-    }
-    Flags flags = 6;
+    TLSCertificate certificate = 3;
 }
 ```
 
+#### OpAMPConnectionSettings.destination_endpoint
 
-#### destination_endpoint
+OpAMP Server URL This MUST be a WebSocket or HTTP URL and MUST be non-empty, for
+example: "wss://example.com:4318/v1/opamp"
 
+#### OpAMPConnectionSettings.headers
+
+Optional headers to use when connecting. Typically used to set access tokens or
+other authorization headers. For HTTP-based protocols the Agent should
+set these in the request headers.
+For example:
+key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
+
+#### OpAMPConnectionSettings.certificate
+
+The Agent should use the offered certificate to connect to the destination
+from now on. If the Agent is able to validate and connect using the offered
+certificate the Agent SHOULD forget any previous client certificates
+for this connection.
+This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
+This field can be used to perform a client certificate revocation/rotation.
+
+### TelemetryConnectionSettings
+
+The TelemetryConnectionSettings message is a collection of fields which comprise an
+offer from the Server to the Agent to use the specified settings for a network
+connection to report own telemetry.
+
+```protobuf
+message TelemetryConnectionSettings {
+    string destination_endpoint = 1;
+    Headers headers = 2;
+    TLSCertificate certificate = 3;
+}
+```
+
+#### TelemetryConnectionSettings.destination_endpoint
+
+The value MUST be a full URL an OTLP/HTTP/Protobuf receiver with path. Schema
+SHOULD begin with "https://", for example "https://example.com:4318/v1/metrics"
+The Agent MAY refuse to send the telemetry if the URL begins with "http://".
+
+#### TelemetryConnectionSettings.headers
+
+Optional headers to use when connecting. Typically used to set access tokens or
+other authorization headers. For HTTP-based protocols the Agent should
+set these in the request headers.
+For example:
+key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
+
+#### TelemetryConnectionSettings.certificate
+
+The Agent should use the offered certificate to connect to the destination
+from now on. If the Agent is able to validate and connect using the offered
+certificate the Agent SHOULD forget any previous client certificates
+for this connection.
+This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
+This field can be used to perform a client certificate revocation/rotation.
+
+### OtherConnectionSettings
+
+The OtherConnectionSettings message is a collection of fields which comprise an
+offer from the Server to the Agent to use the specified settings for a network
+connection. It is not required that all fields in this message are specified.
+The Server may specify only some of the fields, in which case it means that
+the Server offers the Agent to change only those fields, while keeping the
+rest of the fields unchanged.
+
+For example the Server may send a ConnectionSettings message with only the
+certificate field set, while all other fields are unset. This means that
+the Server wants the Agent to use a new certificate and continue sending to
+the destination it is currently sending using the current header and other
+settings.
+
+For fields which reference other messages the field is considered unset
+when the reference is unset.
+
+For primitive field (string) we rely on the "flags" to describe that the
+field is not set (this is done to overcome the limitation of old protoc
+compilers don't generate methods that allow to check for the presence of
+the field.
+
+```protobuf
+message OtherConnectionSettings {
+    string destination_endpoint = 1;
+    Headers headers = 2;
+    TLSCertificate certificate = 3;
+    map<string, string> other_settings = 4;
+}
+```
+
+#### OtherConnectionSettings.destination_endpoint
 
 A URL, host:port or some other destination specifier.
 
-For OpAMP destination this MUST be a HTTP or WebSocket URL and MUST be
-non-empty, for example: "wss://example.com:4318/v1/opamp"
+#### OtherConnectionSettings.headers
 
-For Agent's own telemetry destination this MUST be the full HTTP URL to an
-OTLP/HTTP/Protobuf receiver. The value MUST be a full URL with path and schema
-and SHOULD begin with "https://", for example
-"[https://example.com:4318/v1/metrics](https://example.com:4318/v1/metrics)".
-The Agent MAY refuse to send the telemetry if the URL begins with "http://".
-
-The field is considered unset if (flags & DestinationEndpointSet)==0.
-
-#### headers
-
-
-Headers to use when connecting. Typically used to set access tokens or other
-authorization headers. For HTTP-based protocols the Agent should set these in
-the request headers.
-
+Optional headers to use when connecting. Typically used to set access tokens or
+other authorization headers. For HTTP-based protocols the Agent should
+set these in the request headers.
 For example:
-
 key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
 
-if the field is unset then the Agent SHOULD continue using the headers that it
-currently has (if any).
+#### OtherConnectionSettings.certificate
 
-#### proxy_endpoint
+The Agent should use the offered certificate to connect to the destination
+from now on. If the Agent is able to validate and connect using the offered
+certificate the Agent SHOULD forget any previous client certificates
+for this connection.
+This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
+This field can be used to perform a client certificate revocation/rotation.
 
+#### OtherConnectionSettings.other_settings
 
-A URL, host:port or some other specifier of an intermediary proxy. Empty if no
-proxy is used.
-
-Example use case: if OpAMP proxy is also an OTLP intermediary Collector then the
-OpAMP proxy can direct the Agents that connect to it to also send Agents's OTLP
-metrics through its OTLP metrics pipeline. Can be used for example by
-OpenTelemetry Helm chart with 2 stage-collection when Agents on K8s nodes are
-proxied through a standalone Collector.
-
-For example: "https://proxy.example.com:5678"
-
-The field is considered unset if (flags & ProxyEndpointSet)==0.
-
-#### proxy_headers
-
-
-Headers to use when connecting to a proxy. For HTTP-based protocols the Agent
-should set these in the request headers. If no proxy is used the Headers field
-must be present and must contain no headers.
-
-For example:
-
-key="Proxy-Authorization", value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
-
-if the field is unset then the Agent SHOULD continue using the proxy headers
-that it currently has (if any).
-
-#### certificate
-
-
-The Agent should use the offered certificate to connect to the destination from
-now on. If the Agent is able to validate and connect using the offered
-certificate the Agent SHOULD forget any previous client certificates for this
-connection.
-
-This field is used to perform a client certificate revocation/rotation. if the
-field is unset then the Agent SHOULD continue using the certificate that it
-currently has (if any).
-
-#### flags
-
-Bitfield of Flags enum:
-
-```
-enum Flags {
-    _ = 0;
-    DestinationEndpointSet = 0x01;
-    ProxyEndpointSet = 0x02;
-}
-```
-
+Other connection settings. These are Agent-specific and are up to the Agent
+interpret.
 
 ### Headers Message
-
-
 
 ```
 message Headers {
@@ -1616,9 +1642,7 @@ message Header {
 }
 ```
 
-
 ### TLSCertificate Message
-
 
 The message carries a TLS certificate that can be used as a client-side
 certificate.
@@ -1629,7 +1653,6 @@ Certificate Authority that the destination Server recognizes.
 Alternatively the certificate may be self-signed, assuming the Server can verify
 the certificate. In this case the ca_public_key field can be omitted.
 
-
 ```protobuf
 message TLSCertificate {
     bytes public_key = 1;
@@ -1638,19 +1661,15 @@ message TLSCertificate {
 }
 ```
 
-
-#### public_key
-
+#### TLSCertificate.public_key
 
 PEM-encoded public key of the certificate. Required.
 
-#### private_key
-
+#### TLSCertificate.private_key
 
 PEM-encoded private key of the certificate. Required.
 
-#### ca_public_key
-
+#### TLSCertificate.ca_public_key
 
 PEM-encoded public key of the CA that signed this certificate. Optional, MUST be
 specified if the certificate is CA-signed. Can be stored by intermediary
