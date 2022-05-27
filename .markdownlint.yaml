@@ -1,0 +1,26 @@
+# See https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+# and https://github.com/DavidAnson/markdownlint/blob/main/README.md
+
+# Default state for all rules
+default: true
+
+ul-style: false
+line-length: false
+no-duplicate-header:
+  siblings_only: true
+ol-prefix:
+  style: ordered
+no-inline-html: false
+fenced-code-language: false
+
+# MD022/blanks-around-headings/blanks-around-headers - Headings should be surrounded by blank lines
+MD022: false
+
+# MD025/single-title/single-h1 - Multiple top-level headings in the same document
+MD025: false
+
+# MD032/blanks-around-lists - Lists should be surrounded by blank lines
+MD032: false
+
+# MD034/no-bare-urls - Bare URL used
+MD034: false
