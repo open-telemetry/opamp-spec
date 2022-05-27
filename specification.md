@@ -20,58 +20,59 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
 - [Communication Model](#communication-model)
   * [WebSocket Transport](#websocket-transport)
   * [Plain HTTP Transport](#plain-http-transport)
-  * [AgentToServer Message](#agenttoserver-message)
-      - [instance_uid](#instance_uid)
-      - [agent_description](#agent_description)
-      - [capabilities](#capabilities)
-      - [effective_config](#effective_config)
-      - [remote_config_status](#remote_config_status)
-      - [package_statuses](#package_statuses)
-      - [agent_disconnect](#agent_disconnect)
-      - [flags](#flags)
-  * [ServerToAgent Message](#servertoagent-message)
-      - [instance_uid](#instance_uid-1)
-      - [error_response](#error_response)
-      - [remote_config](#remote_config)
-      - [connection_settings](#connection_settings)
-      - [packages_available](#packages_available)
-      - [flags](#flags-1)
-      - [capabilities](#capabilities-1)
-      - [agent_identification](#agent_identification)
-      - [command](#command)
-  * [ServerErrorResponse Message](#servererrorresponse-message)
-      - [type](#type)
-      - [error_message](#error_message)
-      - [retry_info](#retry_info)
+  * [AgentToServer and ServerToAgent Messages](#agenttoserver-and-servertoagent-messages)
+    + [AgentToServer Message](#agenttoserver-message)
+      - [AgentToServer.instance_uid](#agenttoserverinstance_uid)
+      - [AgentToServer.agent_description](#agenttoserveragent_description)
+      - [AgentToServer.capabilities](#agenttoservercapabilities)
+      - [AgentToServer.effective_config](#agenttoservereffective_config)
+      - [AgentToServer.remote_config_status](#agenttoserverremote_config_status)
+      - [AgentToServer.package_statuses](#agenttoserverpackage_statuses)
+      - [AgentToServer.agent_disconnect](#agenttoserveragent_disconnect)
+      - [AgentToServer.flags](#agenttoserverflags)
+    + [ServerToAgent Message](#servertoagent-message)
+      - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
+      - [ServerToAgent.error_response](#servertoagenterror_response)
+      - [ServerToAgent.remote_config](#servertoagentremote_config)
+      - [ServerToAgent.connection_settings](#servertoagentconnection_settings)
+      - [ServerToAgent.packages_available](#servertoagentpackages_available)
+      - [ServerToAgent.flags](#servertoagentflags)
+      - [ServerToAgent.capabilities](#servertoagentcapabilities)
+      - [ServerToAgent.agent_identification](#servertoagentagent_identification)
+      - [ServerToAgent.command](#servertoagentcommand)
+    + [ServerErrorResponse Message](#servererrorresponse-message)
+      - [ServerErrorResponse.type](#servererrorresponsetype)
+      - [ServerErrorResponse.error_message](#servererrorresponseerror_message)
+      - [ServerErrorResponse.retry_info](#servererrorresponseretry_info)
   * [ServerToAgentCommand Message](#servertoagentcommand-message)
 - [Operation](#operation)
   * [Status Reporting](#status-reporting)
     + [Agent Status Compression](#agent-status-compression)
     + [AgentDescription Message](#agentdescription-message)
-      - [hash](#hash)
-      - [identifying_attributes](#identifying_attributes)
-      - [non_identifying_attributes](#non_identifying_attributes)
+      - [AgentDescription.hash](#agentdescriptionhash)
+      - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
+      - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
     + [EffectiveConfig Message](#effectiveconfig-message)
-      - [hash](#hash-1)
-      - [config_map](#config_map)
+      - [EffectiveConfig.hash](#effectiveconfighash)
+      - [EffectiveConfig.config_map](#effectiveconfigconfig_map)
     + [RemoteConfigStatus Message](#remoteconfigstatus-message)
-      - [hash](#hash-2)
-      - [last_remote_config_hash](#last_remote_config_hash)
-      - [status](#status)
-      - [error_message](#error_message-1)
+      - [RemoteConfigStatus.hash](#remoteconfigstatushash)
+      - [RemoteConfigStatus.last_remote_config_hash](#remoteconfigstatuslast_remote_config_hash)
+      - [RemoteConfigStatus.status](#remoteconfigstatusstatus)
+      - [RemoteConfigStatus.error_message](#remoteconfigstatuserror_message)
     + [PackageStatuses Message](#packagestatuses-message)
-      - [hash](#hash-3)
-      - [packages](#packages)
-      - [server_provided_all_packages_hash](#server_provided_all_packages_hash)
-      - [error_message](#error_message-2)
+      - [PackageStatuses.hash](#packagestatuseshash)
+      - [PackageStatuses.packages](#packagestatusespackages)
+      - [PackageStatuses.server_provided_all_packages_hash](#packagestatusesserver_provided_all_packages_hash)
+      - [PackageStatuses.error_message](#packagestatuseserror_message)
     + [PackageStatus Message](#packagestatus-message)
-      - [name](#name)
-      - [agent_has_version](#agent_has_version)
-      - [agent_has_hash](#agent_has_hash)
-      - [server_offered_version](#server_offered_version)
-      - [server_offered_hash](#server_offered_hash)
-      - [status](#status-1)
-      - [error_message](#error_message-3)
+      - [PackageStatus.name](#packagestatusname)
+      - [PackageStatus.agent_has_version](#packagestatusagent_has_version)
+      - [PackageStatus.agent_has_hash](#packagestatusagent_has_hash)
+      - [PackageStatus.server_offered_version](#packagestatusserver_offered_version)
+      - [PackageStatus.server_offered_hash](#packagestatusserver_offered_hash)
+      - [PackageStatus.status](#packagestatusstatus)
+      - [PackageStatus.error_message](#packagestatuserror_message)
   * [Connection Settings Management](#connection-settings-management)
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
@@ -80,12 +81,12 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
     + [Certificate Generation](#certificate-generation)
     + [Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations)
     + [ConnectionSettingsOffers Message](#connectionsettingsoffers-message)
-      - [hash](#hash-4)
-      - [opamp](#opamp)
-      - [own_metrics](#own_metrics)
-      - [own_traces](#own_traces)
-      - [own_logs](#own_logs)
-      - [other_connections](#other_connections)
+      - [ConnectionSettingsOffers.hash](#connectionsettingsoffershash)
+      - [ConnectionSettingsOffers.opamp](#connectionsettingsoffersopamp)
+      - [ConnectionSettingsOffers.own_metrics](#connectionsettingsoffersown_metrics)
+      - [ConnectionSettingsOffers.own_traces](#connectionsettingsoffersown_traces)
+      - [ConnectionSettingsOffers.own_logs](#connectionsettingsoffersown_logs)
+      - [ConnectionSettingsOffers.other_connections](#connectionsettingsoffersother_connections)
     + [OpAMPConnectionSettings](#opampconnectionsettings)
       - [OpAMPConnectionSettings.destination_endpoint](#opampconnectionsettingsdestination_endpoint)
       - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
@@ -121,17 +122,17 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
       - [All Packages Hash](#all-packages-hash)
     + [Security Considerations](#security-considerations-1)
     + [PackagesAvailable Message](#packagesavailable-message)
-      - [packages](#packages-1)
-      - [all_packages_hash](#all_packages_hash)
+      - [PackagesAvailable.packages](#packagesavailablepackages)
+      - [PackagesAvailable.all_packages_hash](#packagesavailableall_packages_hash)
     + [PackageAvailable Message](#packageavailable-message)
-      - [type](#type-1)
-      - [version](#version)
-      - [file](#file)
-      - [hash](#hash-5)
+      - [PackageAvailable.type](#packageavailabletype)
+      - [PackageAvailable.version](#packageavailableversion)
+      - [PackageAvailable.file](#packageavailablefile)
+      - [PackageAvailable.hash](#packageavailablehash)
     + [DownloadableFile Message](#downloadablefile-message)
-      - [download_url](#download_url)
-      - [content_hash](#content_hash)
-      - [signature](#signature)
+      - [DownloadableFile.download_url](#downloadablefiledownload_url)
+      - [DownloadableFile.content_hash](#downloadablefilecontent_hash)
+      - [DownloadableFile.signature](#downloadablefilesignature)
 - [Connection Management](#connection-management)
   * [Establishing Connection](#establishing-connection)
   * [Closing Connection](#closing-connection)
@@ -159,10 +160,10 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
 - [Performance and Scale](#performance-and-scale)
 - [Open Questions](#open-questions)
 - [FAQ for Reviewers](#faq-for-reviewers)
-    + [What is WebSocket?](#what-is-websocket)
-    + [Why not Use TCP Instead of WebSocket?](#why-not-use-tcp-instead-of-websocket)
-    + [Why not alwaysUse HTTP Instead of WebSocket?](#why-not-alwaysuse-http-instead-of-websocket)
-    + [Why not Use gRPC Instead of WebSocket?](#why-not-use-grpc-instead-of-websocket)
+  * [What is WebSocket?](#what-is-websocket)
+  * [Why not Use TCP Instead of WebSocket?](#why-not-use-tcp-instead-of-websocket)
+  * [Why not alwaysUse HTTP Instead of WebSocket?](#why-not-alwaysuse-http-instead-of-websocket)
+  * [Why not Use gRPC Instead of WebSocket?](#why-not-use-grpc-instead-of-websocket)
 - [Future Possibilities](#future-possibilities)
 - [References](#references)
   * [Agent Management](#agent-management)
@@ -206,12 +207,10 @@ of a large fleet of mixed Agents (e.g. OpenTelemetry Collector, Fluentd, etc).
 
 # Communication Model
 
-
 The OpAMP Server manages Agents that implement the client-side of OpAMP
 protocol. The Agents can optionally send their own telemetry to an OTLP
 destination when directed so by the OpAMP Server. The Agents likely also connect
 to other destinations, where they send the data they collect:
-
 
 ```
         ┌────────────┬────────┐           ┌─────────┐
@@ -231,7 +230,6 @@ to other destinations, where they send the data they collect:
         │            │Clients ├──────────► Destinations
         └────────────┴────────┘
 ```
-
 
 This specification defines the OpAMP network protocol and the expected behavior
 for OpAMP Agents and Servers. The OTLP/HTTP protocol is
@@ -253,7 +251,6 @@ the Agent to the Server and from the Server to the Agent.
 The default URL path for the connection is /v1/opamp. The URL path MAY be
 configurable on the Agent and on the Server.
 
-
 ## WebSocket Transport
 
 One of the supported transports for OpAMP protocol is
@@ -265,7 +262,6 @@ message is a
 message. The Agent sends AgentToServer Protobuf messages and the Server sends
 ServerToAgent Protobuf messages:
 
-
 ```
         ┌───────────────┐                        ┌──────────────┐
         │               │      AgentToServer     │              │
@@ -275,7 +271,6 @@ ServerToAgent Protobuf messages:
         │               │◄───────────────────────┤              │
         └───────────────┘                        └──────────────┘
 ```
-
 
 Typically a single Server accepts WebSocket connections from many Agents. Agents
 are identified by self-assigned or Server-assigned globally unique instance
@@ -336,7 +331,7 @@ Agent initiates an HTTP request when it has an AgentToServer message to deliver.
 The Server responds to each HTTP request with a ServerToAgent message it wants
 to deliver to the Agent. If the Agent has nothing to deliver to the Server the
 Agent MUST periodically poll the Server by sending an AgentToServer message
-where only [instance_uid](#instance_uid) field is set. This gives the Server an
+where only [instance_uid](#agenttoserverinstance_uid) field is set. This gives the Server an
 opportunity to send back in the response any messages that the Server wants to
 deliver to the Agent (such as for example a new remote configuration).
 
@@ -363,19 +358,20 @@ Open Question: do we want to also allow JSON-encoded Protobuf messages? This can
 be fairly trivially achieved by requiring "Content-Type: application/json" header.
 
 The Agent MAY compress the request body using gzip method and MUST specify
-"Content-Encoding: gzip" in that case. Server implementations MUST honour the 
+"Content-Encoding: gzip" in that case. Server implementations MUST honour the
 "Content-Encoding" header and MUST support gzipped or uncompressed request bodies.
 
 The Server MAY compress the response if the Agent indicated it can accept compressed
 response via the "Accept-Encoding" header.
 
-## AgentToServer Message
+## AgentToServer and ServerToAgent Messages
+
+### AgentToServer Message
 
 The body of the OpAMP WebSocket message or HTTP body of the request is a binary
 serialized Protobuf message AgentToServer as defined below (all messages in this
 document are specified in
 [Protobuf 3 language](https://developers.google.com/protocol-buffers/docs/proto3)):
-
 
 ```protobuf
 message AgentToServer {
@@ -393,7 +389,7 @@ message AgentToServer {
 The Server should process each field as it is described in the corresponding
 [Operation](#operation) section.
 
-#### instance_uid
+#### AgentToServer.instance_uid
 
 The instance_uid field is a globally unique identifier of the running instance
 of the Agent. The Agent SHOULD self-generate this identifier and make the best
@@ -405,14 +401,14 @@ lifetime of the Agent process. The recommended format for the instance_uid is
 In case the Agent wants to use an identifier generated by the Server, the field
 SHOULD be set with a temporary value and RequestInstanceUid flag MUST be set.
 
-#### agent_description
+#### AgentToServer.agent_description
 
 Data that describes the Agent, its type, where it runs, etc. See
 [AgentDescription](#agentdescription-message) message for details.
 This field SHOULD be unset if this information is unchanged since the last
 AgentToServer message.
 
-#### capabilities
+#### AgentToServer.capabilities
 
 Bitmask of flags defined by AgentCapabilities enum.
 All bits that are not defined in AgentCapabilities enum MUST be set to 0 by
@@ -458,7 +454,7 @@ enum AgentCapabilities {
 }
 ```
 
-#### effective_config
+#### AgentToServer.effective_config
 
 The current effective configuration of the Agent. The effective configuration is
 the one that is currently used by the Agent. The effective configuration may be
@@ -468,25 +464,25 @@ because the Agent uses a local configuration instead (or in addition). See
 This field SHOULD be unset if this information is unchanged since the last
 AgentToServer message.
 
-#### remote_config_status
+#### AgentToServer.remote_config_status
 
 The status of the remote config that was previously received from the Server.
 See [RemoteConfigStatus](#remoteconfigstatus-message) message for details.
 This field SHOULD be unset if this information is unchanged since the last
 AgentToServer message.
 
-#### package_statuses
+#### AgentToServer.package_statuses
 
-The list of the Agent packages, including package statuses. 
+The list of the Agent packages, including package statuses.
 This field SHOULD be unset if this information is unchanged since the last
 AgentToServer message.
 
-#### agent_disconnect
+#### AgentToServer.agent_disconnect
 
 AgentDisconnect MUST be set in the last AgentToServer message sent from the
 Agent to the Server.
 
-#### flags
+#### AgentToServer.flags
 
 Bit flags as defined by AgentToServerFlags bit masks.
 
@@ -502,8 +498,7 @@ enum AgentToServerFlags {
 }
 ```
 
-
-## ServerToAgent Message
+### ServerToAgent Message
 
 The body of the WebSocket message or HTTP response body is a binary serialized
 Protobuf message ServerToAgent.
@@ -555,7 +550,7 @@ message ServerToAgent {
 }
 ```
 
-#### instance_uid
+#### ServerToAgent.instance_uid
 
 The Agent instance identifier. MUST match the instance_uid field previously
 received in the AgentToServer message. When communication with multiple Agents
@@ -567,32 +562,30 @@ Note: the value can be overriden by Server by sending a new one in the
 AgentIdentification field. When this happens then Agent MUST update its
 instance_uid to the value provided and use it for all further communication.
 
-#### error_response
+#### ServerToAgent.error_response
 
 error_response is set if the Server wants to indicate that something went wrong
 during processing of an AgentToServer message. If error_response is set then all
 other fields below must be unset and vice versa, if any of the fields below is
 set then error_response must be unset.
 
-#### remote_config
-
+#### ServerToAgent.remote_config
 
 This field is set when the Server has a remote config offer for the Agent. See
 [Configuration](#configuration) for details.
 
-#### connection_settings
-
+#### ServerToAgent.connection_settings
 
 This field is set when the Server wants the Agent to change one or more of its
 client connection settings (destination, headers, certificate, etc). See
 [Connection Settings Management](#connection-settings-management) for details.
 
-#### packages_available
+#### ServerToAgent.packages_available
 
 This field is set when the Server has packages to offer to the Agent. See
 [Packages](#packages) for details.
 
-#### flags
+#### ServerToAgent.flags
 
 Bit flags as defined by Flags bit masks.
 
@@ -601,7 +594,6 @@ particular portion of the data in the last AgentToServer message (which is an al
 compression approach) but the Server does not have that data, e.g. the Server was
 restarted and lost the agent status (see the details in
 [this section](#agent-status-compression)).
-
 
 ```protobuf
 enum Flags {
@@ -629,7 +621,7 @@ enum Flags {
 }
 ```
 
-#### capabilities
+#### ServerToAgent.capabilities
 
 Bitmask of flags defined by ServerCapabilities enum. All bits that are not
 defined in ServerCapabilities enum MUST be set to 0 by the Server. This allows
@@ -661,8 +653,7 @@ enum ServerCapabilities {
 }
 ```
 
-
-#### agent_identification
+#### ServerToAgent.agent_identification
 
 Properties related to identification of the Agent, which can be overriden by the
 Server if needed. When new_instance_uid is set, Agent MUST update instance_uid
@@ -674,7 +665,7 @@ message AgentIdentification {
 }
 ```
 
-#### command
+#### ServerToAgent.command
 
 This field is set when the Server wants the Agent to
 perform a restart. This field must not be set with other fields
@@ -682,11 +673,9 @@ besides instance_uid or capabilities. All other fields will be ignored and the
 Agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
 for details.
 
-## ServerErrorResponse Message
-
+### ServerErrorResponse Message
 
 The message has the following structure:
-
 
 ```protobuf
 message ServerErrorResponse {
@@ -703,10 +692,7 @@ message ServerErrorResponse {
 }
 ```
 
-
-
-#### type
-
+#### ServerErrorResponse.type
 
 This field defines the type of the error that the Server encountered when trying
 to process the Agent's request. Possible values are:
@@ -721,18 +707,15 @@ message and indicates that the AgentToServer message was malformed. See
 UNAVAILABLE: The Server is overloaded and unable to process the request. See
 [Throttling](#throttling).
 
-#### error_message
-
+#### ServerErrorResponse.error_message
 
 Error message, typically human readable.
 
-#### retry_info
-
+#### ServerErrorResponse.retry_info
 
 Additional [RetryInfo](#throttling) message about retrying if type==UNAVAILABLE.
 
 ## ServerToAgentCommand Message
- 
 
 The message has the following structure:
 
@@ -755,7 +738,6 @@ will be ignored.
 
 # Operation
 
-
 ## Status Reporting
 
 The Agent MUST send a status report:
@@ -766,23 +748,22 @@ The Agent MUST send a status report:
 
 The status report is sent as an [AgentToServer](#agenttoserver-message) message.
 The following fields in the message can be set to reflect the corresponding
-part of the status: agent_description, capabilities, effective_config, 
+part of the status: agent_description, capabilities, effective_config,
 remote_config_status, package_statuses.
 
 The Server MUST respond to the AgentToServer message by sending a
 [ServerToAgent](#servertoagent-message) message.
 
 If the status report processing failed then the
-[error_response](#error_response) field MUST be set to ServerErrorResponse
+[error_response](#servertoagenterror_response) field MUST be set to ServerErrorResponse
 message.
 
 If the status report is processed successfully by the Server then the
-[error_response](#error_response) field MUST be unset and the other fields can
-be populated as necessary.
+[error_response](#servertoagenterror_response) field MUST be unset and the other fields
+can be populated as necessary.
 
 Here is the sequence diagram that shows how status reporting works (assuming
 server-side processing is successful):
-
 
 ```
         Agent                                  Server
@@ -809,7 +790,6 @@ server-side processing is successful):
           │                                       │
 ```
 
-
 Note that the status of the Agent may change as a result of receiving a message
 from the Server. For example the Server may send a remote configuration to the
 Agent. Once the Agent processes such a request the Agent's status changes (e.g.
@@ -817,7 +797,6 @@ the effective configuration of the Agent changes). Such status change should
 result in the Agent sending a status report to the Server.
 
 So, essentially in such cases the sequence of messages may look like this:
-
 
 ```
                    Agent                                  Server
@@ -841,12 +820,10 @@ So, essentially in such cases the sequence of messages may look like this:
                     │                                       │   └─────────┘
 ```
 
-
 When the Agent receives a ServerToAgent message the Agent MUST NOT send a status
 report unless processing of the message received from the Server resulted in
 actual change of the Agent status (e.g. the configuration of the Agent has
 changed). The sequence diagram in this case look like this:
-
 
 ```
                      Agent                                  Server
@@ -867,7 +844,6 @@ changed). The sequence diagram in this case look like this:
                        │                                       │
                        │                                       │
 ```
-
 
 Important: if the Agent does not follow these rules the operation may result in
 an infinite loop of messages sent back and forth between the Agent and the
@@ -919,10 +895,10 @@ of this particular message.
 When this situation is encountered, to recover the lost status the Server MUST request
 the Agent to report the omitted data. To make this request the Server MUST send
 a ServerToAgent message to the Agent and set the corresponding `Report*` bit in
-the [flags](#flags-1) field of [ServerToAgent message](#servertoagent-message).
+the [flags](#servertoagentflags) field of [ServerToAgent message](#servertoagent-message).
 The flags field contains one `Report*` bit per type of compressible message.
 
-For the details of the flags field see the [descriptions here](#flags-1).
+For the details of the flags field see the [descriptions here](#servertoagentflags).
 
 ### AgentDescription Message
 
@@ -936,13 +912,13 @@ message AgentDescription {
 }
 ```
 
-#### hash
+#### AgentDescription.hash
 
 The hash of the content of all other fields (even if the other fields are omitted
 for compression). See [Agent Status Compression](#agent-status-compression)
 for details about hash field usage.
 
-#### identifying_attributes
+#### AgentDescription.identifying_attributes
 
 Attributes that identify the Agent.
 
@@ -970,7 +946,7 @@ the Agent sends its own telemetry.
 This field MUST be set if the Agent has received the ReportAgentDescription flag in the
 ServerToAgent message.
 
-#### non_identifying_attributes
+#### AgentDescription.non_identifying_attributes
 
 Attributes that do not necessarily identify the Agent but help describe where it
 runs.
@@ -999,13 +975,13 @@ message EffectiveConfig {
 }
 ```
 
-#### hash
+#### EffectiveConfig.hash
 
 The hash of the content of all other fields (even if the other fields are omitted
 for compression). See [Agent Status Compression](#agent-status-compression)
 for details about hash field usage.
 
-#### config_map
+#### EffectiveConfig.config_map
 
 The effective config of the Agent. SHOULD be omitted if unchanged since last
 reported.
@@ -1043,25 +1019,25 @@ message RemoteConfigStatus {
 }
 ```
 
-#### hash
+#### RemoteConfigStatus.hash
 
 The hash of the content of all other fields (even if the other fields are omitted
 for compression). See [Agent Status Compression](#agent-status-compression)
 for details about hash field usage.
 
-#### last_remote_config_hash
+#### RemoteConfigStatus.last_remote_config_hash
 
 The hash of the remote config that was last received by this Agent in the
 AgentRemoteConfig.config_hash field. The Server SHOULD compare this hash with the
 config hash it has for the Agent and if the hashes are different the Server MUST
 include the remote_config field in the response in the ServerToAgent message.
 
-#### status
+#### RemoteConfigStatus.status
 
 The status of the Agent's attempt to apply a previously received remote
 configuration.
 
-#### error_message
+#### RemoteConfigStatus.error_message
 
 Optional error message if status==FAILED.
 
@@ -1079,18 +1055,18 @@ message PackageStatuses {
 }
 ```
 
-#### hash
+#### PackageStatuses.hash
 
 The hash of the content of all other fields (even if the other fields are omitted
 for compression). See [Agent Status Compression](#agent-status-compression)
 for details about hash field usage.
 
-#### packages
+#### PackageStatuses.packages
 
 A map of PackageStatus messages, where the keys are package names. The key MUST
 match the name field of [PackageStatus](#packagestatus-message) message.
 
-#### server_provided_all_packages_hash
+#### PackageStatuses.server_provided_all_packages_hash
 
 The aggregate hash of all packages that this Agent previously received from the
 Server via PackagesAvailable message.
@@ -1099,9 +1075,9 @@ The Server SHOULD compare this hash to the aggregate hash of all packages that i
 has for this Agent and if the hashes are different the Server SHOULD send an
 PackagesAvailable message to the Agent.
 
-#### error_message
+#### PackageStatuses.error_message
 
-This field is set if the Agent encountered an error when processing the 
+This field is set if the Agent encountered an error when processing the
 [PackagesAvailable message](#packagesavailable-message)
 and that error is not related to any particular single package.
 
@@ -1128,12 +1104,12 @@ message PackageStatus {
 }
 ```
 
-#### name
+#### PackageStatus.name
 
 Package name. MUST be always set and MUST match the key in the packages field of
 PackageStatuses message.
 
-#### agent_has_version
+#### PackageStatus.agent_has_version
 
 The version of the package that the Agent has.
 
@@ -1143,7 +1119,7 @@ MUST be empty if the Agent does not have this package. This may be the case for
 example if the package was offered by the Server but failed to install and the
 Agent did not have this package previously.
 
-#### agent_has_hash
+#### PackageStatus.agent_has_hash
 
 The hash of the package that the Agent has.
 
@@ -1153,7 +1129,7 @@ MUST be empty if the Agent does not have this package. This may be the case for
 example if the package was offered by the Server but failed to install and the
 Agent did not have this package previously.
 
-#### server_offered_version
+#### PackageStatus.server_offered_version
 
 The version of the package that the Server offered to the Agent.
 
@@ -1168,7 +1144,7 @@ fields to be set and to have different values. This is for example possible if
 the Agent already has a version of the package successfully installed, the Server
 offers a different version, but the Agent fails to install that version.
 
-#### server_offered_hash
+#### PackageStatus.server_offered_hash
 
 The hash of the package that the Server offered to the Agent.
 
@@ -1183,8 +1159,7 @@ to be set and to have different values. This is for example possible if the
 Agent already has a version of the package successfully installed, the Server
 offers a different version, but the Agent fails to install that version.
 
-#### status
-
+#### PackageStatus.status
 
 The status of this package. The possible values are:
 
@@ -1200,14 +1175,11 @@ server_offered_hash field MUST be set to indicate the version that the Agent
 tried to install. The error_message may also contain more details about the
 failure.
 
-#### error_message
-
+#### PackageStatus.error_message
 
 An error message if the status is erroneous.
 
-
 ## Connection Settings Management
-
 
 OpAMP includes features that allow the Server to manage Agent's connection
 settings for all of the destinations that the Agent connects to.
@@ -1215,7 +1187,6 @@ settings for all of the destinations that the Agent connects to.
 The following diagram shows a typical Agent that is managed by OpAMP Servers,
 sends its own telemetry to an OTLP backend and also connects to other
 destinations to perform its work:
-
 
 ```
             ┌────────────┬────────┐           ┌─────────┐
@@ -1237,7 +1208,6 @@ destinations to perform its work:
             └────────────┴────────┘
 ```
 
-
 When connecting to the OpAMP Server and to other destinations it is typically
 expected that Agents will use some sort of header-based authorization mechanism
 (e.g. an "Authorization" HTTP header or an access token in a custom header) and
@@ -1251,8 +1221,6 @@ certificate registration, revocation and rotation as needed.
 
 The Server can offer connection settings for the following 3 classes of
 destinations:
-
-
 
 1. The **OpAMP Server** itself. This is typically used to manage credentials
    such as the TLS certificate or the request headers that are used for
@@ -1286,14 +1254,12 @@ Depending on which connection settings are offered the sequence of operations is
 slightly different. The handling of connection settings for own telemetry is
 described in [Own Telemetry Reporting](#own-telemetry-reporting). The handling
 of connection settings for "other" destinations is described in
-[Connection Settings for "Other" Destinations](#connection-settings-for-"other"-destinations).
+[Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations).
 The handling of OpAMP connection settings is described below.
 
 ### OpAMP Connection Setting Offer Flow
 
-
 Here is how the OpAMP connection settings change happens:
-
 
 ```
                    Agent                                 Server
@@ -1324,20 +1290,13 @@ Here is how the OpAMP connection settings change happens:
 
 ```
 
-
-
 1. Server generates new connection settings and saves it in Server's credentials
    store, associating the new settings with the Agent instance UID.
 2. Server sends the ServerToAgent message that includes
    [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
-   [opamp](#opamp) field contains the new
-   [ConnectionSettings](#connectionsettings-message) offered. The Server sets
-   only the fields that it wants to change in the
-   [ConnectionSettings](#connectionsettings-message) message. The Server can
-   offer to replace a single field (e.g. only the [headers](#headers)) or
-   several of the fields at once.
-3. Agent receives the settings offer and updates the fields that the offer
-   includes on top of its current connection settings, then saves the updated
+   [opamp](#connectionsettingsoffersopamp) field contains the new
+   [OpAMPConnectionSettings](#opampconnectionsettings) offered.
+3. Agent receives the settings offer and saves the updated
    connection settings in the local store, marking it as "candidate" (if Agent
    crashes it will retry "candidate" validation steps 5-9).
 4. Agent disconnects from the Server.
@@ -1357,12 +1316,9 @@ losing access after restarting and losing the offered certificate.
 
 ### Trust On First Use
 
-
 Agents that want to use TLS with a client certificate but do not initially have
 a certificate can use the Trust On First Use (TOFU) flow. The sequence is the
 following:
-
-
 
 * Agent connects to the Server using regular TLS (validating Server's identity)
   but without a client certificate. Agent sends its Status Report so that it can
@@ -1385,7 +1341,6 @@ access and upon approval send the authorization headers to the Agent.
 
 ### Registration On First Use
 
-
 In some use cases it may be desirable to equip newly installed Agents with an
 initial connection settings that are good for the first use, but generate a new
 set of connection credentials after the first connection is established.
@@ -1403,7 +1358,6 @@ connection credentials. This way individual Agent's credentials may be revoked
 without disrupting the access to all other Agents.
 
 ### Revoking Access
-
 
 Since the Server knows what access headers and a client certificate the Agent
 uses, the Server can revoke access to individual Agents by marking the
@@ -1423,7 +1377,6 @@ rejecting access to connections that use the revoked credentials.
 
 ### Certificate Generation
 
-
 Client certificates that the Server generates may be self-signed, signed by a
 private Certificate Authority or signed by a public Certificate Authority. The
 Server is responsible for generating client certificates such that they are
@@ -1438,15 +1391,12 @@ OpAMP specification.
 
 ### Connection Settings for "Other" Destinations
 
-
 TBD
 
 ### ConnectionSettingsOffers Message
 
-
 ConnectionSettingsOffers message describes connection settings for the Agent to
 use:
-
 
 ```protobuf
 message ConnectionSettingsOffers {
@@ -1459,13 +1409,12 @@ message ConnectionSettingsOffers {
 }
 ```
 
-
-#### hash
+#### ConnectionSettingsOffers.hash
 
 Hash of all settings, including settings that may be omitted from this message
 because they are unchanged.
 
-#### opamp
+#### ConnectionSettingsOffers.opamp
 
 Settings to connect to the OpAMP Server. If this field is not set then the Agent
 should assume that the settings are unchanged and should continue using existing
@@ -1473,25 +1422,25 @@ settings. The Agent MUST verify the offered connection settings by actually
 connecting before accepting the setting to ensure it does not lose access to
 the OpAMP Server due to invalid settings.
 
-#### own_metrics
+#### ConnectionSettingsOffers.own_metrics
 
 Settings to connect to an OTLP metrics backend to send Agent's own metrics to.
 If this field is not set then the Agent should assume that the settings are
 unchanged.
 
-#### own_traces
+#### ConnectionSettingsOffers.own_traces
 
 Settings to connect to an OTLP metrics backend to send Agent's own traces to. If
 this field is not set then the Agent should assume that the settings are
 unchanged.
 
-#### own_logs
+#### ConnectionSettingsOffers.own_logs
 
 Settings to connect to an OTLP metrics backend to send Agent's own logs to. If
 this field is not set then the Agent should assume that the settings are
 unchanged.
 
-#### other_connections
+#### ConnectionSettingsOffers.other_connections
 
 Another set of connection settings, with a string name associated with each. How
 the Agent uses these is Agent-specific. Typically the name represents the name
@@ -1678,13 +1627,11 @@ in the future.
 
 ## Own Telemetry Reporting
 
-
 Own Telemetry Reporting is an optional capability of OpAMP protocol. The Server
 can offer to the Agent a destination to which the Agent can send its own
 telemetry (metrics, traces or logs). If the Agent is capable of producing
 telemetry and wishes to do so then it should sends its telemetry to the offered
 destination using OTLP/HTTP protocol:
-
 
 ```
             ┌────────────┬────────┐           ┌─────────┐
@@ -1700,15 +1647,14 @@ destination using OTLP/HTTP protocol:
             └────────────┴────────┘           └─────────┘
 ```
 
-
 The Server makes the offer by sending a [ServerToAgent](#servertoagent-message)
-message with a populated [connection_settings](#connection_settings) field that
-contains one or more of the own_metrics, own_traces, own_logs fields set. Each
+message with a populated [connection_settings](#servertoagentconnection_settings) field
+that contains one or more of the own_metrics, own_traces, own_logs fields set. Each
 of these fields describes a destination, which can receive telemetry using OTLP
 protocol.
 
-The Server SHOULD populate the [connection_settings](#connection_settings) field
-when it sends the first ServerToAgent message to the particular Agent (normally
+The Server SHOULD populate the [connection_settings](#servertoagentconnection_settings)
+field when it sends the first ServerToAgent message to the particular Agent (normally
 in response to the first status report from the Agent), unless there is no OTLP
 backend that can be used. The Server SHOULD also populate the field on
 subsequent ServerToAgent if the destination has changed. If the destination is
@@ -1716,10 +1662,9 @@ unchanged the connection_settings field SHOULD NOT be set. When the Agent
 receives a ServerToAgent with an unset connection_settings field the Agent SHOULD
 continue sending its telemetry to the previously offered destination.
 
-The Agent SHOULD periodically report its metrics to the destination offered in
-the [own_metrics](#own_metrics) field. The recommended reporting interval is 10
-seconds. Here is the diagram that shows the operation sequence:
-
+The Agent SHOULD periodically report its metrics to the destination offered in the
+[own_metrics](#connectionsettingsoffersown_metrics) field. The recommended reporting
+interval is 10 seconds. Here is the diagram that shows the operation sequence:
 
 ```
                 Agent                          Server
@@ -1742,28 +1687,26 @@ seconds. Here is the diagram that shows the operation sequence:
     └────────┘    │                                           │
 ```
 
-
 The Agent SHOULD report metrics of the Agent process (or processes) and any
 custom metrics that describe the Agent state. Reported process metrics MUST
 follow the OpenTelemetry
 [conventions for processes](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/semantic_conventions/process-metrics.md).
 
 Similarly, the Agent SHOULD report its traces to the destination offered in the
-[own_traces](#own_traces) field and logs to the destination offered in the
-[own_logs](#own_logs) field.
+[own_traces](#connectionsettingsoffersown_traces) field and logs to the destination
+offered in the [own_logs](#connectionsettingsoffersown_logs) field.
 
 All attributes specified in the
-[identifying_attributes](#identifying_attributes) field in AgentDescription
-message SHOULD be also specified in the Resource of the reported OTLP telemetry.
+[identifying_attributes](#agentdescriptionidentifying_attributes) field in
+AgentDescription message SHOULD be also specified in the Resource of the reported OTLP
+telemetry.
 
 Attributes specified in the
-[non_identifying_attributes](#non_identifying_attributes) field in
+[non_identifying_attributes](#agentdescriptionnon_identifying_attributes) field in
 AgentDescription message may be also specified in the Resource of the reported
 OTLP telemetry, in which case they SHOULD have exactly the same values.
 
-
 ## Configuration
-
 
 Agent configuration is an optional capability of OpAMP protocol. Remote
 configuration capability can be disabled if necessary (for example when using
@@ -1771,7 +1714,7 @@ existing configuration capabilities of an orchestration system such as
 Kubernetes).
 
 The Server can offer a Remote Configuration to the Agent by setting the
-[remote_config](#remote_config) field in the ServerToAgent message. Since the
+[remote_config](#servertoagentremote_config) field in the ServerToAgent message. Since the
 ServerToAgent message is normally sent by the Server in response to a status
 report the Server has the Agent's description and may tailor the configuration
 it offers to the specific Agent if necessary.
@@ -1789,7 +1732,7 @@ configuration.
 
 Once the Effective Configuration is formed the Agent uses it for its operation
 and will also report the Effective Configuration to the OpAMP Server via the
-[effective_config](#effective_config) field of status report. The Server
+[effective_config](#agenttoservereffective_config) field of status report. The Server
 typically allows the end user to see the effective configuration alongside other
 data reported in the status reported by the Agent.
 
@@ -1799,7 +1742,6 @@ set the Server should not expect the AgentToServer.effective_config field to be
 set.
 
 Here is the typical configuration sequence diagram:
-
 
 ```
                Agent                              Server
@@ -1836,7 +1778,6 @@ without waiting for a status report from the Agent. This can be used to
 re-configure an Agent that is connected but which has nothing new to report. The
 sequence diagram in this case looks like this:
 
-
 ```
                Agent                              Server
 
@@ -1859,12 +1800,10 @@ Config    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
                  │                                   │
 ```
 
-
 The Agent may ignore the Remote Configuration offer if it does not want its
 configuration to be remotely controlled by the Server.
 
 ### Configuration Files
-
 
 The configuration of the Agent is a collection of named configuration files
 (this applies both to the Remote Configuration and to the Effective
@@ -1881,13 +1820,11 @@ be empty.
 The collection of configuration files is represented using a AgentConfigMap
 message:
 
-
 ```protobuf
 message AgentConfigMap {
   map<string, AgentConfigFile> config_map = 1;
 }
 ```
-
 
 The config_map field of the AgentConfigSet message is a map of configuration
 files, where keys are file names.
@@ -1898,14 +1835,12 @@ single entry and the key MAY be an empty string.
 The AgentConfigFile message represents one configuration file and has the
 following structure:
 
-
 ```protobuf
 message AgentConfigFile {
   bytes body = 1;
   string content_type = 2;
 }
 ```
-
 
 The body field contains the raw bytes of the configuration file. The content,
 format and encoding of the raw bytes is Agent type-specific and is outside the
@@ -1919,7 +1854,6 @@ UI.
 
 ### Security Considerations
 
-
 Remote Configuration is a potentially dangerous functionality that may be
 exploited by malicious actors. For example if the Agent is capable of collecting
 local files and sending over the network then a compromised OpAMP Server may
@@ -1932,16 +1866,13 @@ recommendations specifically for
 
 ### AgentRemoteConfig Message
 
-
 The message has the following structure:
-
 
 ```protobuf
 message AgentRemoteConfig {
   AgentConfigMap config = 1;
 }
 ```
-
 
 ## Packages
 
@@ -1957,7 +1888,7 @@ functionality of the Agent. When there is only one top-level package it may have
 empty name.
 
 Sub-packages are also known as addons or plugins. The sub-packages can be installed at
-the Agent for added functionality (hence the name addons). 
+the Agent for added functionality (hence the name addons).
 
 The Agent may have one or more packages installed. Each package has a name. The
 Agent cannot have more than one package of the particular name installed.
@@ -1970,8 +1901,8 @@ may be also offered to the Agent remotely by the Server, in which case the Agent
 may download and install the packages.
 
 To offer packages to the Agent the Server sets the
-[packages_available](#packages_available) field in the ServerToAgent message that
-is sent either in response to a status report form the Agent or by Server's
+[packages_available](#servertoagentpackages_available) field in the ServerToAgent message
+that is sent either in response to a status report form the Agent or by Server's
 initiative if the Server wants to push packages to the Agent.
 
 The [PackagesAvailable](#packagesavailable-message) message describes the packages
@@ -1993,12 +1924,10 @@ can accept packages via AcceptsPackages bit of AgentToServer.capabilities field.
 
 ### Downloading Packages
 
-
 After receiving the [PackagesAvailable](#packagesavailable-message) message the
 Agent SHOULD follow this download procedure:
 
 #### Step 1
-
 
 Compare the aggregate hash of all packages it has with the aggregate hash offered
 by the Server in the all_packages_hash field.
@@ -2009,17 +1938,15 @@ Otherwise, go to Step 2.
 
 #### Step 2
 
-
 For each package offered by the Server the Agent SHOULD check if it should
 download the particular package:
-
-
 
 * If the Agent does not have a package with the specified name then it SHOULD
   download the package. See Step 3 on how to download each package file.
 * If the Agent has the package the Agent SHOULD compare the hash of the package that
   the Agent has with the hash of the package offered by the Server in the
-  [hash](#hash) field in the [PackageAvailable](#packageavailable-message) message.
+  [hash](#packageavailablehash) field in the [PackageAvailable](#packageavailable-message)
+  message.
   If the hashes are the same then the package is the same and processing for this
   package is done, proceed to the next package. If the hashes are different then
   check the package file as described in Step 3.
@@ -2035,11 +1962,11 @@ should download the file:
 * If the Agent does not have a file with the specified name then it SHOULD
   download the file.
 * If the Agent has the file then the Agent SHOULD compare the hash of the file
-  it has locally with the [hash](#hash) field in the
+  it has locally with the [hash](#downloadablefilecontent_hash) field in the
   [DownloadableFile](#downloadablefile-message) message. If hashes are the same
   the processing of this file is done. Otherwise, the offered file is different
   and the file SHOULD be downloaded from the location specified in the
-  [download_url](#download_url) field of the
+  [download_url](#downloadablefiledownload_url) field of the
   [DownloadableFile](#downloadablefile-message) message. The Agent SHOULD use an
   HTTP GET message to download the file.
 
@@ -2052,18 +1979,16 @@ that is specific to the Agent).
 
 ### Package Status Reporting
 
-
 During the downloading and installation process the Agent MAY periodically
 report the status of the process. To do this the Agent SHOULD send an
 [AgentToServer](#agenttoserver-message) message and set the
-[package_statuses](#packagestatuses-message) field accordingly.
+[package_statuses](#agenttoserverpackage_statuses) field accordingly.
 
 Once the downloading and installation of all packages is done (succeeded or
 failed) the Agent SHOULD report the status of all packages to the Server.
 
 Here is the typical sequence diagram for the package downloading and status
 reporting process:
-
 
 ```
     Download           Agent                             OpAMP
@@ -2095,7 +2020,6 @@ reporting process:
        │                 │                                  │
 ```
 
-
 The Agent MUST always include all packages it has or is processing (downloading or
 installing) in PackageStatuses message.
 
@@ -2104,7 +2028,6 @@ locally, not only the packages it was offered and downloaded from the Server.
 [TODO: is this necessary?]
 
 ### Calculating Hashes
-
 
 The Agent and the Server use hashes to identify content of files and packages such
 that the Agent can decide what files and packages need to be downloaded.
@@ -2117,11 +2040,12 @@ guarantees are needed by the implementation).
 The hashes are opaque to the Agent, the Agent never calculates hashes, it only
 stores and compares them.
 
-There are 3 levels of hashes: 
+There are 3 levels of hashes:
 
 #### File Hash
 
-The hash of the packages file content. This is stored in the [content_hash](#content_hash) field in
+The hash of the packages file content. This is stored in the
+[content_hash](#downloadablefilecontent_hash) field in
 the [DownloadableFile](#downloadablefile-message) message. This value SHOULD be
 used by the Agent to determine if the particular file it has is different on the
 Server and needs to be re-downloaded.
@@ -2129,7 +2053,7 @@ Server and needs to be re-downloaded.
 #### Package Hash
 
 The package hash that identifies the entire package (package name and file content).
-This hash is stored in the [hash](#hash) field in the
+This hash is stored in the [hash](#packageavailablehash) field in the
 [PackageAvailable](#packageavailable-message) message.
 
 This value SHOULD be used by the Agent to determine if the particular package it
@@ -2137,11 +2061,10 @@ has is different on the Server and needs to be re-downloaded.
 
 #### All Packages Hash
 
-
 The all packages hash is the aggregate hash of all packages for the particular
 Agent. The hash is calculated as an aggregate of all package names and content.
-This hash is stored in the [all_packages_hash](#all_packages_hash) field in the
-[PackagesAvailable](#packagesavailable-message) message.
+This hash is stored in the [all_packages_hash](#packagesavailableall_packages_hash) field
+in the [PackagesAvailable](#packagesavailable-message) message.
 
 This value SHOULD be used by the Agent to determine if any of the packages it has
 are different from the ones available on the Server and need to be
@@ -2151,7 +2074,6 @@ Note that the aggregate hash does not include the packages that are available on
 the Agent locally and were not downloaded from the download Server.
 
 ### Security Considerations
-
 
 Downloading packages remotely is a potentially dangerous functionality that may be
 exploited by malicious actors. If packages contain executable code then a
@@ -2172,11 +2094,11 @@ message PackagesAvailable {
 }
 ```
 
-#### packages
+#### PackagesAvailable.packages
 
 A map of packages. Keys are package names.
 
-#### all_packages_hash
+#### PackagesAvailable.all_packages_hash
 
 Aggregate hash of all remotely installed packages.
 
@@ -2205,7 +2127,7 @@ message PackageAvailable {
 
 TODO: do we need other fields, e.g. description?
 
-#### type
+#### PackageAvailable.type
 
 The type of the package, either an addon or a top-level package.
 
@@ -2216,19 +2138,19 @@ enum PackageType {
 }
 ```
 
-#### version
+#### PackageAvailable.version
 
 The package version that is available on the Server side. The Agent may for
 example use this information to avoid downloading a package that was previously
 already downloaded and failed to install.
 
-#### file
+#### PackageAvailable.file
 
 The downloadable file of the package.
 
-#### hash
+#### PackageAvailable.hash
 
-The hash of the package. SHOULD be calculated based on all other fields of the 
+The hash of the package. SHOULD be calculated based on all other fields of the
 PackageAvailable message and content of the file of the package. The hash is used by
 the Agent to determine if the package it has is different from the package the Server
 is offering.
@@ -2245,27 +2167,26 @@ message DownloadableFile {
 }
 ```
 
-#### download_url
+#### DownloadableFile.download_url
 
 The URL from which the file can be downloaded using HTTP GET request. The Server
 at the specified URL SHOULD support range requests to allow for resuming
 downloads.
 
-#### content_hash
+#### DownloadableFile.content_hash
 
 The SHA256 hash of the file content. Can be used by the Agent to verify that the file
 was downloaded correctly.
 
-#### signature
+#### DownloadableFile.signature
 
 Optional signature of the file content. Can be used by the Agent to verify the
-authenticity of the downloaded file, for example can be the 
+authenticity of the downloaded file, for example can be the
 [detached GPG signature](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
-The exact signing and verification method is Agent specific. See 
+The exact signing and verification method is Agent specific. See
 [Code Signing](#code-signing) for recommendations.
 
 # Connection Management
-
 
 ## Establishing Connection
 
@@ -2321,7 +2242,6 @@ Agent SHOULD immediately try to re-connect. If the re-connection fails the Agent
 SHOULD continue connection attempts with backoff as described in
 [Establishing Connection](#establishing-connection).
 
-
 ## Duplicate WebSocket Connections
 
 Each Agent instance SHOULD connect no more than once to the Server. If the Agent
@@ -2340,7 +2260,6 @@ a new instance_uid, and send it as new_instance_uid value of AgentIdentification
 
 ## Authentication
 
-
 The Agent and the Server MAY use authentication methods supported by HTTP, such
 as [Basic](https://datatracker.ietf.org/doc/html/rfc7617) authentication or
 [Bearer](https://datatracker.ietf.org/doc/html/rfc6750) authentication. The
@@ -2353,21 +2272,18 @@ the Agent authentication fails.
 
 ## Bad Request
 
-
 If the Server receives a malformed AgentToServer message the Server SHOULD
-respond with a ServerToAgent message with [error_response](#errorresponse-message)
-set accordingly. The [type](#type) field MUST be set to BAD_REQUEST and
-[error_message](#error_message) SHOULD be a human readable description of the
-problem with the AgentToServer message.
+respond with a ServerToAgent message with [error_response](#servertoagenterror_response)
+set accordingly. The [type](#servererrorresponsetype) field MUST be set to BAD_REQUEST and
+[error_message](#servererrorresponseerror_message) SHOULD be a human readable description
+of the problem with the AgentToServer message.
 
 The Agent SHOULD NOT retry sending an AgentToServer message to which it received
 a BAD_REQUEST response.
 
 ## Retrying Messages
 
-
 The Agent MAY retry sending AgentToServer message if:
-
 
 * AgentToServer message that requires a response was sent, however no response
   was received within a reasonable time (the timeout MAY be configurable).
@@ -2405,15 +2321,14 @@ needs to keep one up-to-date message of a particular kind that it wants to
 deliver to the Agent and send it as soon as the connection to the Agent is
 available.
 
-
 ## Throttling
 
 ### WebSocket Transport
 
 When the Server is overloaded and is unstable to process the AgentToServer
 message it SHOULD respond with an ServerToAgent message, where
-[error_response](#servererrorresponse-message) is filled with [type](#type) field
-set to UNAVAILABLE.
+[error_response](#servertoagenterror_response) is filled with
+[type](#servererrorresponsetype) field set to UNAVAILABLE.
 ~~The Agent SHOULD retry the message.~~ _(Note: retrying individual messages is
 not possible since we no longer have sequence ids and don't know which message
 failed)._ The Agent SHOULD disconnect, wait, then reconnect again and resume its
@@ -2421,13 +2336,11 @@ operation. The retry_info field may be optionally set with
 retry_after_nanoseconds field specifying how long the Agent SHOULD wait before
 ~~retiring the message~~ reconnecting:
 
-
 ```protobuf
 message RetryInfo {
     uint64 retry_after_nanoseconds = 1;
 }
 ```
-
 
 If retry_info is not set then the Agent SHOULD implement an exponential backoff
 strategy to gradually increase the interval between retries.
@@ -2449,7 +2362,6 @@ The minimum recommended retry interval is 30 seconds.
 
 # Security
 
-
 Remote configuration, downloadable packages are a significant
 security risk. By sending a malicious Server-side configuration or a malicious
 package the Server may compel the Agent to perform undesirable work. This section
@@ -2460,14 +2372,11 @@ recommended for sensitive applications.
 
 ## General Recommendations
 
-
 We recommend that the Agent employs the zero-trust security model and does not
 automatically trust the remote configuration or other offers it receives from
 the Server. The data received from the Server SHOULD be verified and sanitized
 by the Agent in order to limit and prevent the damage that may be caused by
 malicious actors. We recommend the following:
-
-
 
 * The Agent SHOULD run at the minimum possible privilege to prevent itself from
   accessing sensitive files or perform high privilege operations. The Agent
@@ -2487,7 +2396,6 @@ malicious actors. We recommend the following:
   exploited to perform arbitrary code execution on the Agent's machine.
 
 ## Configuration Restrictions
-
 
 The Agent is recommended to restrict what it may be compelled to do via remote
 configuration.
@@ -2513,28 +2421,24 @@ these restrictions by sending a remote config from the Server to the Agent.
 
 ## Opt-in Remote Configuration
 
-
 It is recommended that remote configuration capabilities are not enabled in the
 Agent by default. The capabilities should be opt-in by the user.
 
 ## Code Signing
 
-
 Any executable code that is part of a package should be signed
 to prevent a compromised Server from delivering malicious code to the Agent. We
 recommend the following:
-
-
 
 * Any downloadable executable code (e.g. executable packages)
   need to be code-signed. The actual code-signing and verification mechanism is
   Agent specific and is outside the concerns of the OpAMP specification.
 * The Agent SHOULD verify executable code in downloaded files to ensure the code
   signature is valid.
-* The downloadable code can be signed with the signature included in the file content or 
+* The downloadable code can be signed with the signature included in the file content or
   have a detached signature recorded in the DownloadableFile
-  message's [signature](#signature) field. Detached signatures may be used for example
-  with [GPG signing](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
+  message's [signature](#downloadablefilesignature) field. Detached signatures may be used
+  for example with [GPG signing](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
 * If Certificate Authority is used for code signing it is recommended that the
   Certificate Authority and its private key is not co-located with the OpAMP
   Server, so that a compromised Server cannot sign malicious code.
@@ -2557,8 +2461,8 @@ AgentToServer message, the Server sets the capabilities bit-field in the
 ServerToAgent message.
 
 Each set bit in the capabilities field indicates that the particular capability
-is supported. The list of Agent capabilities is [here](#agenttoserver-message).
-The list of Server capabilities is [here](#servertoagent-message).
+is supported. The list of Agent capabilities is [here](#agenttoservercapabilities).
+The list of Server capabilities is [here](#servertoagentcapabilities).
 
 After the Server learns about the capabilities of the particular Agent the
 Server MUST stop using the capabilities that the Agent does not support.
@@ -2587,7 +2491,7 @@ that is unaware of the new capability will simply ignore the new field. The
 Protobuf encoding ensures that the rest of the fields are still successfully
 deserialized by the recipient.
 
-### Non-Ignorable Capability Extensions 
+### Non-Ignorable Capability Extensions
 
 For the new capabilities that extend the functionality in such a manner that
 they cannot be silently ignored by the peer a different approach is used.
@@ -2609,13 +2513,9 @@ the new capabilities.
 
 # Performance and Scale
 
-
 TBD
 
 # Open Questions
-
-
-
 
 * How does the Server know that the request/report received actually is
   generated by the Agent that the message claims? Do we need to verify that the
@@ -2671,9 +2571,7 @@ TBD
 
 # FAQ for Reviewers
 
-
-### What is WebSocket?
-
+## What is WebSocket?
 
 WebSocket is a bidirectional, message-oriented protocol that uses plain HTTP for
 establishing the connection and then uses the HTTP's existing TCP connection to
@@ -2684,8 +2582,7 @@ libraries in virtually all popular programming languages, is supported by
 network inspection and debugging tools, is secure and efficient and provides the
 exact message-oriented semantics that we need for OpAMP.
 
-### Why not Use TCP Instead of WebSocket?
-
+## Why not Use TCP Instead of WebSocket?
 
 We could roll out our own message-oriented implementation over TCP but there are
 no benefits over WebSocket which is an existing widely supported standard. A
@@ -2693,7 +2590,7 @@ custom TCP-based solution would be more work to design, more work to implement
 and more work to troubleshoot since existing network tools would not recognize
 it.
 
-### Why not alwaysUse HTTP Instead of WebSocket?
+## Why not alwaysUse HTTP Instead of WebSocket?
 
 Regular HTTP is a half-duplex protocol, which makes delivery of messages from
 the Server to the client tied to the request time of the client. This means that
@@ -2714,8 +2611,7 @@ connection for client-to-Server delivery direction. The dual connection needed
 for a long polling approach would make the protocol more complicated to design
 and implement without much gains compared to WebSocket approach.
 
-### Why not Use gRPC Instead of WebSocket?
-
+## Why not Use gRPC Instead of WebSocket?
 
 gRPC is a big dependency that some implementations are reluctant to take. gRPC
 requires HTTP/2 support from all intermediaries and is not supported in some
@@ -2732,7 +2628,6 @@ OpAMP).
 
 # Future Possibilities
 
-
 Define specification for Concentrating Proxy that can serve as intermediary to
 reduce the number of connections to the Server when a very large number
 (millions and more) of Agents are managed.
@@ -2742,11 +2637,7 @@ worse latency characteristics but may be desirable for some implementation.
 
 # References
 
-
 ## Agent Management
-
-
-
 
 * Splunk
   [Deployment Server](https://docs.splunk.com/Documentation/Splunk/8.2.2/Updating/Aboutdeploymentserver).
@@ -2758,18 +2649,12 @@ worse latency characteristics but may be desirable for some implementation.
 
 ## Configuration Management
 
-
-
-
 * [Uber Flipr](https://eng.uber.com/flipr/).
 * Facebook's
   [Holistic Configuration Management](https://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdfhttps://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdf)
   (push).
 
 ## Security and Certificate Management
-
-
-
 
 * mTLS in Go:
   [https://kofo.dev/how-to-mtls-in-golang](https://kofo.dev/how-to-mtls-in-golang)
@@ -2782,9 +2667,6 @@ worse latency characteristics but may be desirable for some implementation.
 
 ## Cloud Provider Support
 
-
-
-
 * AWS:
   [https://aws.amazon.com/elasticloadbalancing/features/](https://aws.amazon.com/elasticloadbalancing/features/)
 * GCP:
@@ -2794,13 +2676,11 @@ worse latency characteristics but may be desirable for some implementation.
 
 ## Other
 
-
-
-
 * [Websocket Load Balancing](https://pdf.sciencedirectassets.com/280203/1-s2.0-S1877050919X0006X/1-s2.0-S1877050919303576/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEI3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIAhC7%2Bztk8aH29lDsWYFIHLt97kwOE4PoWkiPfH2OTQwAiEA65oLMq1RhzF6b5pSixhnPVLT9G2iKkG145XtdpW4d4IqgwQIpv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAEGgwwNTkwMDM1NDY4NjUiDDtEVrp4vXmh0hvwWyrXAxnfLN4%2BsMMF7wxoXOiBFQjn%2FJLpSLUIWghc87%2Bx2tbvdCIC%2BQV4JCY9rOK3p9rogqh9yoI2yem4SHASzL%2BQUQMOiGWagk%2FzyCNdS0y%2FLzHkKDahvRMJGKxWeXErbsuvPCufnbDpNHmKD0vnT5sqpOoM64%2FJVxvd9QYx48xasNMtXZ8%2BFm9wPpNQnsWSEZKYiOKLaLfnATzcXADJmOCTVQbwZoT4%2BFKWcoujBxSBHE9kw7S749ywQ9bOtgNWid5R2dj0z%2Br6C63SnBS3IdMSZ2qO4H3XTYY5pbfNCfR57zKIdwyp3zLJr5%2BtTEz1YR9FXwWF9niDEr0v2qu%2FlL7%2BGHsak8UQ4hZ0BFlZtcIRNW1lpZd9bNSINb3d6MnGeYrkhxQVP0KcZsowP9672IYzuMD4nK1X4Hv7bMqeO7ojuSf%2F2ND9NXn0Ldr%2BX0lzESv10LyhElCGfFJ4EZjIxYOKZdee1Zc1USdj1kNx1OC0cefIN1ixiA0OIbtWVz1lI6n1LYpngeUYngGP0ZFb%2Br%2FbleC3WarDHWIn4NNjI1aQW3P9fTmKEan3b3skRIBbwM8%2FrwRJGYQ03JaCKuU4xbogz9uEL%2BbpJ1SB7En8pS8xuSiE1kzvnsF0FTCEvMSIBjqlAadtZOgWRUk2FxdoYsCK43DYqD6zjbDrRBfyIXTJGlJYKt5iR3SCi8ySacO1aPZhah9ir179nYi5dVYnf5c6%2Fe8Q5Mo1uRtisouWJZSjAOhmRY7a76fSqyHwj088aI5t1pcempNCOnsM4SfyrZJ9UE%2FKfb5YsJ71VwRPZ%2BXZ%2FvZnQlW7e6NJqWswhre0pQftkShN%2BbpE%2FTzusekzm6q3w6b3ynUN8A%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20210809T134614Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTY2T5F5OYZ%2F20210809%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=6098b604ebac38723d26ae66e527b397312a6371ad19e1a4fbfe94ca9c61e1a9&hash=ebd5b943d3aff77c6bfb8853fab1598db53996f5f018d688364a41dd71c15d92&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1877050919303576&tid=spdf-3c0a3a1a-bd3b-40d0-af0d-48a46859c89a&sid=d21b79c59bbb0348b79945c084cc3b66983agxrqa&type=client)
 
 --
 
+```
 Copyright The OpenTelemetry Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -2814,3 +2694,4 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
