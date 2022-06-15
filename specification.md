@@ -2651,7 +2651,7 @@ worse latency characteristics but may be desirable for some implementation.
 
 * [Uber Flipr](https://eng.uber.com/flipr/).
 * Facebook's
-  [Holistic Configuration Management](https://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdfhttps://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdf)
+  [Holistic Configuration Management](https://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdf)
   (push).
 
 ## Security and Certificate Management
