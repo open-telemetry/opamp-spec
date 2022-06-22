@@ -2637,9 +2637,6 @@ Define specification for Concentrating Proxy that can serve as intermediary to
 reduce the number of connections to the Server when a very large number
 (millions and more) of Agents are managed.
 
-OpAMP may be extended by a polling-based HTTP standard. It will have somewhat
-worse latency characteristics but may be desirable for some implementation.
-
 # References
 
 ## Agent Management
