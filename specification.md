@@ -4,7 +4,7 @@ Author: Tigran Najaryan, Splunk
 
 Contributors: Chris Green, Splunk
 
-Status: Early Draft.
+Status: Alpha
 
 Date: September 2021
 
