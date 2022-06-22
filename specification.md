@@ -14,6 +14,9 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
 
 #
 
+<details>
+<summary>Table of Contents</summary>
+
 <!-- toc -->
 
 - [Introduction](#introduction)
@@ -173,6 +176,8 @@ Note 2: this document requires a simplification pass to reduce the scope, size a
   * [Other](#other)
 
 <!-- tocstop -->
+
+</details>
 
 # Introduction
 
