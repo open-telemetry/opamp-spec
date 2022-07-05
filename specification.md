@@ -27,6 +27,7 @@ Note: this document requires a simplification pass to reduce the scope, size and
       - [AgentToServer.sequence_num](#agenttoserversequence_num)
       - [AgentToServer.agent_description](#agenttoserveragent_description)
       - [AgentToServer.capabilities](#agenttoservercapabilities)
+      - [AgentToServer.health](#agenttoserverhealth)
       - [AgentToServer.effective_config](#agenttoservereffective_config)
       - [AgentToServer.remote_config_status](#agenttoserverremote_config_status)
       - [AgentToServer.package_statuses](#agenttoserverpackage_statuses)
@@ -53,6 +54,10 @@ Note: this document requires a simplification pass to reduce the scope, size and
     + [AgentDescription Message](#agentdescription-message)
       - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
       - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
+    + [AgentHealth Message](#agenthealth-message)
+      - [AgentHealth.up](#agenthealthup)
+      - [AgentHealth.start_time_unix_nano](#agenthealthstart_time_unix_nano)
+      - [AgentHealth.last_error](#agenthealthlast_error)
     + [EffectiveConfig Message](#effectiveconfig-message)
       - [EffectiveConfig.config_map](#effectiveconfigconfig_map)
     + [RemoteConfigStatus Message](#remoteconfigstatus-message)
@@ -375,11 +380,12 @@ message AgentToServer {
     uint64 sequence_num = 2;
     AgentDescription agent_description = 3;
     AgentCapabilities capabilities = 4;
-    EffectiveConfig effective_config = 5;
-    RemoteConfigStatus remote_config_status = 6;
-    PackageStatuses package_statuses = 7;
-    AgentDisconnect agent_disconnect = 8;
-    AgentToServerFlags flags = 9;
+    AgentHealth health = 5;
+    EffectiveConfig effective_config = 6;
+    RemoteConfigStatus remote_config_status = 7;
+    PackageStatuses package_statuses = 8;
+    AgentDisconnect agent_disconnect = 9;
+    AgentToServerFlags flags = 10;
 }
 ```
 
@@ -458,6 +464,11 @@ enum AgentCapabilities {
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
+
+#### AgentToServer.health
+
+The current health of the Agent. See [AgentHealth message](#agenthealth-message).
+May be omitted if nothing changed since last AgentToServer message.
 
 #### AgentToServer.effective_config
 
@@ -744,7 +755,7 @@ The Agent MUST send a status report:
 
 The status report is sent as an [AgentToServer](#agenttoserver-message) message.
 The following fields in the message can be set to reflect the corresponding
-part of the status: agent_description, capabilities, effective_config,
+part of the status: agent_description, capabilities, health, effective_config,
 remote_config_status, package_statuses.
 
 The Server MUST respond to the AgentToServer message by sending a
@@ -857,6 +868,7 @@ The Agent MAY compress the AgentToServer message by omitting the sub-messages th
 since that particular data was reported last time. The following sub-messages can be subject
 to such compression:
 [AgentDescription](#agentdescription-message),
+[AgentHealth](#agenthealth-message),
 [EffectiveConfig](#effectiveconfig-message),
 [RemoteConfigStatus](#remoteconfigstatus-message) and
 [PackageStatuses](#packagestatuses-message).
@@ -938,6 +950,33 @@ The following attributes SHOULD be included:
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
   this Agent.
+
+### AgentHealth Message
+
+The AgentHealth message has the following structure:
+
+```protobuf
+message AgentHealth {
+    bool up = 1;
+    fixed64 start_time_unix_nano = 2;
+    string last_error = 3;
+}
+```
+
+#### AgentHealth.up
+
+Set to true if the Agent is up and running.
+
+#### AgentHealth.start_time_unix_nano
+
+Timestamp since the Agent is up, i.e. when the agent was started.
+Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
+If "up" is false this field is unused.
+
+#### AgentHealth.last_error
+
+Human-readable error message if the Agent is in erroneous state. Typically set
+when up==false.
 
 ### EffectiveConfig Message
 
