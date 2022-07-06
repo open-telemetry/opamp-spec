@@ -4,7 +4,7 @@ Author: Tigran Najaryan, Splunk
 
 Contributors: Chris Green, Splunk
 
-Status: Alpha
+Status: [Beta](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57)
 
 Date: September 2021
 
