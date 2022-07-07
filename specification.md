@@ -1,16 +1,8 @@
 # OpAMP: Open Agent Management Protocol
 
-Author: Tigran Najaryan, Splunk
-
-Contributors: Chris Green, Splunk
-
 Status: [Beta](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57)
 
-Date: September 2021
-
 Note: this document requires a simplification pass to reduce the scope, size and complexity.
-
-#
 
 <details>
 <summary>Table of Contents</summary>
