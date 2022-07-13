@@ -27,4 +27,14 @@ Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/op
 
 ## Implementations
 
+### Libraries
+
 - [OpAMP Go](https://github.com/open-telemetry/opamp-go)
+
+### Agent Management Platforms
+
+- [BindPlane OP](https://github.com/observIQ/bindplane-op)
+
+### Agents
+
+- [observIQ Distro for OpenTelemetry Collector](https://github.com/observIQ/observiq-otel-collector)
