@@ -183,6 +183,7 @@ mixed Agents from different vendors.
 
 OpAMP supports the following functionality:
 
+* Maintaining Agent identity.
 * Remote configuration of the Agents.
 * Status reporting. The protocol allows the Agent to report the properties of
   the Agent such as its type and version or the operating system type and
@@ -203,8 +204,12 @@ of a large fleet of mixed Agents (e.g. OpenTelemetry Collector, Fluentd, etc).
 
 # Communication Model
 
-The OpAMP Server manages Agents that implement the client-side of OpAMP
-protocol. The Agents can optionally send their own telemetry to an OTLP
+The OpAMP Server manages Agents that provide a client-side implementation of OpAMP
+protocol, further referred to as OpAMP Client or simply Client.
+OpAMP does not assume any particular relationship between the Agent and the Client,
+the Client can be run in a separate process, a sidecar, a plugin, or be fully integrated into the Agent code.
+
+The Agents can optionally send their own telemetry to an OTLP
 destination when directed so by the OpAMP Server. The Agents likely also connect
 to other destinations, where they send the data they collect:
 
@@ -245,27 +250,27 @@ instance_uid for short). The instance_uid is recorded in each message sent from
 the Agent to the Server and from the Server to the Agent.
 
 The default URL path for the connection is /v1/opamp. The URL path MAY be
-configurable on the Agent and on the Server.
+configurable on the Client and on the Server.
 
 ## WebSocket Transport
 
 One of the supported transports for OpAMP protocol is
-[WebSocket](https://datatracker.ietf.org/doc/html/rfc6455). The Agent is a
-WebSocket client and the Server is a WebSocket Server. The Agent and the Server
+[WebSocket](https://datatracker.ietf.org/doc/html/rfc6455). The OpAMP Client
+is a WebSocket client and the Server is a WebSocket Server. The Client and the Server
 communicate using binary data WebSocket messages. The payload of each WebSocket
 message is a
 [binary serialized Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
-message. The Agent sends AgentToServer Protobuf messages and the Server sends
+message. The Client sends AgentToServer Protobuf messages and the Server sends
 ServerToAgent Protobuf messages:
 
 ```
-        ┌───────────────┐                        ┌──────────────┐
-        │               │      AgentToServer     │              │
-        │               ├───────────────────────►│              │
-        │     Agent     │                        │    Server    │
-        │               │      ServerToAgent     │              │
-        │               │◄───────────────────────┤              │
-        └───────────────┘                        └──────────────┘
+        ┌────────────\ \────────┐                        ┌──────────────┐
+        │            / /        │      AgentToServer     │              │
+        │            \ \ OpAmp  ├───────────────────────►│              │
+        │     Agent  / /        │                        │    Server    │
+        │            \ \ Client │      ServerToAgent     │              │
+        │            / /        │◄───────────────────────┤              │
+        └────────────\ \────────┘                        └──────────────┘
 ```
 
 Typically a single Server accepts WebSocket connections from many Agents. Agents
@@ -281,11 +286,11 @@ sequence of messages exchanged by the Agent and the Server is defined for each
 particular capability in the corresponding section of this specification.
 
 The sequence is normally started by an initiating message triggered by some
-external event. For example after the connection is established the Agent sends
+external event. For example after the connection is established the Client sends
 a AgentToServer message. In this case the "connection established" is the
 triggering event and the AgentToServer is the initiating message.
 
-Both the Agent and the Server may begin a sequence by sending an initiating
+Both the Client and the Server may begin a sequence by sending an initiating
 message.
 
 The initiating message may trigger the recipient to send one or more messages
@@ -301,8 +306,8 @@ separation between "request" and "response" messages types. The role of the
 message depends on how the sequence is triggered.
 
 For example the AgentToServer message may be the initiating message sent by the
-Agent when the Agent connects to the Server for the first time. The AgentToServer
-message may also be sent by the Agent in response to the Server making a remote
+Client when the Client connects to the Server for the first time. The AgentToServer
+message may also be sent by the Client in response to the Server making a remote
 configuration offer to the Agent and Agent reporting that it accepted the
 configuration.
 
@@ -310,51 +315,51 @@ See sections under the [Operation](#operation) section for the details of the
 message sequences.
 
 The WebSocket transport is typically used when it is necessary to have instant
-communication ability from the Server to the Agent without waiting for the Agent
+communication ability from the Server to the Agent without waiting for the Client
 to poll the Server like it is done when using the HTTP transport (see below).
 
 ## Plain HTTP Transport
 
 The second supported transport for OpAMP protocol is plain HTTP connection. The
-Agent is an HTTP client and the Server is an HTTP server. The Agent makes
+OpAMP Client is an HTTP client and the Server is an HTTP server. The Client makes
 POST requests to the Server. The body of the POST request and response is a
 [binary serialized Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
-message. The Agent sends AgentToServer Protobuf messages in the request body and
+message. The Client sends AgentToServer Protobuf messages in the request body and
 the Server sends ServerToAgent Protobuf messages in the response body.
 
 OpAMP over HTTP is a synchronous, half-duplex message exchange protocol. The
-Agent initiates an HTTP request when it has an AgentToServer message to deliver.
+Client initiates an HTTP request when it has an AgentToServer message to deliver.
 The Server responds to each HTTP request with a ServerToAgent message it wants
 to deliver to the Agent. If the Agent has nothing to deliver to the Server the
-Agent MUST periodically poll the Server by sending an AgentToServer message
+Client MUST periodically poll the Server by sending an AgentToServer message
 where only [instance_uid](#agenttoserverinstance_uid) field is set. This gives the Server an
 opportunity to send back in the response any messages that the Server wants to
 deliver to the Agent (such as for example a new remote configuration).
 
 The default polling interval when the Agent does have anything to deliver is 30
-seconds. This polling interval SHOULD be configurable on the Agent.
+seconds. This polling interval SHOULD be configurable on the Client.
 
 When using HTTP transport the sequence of messages is exactly the same as it is
 when using the WebSocket transport. The only difference is in the timing:
 - When the Server wants to send a message to the Agent, the Server needs to wait
-  for the Agent to poll the Server and establish an HTTP request over which the Server's
+  for the Client to poll the Server and establish an HTTP request over which the Server's
   message can be sent back as an HTTP response.
 - When the Agent wants to send a message to the Server and the Agent has previously sent
-  a request to the Server that is not yet responded, the Agent MUST wait until the
+  a request to the Server that is not yet responded, the Client MUST wait until the
   response is received before a new request can be made. Note that the new request in
-  this case can be made immediately after the previous response is received, the Agent
+  this case can be made immediately after the previous response is received, the Client
   does not need to wait for the polling period between requests.
 
-The Agent MUST set "Content-Type: application/x-protobuf" request header when
+The Client MUST set "Content-Type: application/x-protobuf" request header when
 using plain HTTP transport. When the Server receives an HTTP request with this
 header set it SHOULD assume this is a plain HTTP transport request, otherwise it
 SHOULD assume this is a WebSocket transport initiation.
 
-The Agent MAY compress the request body using gzip method and MUST specify
+The Client MAY compress the request body using gzip method and MUST specify
 "Content-Encoding: gzip" in that case. Server implementations MUST honour the
 "Content-Encoding" header and MUST support gzipped or uncompressed request bodies.
 
-The Server MAY compress the response if the Agent indicated it can accept compressed
+The Server MAY compress the response if the Client indicated it can accept compressed
 response via the "Accept-Encoding" header.
 
 ## AgentToServer and ServerToAgent Messages
@@ -400,7 +405,7 @@ SHOULD be set with a temporary value and RequestInstanceUid flag MUST be set.
 #### AgentToServer.sequence_num
 
 The sequence number is incremented by 1 for every AgentToServer message sent
-by the Agent. This allows the Server to detect that it missed a message when
+by the Client. This allows the Server to detect that it missed a message when
 it notices that the sequence_num is not exactly by 1 greater than the previously
 received one. See [Agent Status Compression](#agent-status-compression) for more
 details.
@@ -416,7 +421,7 @@ AgentToServer message.
 
 Bitmask of flags defined by AgentCapabilities enum.
 All bits that are not defined in AgentCapabilities enum MUST be set to 0 by
-the Agent. This allows extending the protocol and the AgentCapabilities enum
+the Client. This allows extending the protocol and the AgentCapabilities enum
 in the future such that old Agents automatically report that they don't
 support the new capability.
 This field MUST be always set.
@@ -493,7 +498,7 @@ AgentToServer message.
 #### AgentToServer.agent_disconnect
 
 AgentDisconnect MUST be set in the last AgentToServer message sent from the
-Agent to the Server.
+Client to the Server.
 
 #### AgentToServer.flags
 
@@ -544,7 +549,7 @@ the content may be different if the situation on the Server has changed. The
 Agent SHOULD be ready to process these additional ServerToAgent messages as they
 arrive.
 
-The Agent SHOULD NOT send any status reports at all if the status of the Agent
+The Client SHOULD NOT send any status reports at all if the status of the Agent
 did not change as a result of processing.
 
 The ServerToAgent message has the following structure:
@@ -602,7 +607,7 @@ This field is set when the Server has packages to offer to the Agent. See
 
 Bit flags as defined by Flags bit masks.
 
-`Report*` flags can be used by the Server if the Agent did not include the
+`Report*` flags can be used by the Server if the Client did not include the
 particular portion of the data in the last AgentToServer message (which is an allowed
 compression approach) but the Server does not have that data, e.g. the Server was
 restarted and lost the agent status (see the details in
@@ -614,7 +619,7 @@ enum Flags {
 
     // Flags is a bit mask. Values below define individual bits.
 
-    // ReportFullState flag can be used by the Server if the Agent did not include 
+    // ReportFullState flag can be used by the Server if the Client did not include 
     // some sub-message in the last AgentToServer message (which is an allowed
     // optimization) but the Server detects that it does not have it (e.g. was
     // restarted and lost state). The detection happens using
@@ -746,10 +751,10 @@ will be ignored.
 
 ## Status Reporting
 
-The Agent MUST send a status report:
+The Client MUST send a status report:
 
 * First time immediately after connecting to the Server. The status report MUST
-  be the first message sent by the Agent.
+  be the first message sent by the Client.
 * Subsequently, every time the status of the Agent changes.
 
 The status report is sent as an [AgentToServer](#agenttoserver-message) message.
@@ -772,7 +777,7 @@ Here is the sequence diagram that shows how status reporting works (assuming
 server-side processing is successful):
 
 ```
-        Agent                                  Server
+        Client                                  Server
 
           │                                       │
           │                                       │
@@ -800,12 +805,12 @@ Note that the status of the Agent may change as a result of receiving a message
 from the Server. For example the Server may send a remote configuration to the
 Agent. Once the Agent processes such a request the Agent's status changes (e.g.
 the effective configuration of the Agent changes). Such status change should
-result in the Agent sending a status report to the Server.
+result in the Client sending a status report to the Server.
 
 So, essentially in such cases the sequence of messages may look like this:
 
 ```
-                   Agent                                  Server
+          Agent   Client                                  Server
 
                     │         ServerToAgent                 │
             ┌───────┤◄──────────────────────────────────────┤
@@ -826,13 +831,13 @@ So, essentially in such cases the sequence of messages may look like this:
                     │                                       │   └─────────┘
 ```
 
-When the Agent receives a ServerToAgent message the Agent MUST NOT send a status
+When the Client receives a ServerToAgent message the Client MUST NOT send a status
 report unless processing of the message received from the Server resulted in
 actual change of the Agent status (e.g. the configuration of the Agent has
 changed). The sequence diagram in this case look like this:
 
 ```
-                     Agent                                  Server
+              Agent  Client                                  Server
 
                        │         ServerToAgent                 │
                 ┌──────┤◄──────────────────────────────────────┤
@@ -851,19 +856,19 @@ changed). The sequence diagram in this case look like this:
                        │                                       │
 ```
 
-Important: if the Agent does not follow these rules the operation may result in
-an infinite loop of messages sent back and forth between the Agent and the
+Important: if the Client does not follow these rules the operation may result in
+an infinite loop of messages sent back and forth between the Client and the
 Server.
 
 ### Agent Status Compression
 
-The Agent notifies the Server about Agent's status by sending AgentToServer messages.
+The Client notifies the Server about Agent's status by sending AgentToServer messages.
 The status for example includes the Agent description, its effective configuration,
 the status of the remote configuration it received from the Server and the status
 of the packages. The Server tracks the status of the Agent using the data
 specified in the sub-messages referenced from AgentToServer message.
 
-The Agent MAY compress the AgentToServer message by omitting the sub-messages that have not changed
+The Client MAY compress the AgentToServer message by omitting the sub-messages that have not changed
 since that particular data was reported last time. The following sub-messages can be subject
 to such compression:
 [AgentDescription](#agentdescription-message),
@@ -881,14 +886,14 @@ If all AgentToServer messages are reliably delivered to the Server and the Serve
 correctly processes them then such compression is safe and the Server should always
 have the correct latest status of the Agent.
 
-However, it is possible that the Agent and Server lose the synchronization and the Agent
+However, it is possible that the Client and Server lose the synchronization and the Client
 believes the Server has the latest data while in reality the Server doesn't. This is
-possible for example if the Server is restarted while the Agent keeps running and sends
+possible for example if the Server is restarted while the Client keeps running and sends
 AgentToServer messages, which the Server does not receive because it is temporarily down.
 
 In order to detect this situation and recover from it, the AgentToServer message
 contains a sequence_num field. The field is an integer number that is incremented
-every time the Agent has a new AgentToServer message to send.
+every time the Client has a new AgentToServer message to send.
 
 When the Server receives an AgentToServer message sequence_num field value that is not
 exactly by one greater than the previously received sequence_num value then the Server
@@ -1213,7 +1218,7 @@ destinations:
 1. The **OpAMP Server** itself. This is typically used to manage credentials
    such as the TLS certificate or the request headers that are used for
    authorization. The Server MAY also offer a different destination endpoint to
-   direct the Agent to connect to a different OpAMP Server.
+   direct the Client to connect to a different OpAMP Server.
 2. The destinations for the Agent to send its **own telemetry**: metrics, traces
    and logs using OTLP/HTTP protocol.
 3. A set of **additional "other" connection** settings, with a string name
@@ -1250,7 +1255,7 @@ The handling of OpAMP connection settings is described below.
 Here is how the OpAMP connection settings change happens:
 
 ```
-                   Agent                                 Server
+                   Client                                 Server
 
                      │                                       │    Initiate
                      │    Connect                            │    Settings
@@ -1284,32 +1289,32 @@ Here is how the OpAMP connection settings change happens:
    [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
    [opamp](#connectionsettingsoffersopamp) field contains the new
    [OpAMPConnectionSettings](#opampconnectionsettings) offered.
-3. Agent receives the settings offer and saves the updated
-   connection settings in the local store, marking it as "candidate" (if Agent
+3. Client receives the settings offer and saves the updated
+   connection settings in the local store, marking it as "candidate" (if Client
    crashes it will retry "candidate" validation steps 5-9).
-4. Agent disconnects from the Server.
-5. Agent connects to the Server, using the new settings.
+4. Client disconnects from the Server.
+5. Client connects to the Server, using the new settings.
 6. Connection is successfully established, any TLS verifications required are
    passed and the Server indicates a successful authorization.
 7. Server deletes the old connection settings for this Agent (using Agent
    instance UID) from its credentials store.
-8. Agent deletes the old settings from its credentials store and marks the new
+8. Client deletes the old settings from its credentials store and marks the new
    connection settings as "valid".
-9. If step 6 fails the Agent deletes the new settings and reverts to the old
+9. If step 6 fails the Client deletes the new settings and reverts to the old
    settings and reconnects.
 
-Note: Agents which are unable to persist new connection settings and have access
+Note: Clients which are unable to persist new connection settings and have access
 only to ephemeral storage SHOULD reject certificate offers otherwise they risk
 losing access after restarting and losing the offered certificate.
 
 ### Trust On First Use
 
-Agents that want to use TLS with a client certificate but do not initially have
+Clients that want to use TLS with a client certificate but do not initially have
 a certificate can use the Trust On First Use (TOFU) flow. The sequence is the
 following:
 
-* Agent connects to the Server using regular TLS (validating Server's identity)
-  but without a client certificate. Agent sends its Status Report so that it can
+* Client connects to the Server using regular TLS (validating Server's identity)
+  but without a client certificate. Client sends the Agent's Status Report so that it can
   be identified.
 * The Server accepts the connection and status and awaits for an approval to
   generate a client certificate for the Agent.
@@ -1321,9 +1326,9 @@ following:
   steps, except that there is no old client certificate to delete.
 
 TOFU flow allows to bootstrap a secure environment without the need to perform
-Agent-side installation of certificates.
+Client-side installation of certificates.
 
-Exact same TOFU approach can be also used for Agents that don't have the
+Exact same TOFU approach can be also used for Clients that don't have the
 necessary authorization headers to access the Server. The Server can detect such
 access and upon approval send the authorization headers to the Agent.
 
@@ -1336,7 +1341,7 @@ set of connection credentials after the first connection is established.
 This can be achieved very similarly to how the TOFU flow works. The only
 difference is that the first connection will be properly authenticated, but the
 Server will immediately generate and offer new connection settings to the Agent.
-The Agent will then persist the setting and will use them for all subsequent
+The Client will then persist the setting and will use them for all subsequent
 operations.
 
 This allows deploying a large number of Agents using one pre-defined set of
@@ -1347,11 +1352,11 @@ without disrupting the access to all other Agents.
 
 ### Revoking Access
 
-Since the Server knows what access headers and a client certificate the Agent
+Since the Server knows what access headers and a client certificate the Client
 uses, the Server can revoke access to individual Agents by marking the
-corresponding connection settings as "revoked" and disconnecting the Agent.
+corresponding connection settings as "revoked" and disconnecting the Client.
 Subsequent connections using the revoked credentials can be rejected by the
-Server essentially prohibiting the Agent to access the Server.
+Server essentially prohibiting the Client to access the Server.
 
 Since the Server has control over the connection settings of all 3 destination
 types of the Agent (because it can offer the connection settings) this
@@ -1404,9 +1409,9 @@ because they are unchanged.
 
 #### ConnectionSettingsOffers.opamp
 
-Settings to connect to the OpAMP Server. If this field is not set then the Agent
+Settings to connect to the OpAMP Server. If this field is not set then the Client
 should assume that the settings are unchanged and should continue using existing
-settings. The Agent MUST verify the offered connection settings by actually
+settings. The Client MUST verify the offered connection settings by actually
 connecting before accepting the setting to ensure it does not lose access to
 the OpAMP Server due to invalid settings.
 
@@ -1458,16 +1463,16 @@ example: "wss://example.com:4318/v1/opamp"
 #### OpAMPConnectionSettings.headers
 
 Optional headers to use when connecting. Typically used to set access tokens or
-other authorization headers. For HTTP-based protocols the Agent should
+other authorization headers. For HTTP-based protocols the Client should
 set these in the request headers.
 For example:
 key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
 
 #### OpAMPConnectionSettings.certificate
 
-The Agent should use the offered certificate to connect to the destination
-from now on. If the Agent is able to validate and connect using the offered
-certificate the Agent SHOULD forget any previous client certificates
+The Client should use the offered certificate to connect to the destination
+from now on. If the Client is able to validate and connect using the offered
+certificate the Client SHOULD forget any previous client certificates
 for this connection.
 This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
 This field can be used to perform a client certificate revocation/rotation.
@@ -1643,7 +1648,7 @@ protocol.
 
 The Server SHOULD populate the [connection_settings](#servertoagentconnection_settings)
 field when it sends the first ServerToAgent message to the particular Agent (normally
-in response to the first status report from the Agent), unless there is no OTLP
+in response to the first status report from the Client), unless there is no OTLP
 backend that can be used. The Server SHOULD also populate the field on
 subsequent ServerToAgent if the destination has changed. If the destination is
 unchanged the connection_settings field SHOULD NOT be set. When the Agent
@@ -1655,22 +1660,22 @@ The Agent SHOULD periodically report its metrics to the destination offered in t
 interval is 10 seconds. Here is the diagram that shows the operation sequence:
 
 ```
-                Agent                          Server
+       Agent    Client                                Server
                                                             Metric
                   │                                      │  Backend
                   │ServerToAgent{ConnectionSettingsOffer}│
-                  │◄─────────────────────────────────────┤    │
-                  │                                      │    │
-                  │                                           │
+        ┌─────────│◄─────────────────────────────────────┤    │
+        │         │                                      │    │
+        ▼         │                                           │
     ┌────────┐    │                                           │
     │Collect │    │                OTLP Metrics               │ ──┐
-    │Own     ├───►├──────────────────────────────────────────►│   │
+    │Own     ├───────────────────────────────────────────────►│   │
     │Metrics │    │                                           │   │
     └────────┘    .                    ...                    .   │ Repeats
                                                                   │
     ┌────────┐    │                                           │   │ Periodically
     │Collect │    │                OTLP Metrics               │   │
-    │Own     ├───►├──────────────────────────────────────────►│   │
+    │Own     ├───────────────────────────────────────────────►│   │
     │Metrics │    │                                           │ ──┘
     └────────┘    │                                           │
 ```
@@ -1707,7 +1712,7 @@ ServerToAgent message is normally sent by the Server in response to a status
 report the Server has the Agent's description and may tailor the configuration
 it offers to the specific Agent if necessary.
 
-The Agent MUST set the AcceptsRemoteConfig bit of AgentToServer.capabilities if
+The Client MUST set the AcceptsRemoteConfig bit of AgentToServer.capabilities if
 the Agent is capable of accepting remote configuration. If the bit is not set
 the Server MUST not offer a remote configuration to the Agent.
 
@@ -1719,12 +1724,12 @@ Configuration with other inputs available to the Agent, e.g. a locally available
 configuration.
 
 Once the Effective Configuration is formed the Agent uses it for its operation
-and will also report the Effective Configuration to the OpAMP Server via the
+and the Client will also report the Effective Configuration to the OpAMP Server via the
 [effective_config](#agenttoservereffective_config) field of status report. The Server
 typically allows the end user to see the effective configuration alongside other
-data reported in the status reported by the Agent.
+data reported in the status reported by the Client.
 
-The Agent MUST set the ReportsEffectiveConfig bit of AgentToServer.capabilities
+The Client MUST set the ReportsEffectiveConfig bit of AgentToServer.capabilities
 if the Agent is capable of reporting effective configuration. If the bit is not
 set the Server should not expect the AgentToServer.effective_config field to be
 set.
@@ -1732,7 +1737,7 @@ set.
 Here is the typical configuration sequence diagram:
 
 ```
-               Agent                              Server
+    Agent      Client                             Server
 
                  │ AgentToServer{}                   │   ┌─────────┐
                  ├──────────────────────────────────►├──►│ Process │
@@ -1756,18 +1761,18 @@ Config    Config │ ServerToAgent{AgentRemoteConfig}  │   │ Fetch   │
 EffectiveConfig and RemoteConfigStatus fields are included in the AgentToServer
 message if the fields have changed.
 
-Note: the Agent SHOULD NOT send AgentToServer message if the Effective Configuration
+Note: the Client SHOULD NOT send AgentToServer message if the Effective Configuration
 or other fields that are reported via AgentToServer message are unchanged.
-If the Agent does not follow this rule the operation may result in an infinite loop of
-messages sent back and forth between the Agent and the Server.
+If the Client does not follow this rule the operation may result in an infinite loop of
+messages sent back and forth between the Client and the Server.
 
 The Server may also initiate sending of a remote configuration on its own,
-without waiting for a status report from the Agent. This can be used to
+without waiting for a status report from the Client. This can be used to
 re-configure an Agent that is connected but which has nothing new to report. The
 sequence diagram in this case looks like this:
 
 ```
-               Agent                              Server
+    Agent      Client                             Server
 
                  │                                   │
                  │                                   │
@@ -1968,18 +1973,18 @@ that is specific to the Agent).
 ### Package Status Reporting
 
 During the downloading and installation process the Agent MAY periodically
-report the status of the process. To do this the Agent SHOULD send an
+report the status of the process. To do this the Client SHOULD send an
 [AgentToServer](#agenttoserver-message) message and set the
 [package_statuses](#agenttoserverpackage_statuses) field accordingly.
 
 Once the downloading and installation of all packages is done (succeeded or
-failed) the Agent SHOULD report the status of all packages to the Server.
+failed) the Client SHOULD report the status of all packages to the Server.
 
 Here is the typical sequence diagram for the package downloading and status
 reporting process:
 
 ```
-    Download           Agent                             OpAMP
+    Download        Agent/Client                          OpAMP
      Server                                              Server
        │                 │                                  │
        │                 │  ServerToAgent{PackagesAvailable}│
@@ -2008,10 +2013,10 @@ reporting process:
        │                 │                                  │
 ```
 
-The Agent MUST always include all packages it has or is processing (downloading or
+The Client MUST always include all packages the Agent has or is processing (downloading or
 installing) in PackageStatuses message.
 
-Note that the Agent MAY also report the status of packages it has installed
+Note that the Client MAY also report the status of packages the Agent has installed
 locally, not only the packages it was offered and downloaded from the Server.
 
 ### Calculating Hashes
@@ -2089,7 +2094,7 @@ A map of packages. Keys are package names.
 
 Aggregate hash of all remotely installed packages.
 
-The Agent SHOULD include this value in subsequent
+The Client SHOULD include this value in subsequent
 [PackageStatuses](#packagestatuses-message) messages. This in turn allows the Server
 to identify that a different set of packages is available for the Agent and
 specify the available packages in the next ServerToAgent message.
@@ -2175,27 +2180,27 @@ The exact signing and verification method is Agent specific. See
 
 ## Establishing Connection
 
-The Agent connects to the Server by establishing an HTTP(S) connection.
+The Client connects to the Server by establishing an HTTP(S) connection.
 
 If WebSocket transport is used then the connection is upgraded to WebSocket as
 defined by WebSocket standard.
 
-After the connection is established the Agent MUST send the first
+After the connection is established the Client MUST send the first
 [status report](#status-reporting) and expect a response to it.
 
-If the Agent is unable to establish a connection to the Server it SHOULD retry
+If the Client is unable to establish a connection to the Server it SHOULD retry
 connection attempts and use exponential backoff strategy with jitter to avoid
 overwhelming the Server.
 
-When retrying connection attempts the Agent SHOULD honour any
+When retrying connection attempts the Client SHOULD honour any
 [throttling](#throttling) responses it receives from the Server.
 
 ## Closing Connection
 
 ### WebSocket Transport, Agent Initiated
 
-To close a connection the Agent MUST first send an AgentToServer message with
-agent_disconnect field set. The Agent MUST then send a WebSocket
+To close a connection the Client MUST first send an AgentToServer message with
+agent_disconnect field set. The Client MUST then send a WebSocket
 [Close](https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1) control
 frame and follow the procedure defined by WebSocket standard.
 
@@ -2207,35 +2212,35 @@ frame and follow the procedure defined by WebSocket standard.
 
 ### Plain HTTP Transport
 
-The Agent is considered logically disconnected as soon as the OpAMP HTTP
-response is completed. It is not necessary for the Agent to send AgentToServer
+The Client is considered logically disconnected as soon as the OpAMP HTTP
+response is completed. It is not necessary for the Client to send AgentToServer
 message with agent_disconnect field set since it is always implied anyway that
-the Agent is gone after the HTTP response is completed.
+the Client connection is gone after the HTTP response is completed.
 
-HTTP keep-alive may be used by the Agent and the Server but it has no effect on
+HTTP keep-alive may be used by the Client and the Server but it has no effect on
 the logical operation of the OpAMP protocol.
 
 The Server may use its own business logic to decide what it considers an active
-Agent (e.g. an Agent that continuously polls) vs an inactive Agent (e.g. an
-Agent that has no made an HTTP for a specific period of time). This business
+Agent (e.g. an Client that continuously polls) vs an inactive Agent (e.g. a
+Client that has not made an HTTP request for a specific period of time). This business
 logic is outside the scope of OpAMP specification.
 
 ## Restoring WebSocket Connection
 
 If an established WebSocket connection is broken (disconnected) unexpectedly the
-Agent SHOULD immediately try to re-connect. If the re-connection fails the Agent
+Client SHOULD immediately try to re-connect. If the re-connection fails the Client
 SHOULD continue connection attempts with backoff as described in
 [Establishing Connection](#establishing-connection).
 
 ## Duplicate WebSocket Connections
 
-Each Agent instance SHOULD connect no more than once to the Server. If the Agent
-needs to re-connect to the Server the Agent MUST ensure that it sends an
+Each Client instance SHOULD connect no more than once to the Server. If the Client
+needs to re-connect to the Server the Client MUST ensure that it sends an
 AgentDisconnect message first, then closes the existing connection and only then
 attempts to connect again.
 
 The Server MAY disconnect or deny serving requests if it detects that the same
-Agent instance has more than one simultaneous connection or if multiple Agent
+Client instance has more than one simultaneous connection or if multiple Agent
 instances are using the same instance_uid.
 
 The Server SHOULD detect duplicate instance_uids (which may happen for example
@@ -2245,7 +2250,7 @@ a new instance_uid, and send it as new_instance_uid value of AgentIdentification
 
 ## Authentication
 
-The Agent and the Server MAY use authentication methods supported by HTTP, such
+The Client and the Server MAY use authentication methods supported by HTTP, such
 as [Basic](https://datatracker.ietf.org/doc/html/rfc7617) authentication or
 [Bearer](https://datatracker.ietf.org/doc/html/rfc6750) authentication. The
 authentication happens when the HTTP connection is established before it is
@@ -2253,7 +2258,7 @@ upgraded to a WebSocket connection.
 
 The Server MUST respond with
 [401 Unauthorized](https://datatracker.ietf.org/doc/html/rfc7235#section-3.1) if
-the Agent authentication fails.
+the Client authentication fails.
 
 ## Bad Request
 
@@ -2263,12 +2268,12 @@ set accordingly. The [type](#servererrorresponsetype) field MUST be set to BAD_R
 [error_message](#servererrorresponseerror_message) SHOULD be a human readable description
 of the problem with the AgentToServer message.
 
-The Agent SHOULD NOT retry sending an AgentToServer message to which it received
+The Client SHOULD NOT retry sending an AgentToServer message to which it received
 a BAD_REQUEST response.
 
 ## Retrying Messages
 
-The Agent MAY retry sending AgentToServer message if:
+The Client MAY retry sending AgentToServer message if:
 
 * AgentToServer message that requires a response was sent, however no response
   was received within a reasonable time (the timeout MAY be configurable).
@@ -2282,28 +2287,28 @@ more than once the Server MUST respond to each message, not just the first
 message, even if the Server detects the duplicates and processes the message
 once.
 
-Note that the Agent is not required to keep a growing queue of messages that it
-wants to send to the Server if the connection is unavailable. The Agent
+Note that the Client is not required to keep a growing queue of messages that it
+wants to send to the Server if the connection is unavailable. The Client
 typically only needs to keep one up-to-date message of each kind that it wants
 to send to the Server and send it as soon as the connection is available.
 
-For example, the Agent should keep track of its own status and compose a
+For example, the Client should keep track of the Agent's status and compose a
 AgentToServer message that is ready to be sent at the first opportunity. If the
-Agent is unable to send the AgentToServer message (for example if the connection
-is not yet available) the Agent does not need to create a new AgentToServer every
+Client is unable to send the AgentToServer message (for example if the connection
+is not yet available) the Client does not need to create a new AgentToServer every
 time the Agent's status changes and keep all these AgentToServer messages in a
-queue ready to be sent. The Agent simply needs to keep one up-to-date
+queue ready to be sent. The Client simply needs to keep one up-to-date
 AgentToServer message and send it at the first opportunity. This of course
 requires the AgentToServer message to contain all changes since it was last
 reported and to correctly reflect the current (last) state of the Agent.
 
 Similarly, all other Agent reporting capabilities, such as Addon Status
-Reporting or Agent Package Installation Status Reporting require the Agent to
+Reporting or Agent Package Installation Status Reporting require the Client to
 only keep one up-to-date status message and send it at the earliest opportunity.
 
 The exact same logic is true in the opposite direction: the Server normally only
 needs to keep one up-to-date message of a particular kind that it wants to
-deliver to the Agent and send it as soon as the connection to the Agent is
+deliver to the Agent and send it as soon as the connection to the Client is
 available.
 
 ## Throttling
@@ -2314,11 +2319,11 @@ When the Server is overloaded and is unstable to process the AgentToServer
 message it SHOULD respond with an ServerToAgent message, where
 [error_response](#servertoagenterror_response) is filled with
 [type](#servererrorresponsetype) field set to UNAVAILABLE.
-~~The Agent SHOULD retry the message.~~ _(Note: retrying individual messages is
+~~The Client SHOULD retry the message.~~ _(Note: retrying individual messages is
 not possible since we no longer have sequence ids and don't know which message
-failed)._ The Agent SHOULD disconnect, wait, then reconnect again and resume its
+failed)._ The Client SHOULD disconnect, wait, then reconnect again and resume its
 operation. The retry_info field may be optionally set with
-retry_after_nanoseconds field specifying how long the Agent SHOULD wait before
+retry_after_nanoseconds field specifying how long the Client SHOULD wait before
 ~~retiring the message~~ reconnecting:
 
 ```protobuf
@@ -2327,7 +2332,7 @@ message RetryInfo {
 }
 ```
 
-If retry_info is not set then the Agent SHOULD implement an exponential backoff
+If retry_info is not set then the Client SHOULD implement an exponential backoff
 strategy to gradually increase the interval between retries.
 
 ### Plain HTTP Transport
@@ -2340,7 +2345,7 @@ or
 [HTTP 429 Too Many Requests](https://datatracker.ietf.org/doc/html/rfc6585#section-4)
 response and MAY optionally set
 [Retry-After](https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.3)
-header to indicate when SHOULD the Agent attempt to reconnect. The Agent SHOULD
+header to indicate when SHOULD the Client attempt to reconnect. The Client SHOULD
 honour the corresponding requirements of HTTP specification.
 
 The minimum recommended retry interval is 30 seconds.
@@ -2441,7 +2446,7 @@ these capabilities are optional. The Agent or the Server should be prepared that
 the peer does not support a particular capability.
 
 Both the Agent and the Server indicate the capabilities that they support during
-the initial message exchange. The Agent sets the capabilities bit-field in the
+the initial message exchange. The Client sets the capabilities bit-field in the
 AgentToServer message, the Server sets the capabilities bit-field in the
 ServerToAgent message.
 
@@ -2485,13 +2490,13 @@ The capabilities fields in AgentToServer and ServerToAgent messages contains a
 number of reserved bits. These bits SHOULD be used for indicating support of new
 capabilities that will be added to OpAMP in the future.
 
-The Agent and the Server MUST set these reserved bits to 0 when sending the
+The Client and the Server MUST set these reserved bits to 0 when sending the
 message. This allows the recipient, which implements a newer version of OpAMP to
 learn that the sender does not support the new capability and adjust its
 behavior correspondingly.
 
 The AgentToServer and ServerToAgent messages are the first messages exchanged by
-the Agent and Server which allows them to learn about the capabilities of the
+the Client and Server which allows them to learn about the capabilities of the
 peer and adjust their behavior appropriately. How exactly the behavior is
 adjusted for future capabilities MUST be defined in the future specification of
 the new capabilities.
