@@ -247,6 +247,36 @@ the Agent to the Server and from the Server to the Agent.
 The default URL path for the connection is /v1/opamp. The URL path MAY be
 configurable on the Agent and on the Server.
 
+One of the typical ways to implement OpAMP on the Agent side is by having a helping
+Supervisor process, which controls the Agent process. The Supervisor is also
+typically responsible for communicating with the OpAMP Server:
+
+```
+      ┌───────────────────┐
+      │ Supervisor        │
+      │                   │
+      │          ┌────────┤           ┌────────┐
+      │          │ OpAMP  │  OpAMP    │ OpAMP  │
+      │          │        ├──────────►│        │
+      │          │ Client │           │ Server │
+      └────┬─────┴────────┘           └────────┘
+           │
+           │
+           ▼
+      ┌──────────┐
+      │          │
+      │  Agent   │
+      │          │
+      └──────────┘
+```
+
+The OpAMP specification does not require using a Supervisor and does not define how the
+Supervisor and the Agent communicate.
+
+In the rest of the OpAMP specification the term _Agent_ is used to refer to the entity
+which implements the client portion of the OpAMP, regardless of whether or not a
+Supervisor is part of that entity.
+
 ## WebSocket Transport
 
 One of the supported transports for OpAMP protocol is
