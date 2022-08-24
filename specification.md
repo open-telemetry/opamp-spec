@@ -131,7 +131,7 @@ Note: this document requires a simplification pass to reduce the scope, size and
 - [Connection Management](#connection-management)
   * [Establishing Connection](#establishing-connection)
   * [Closing Connection](#closing-connection)
-    + [WebSocket Transport, OpAMP Client Initiated](#websocket-transport-agent-initiated)
+    + [WebSocket Transport, OpAMP Client Initiated](#websocket-transport-opamp-client-initiated)
     + [WebSocket Transport, Server Initiated](#websocket-transport-server-initiated)
     + [Plain HTTP Transport](#plain-http-transport-1)
   * [Restoring WebSocket Connection](#restoring-websocket-connection)
