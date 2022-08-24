@@ -131,7 +131,7 @@ Note: this document requires a simplification pass to reduce the scope, size and
 - [Connection Management](#connection-management)
   * [Establishing Connection](#establishing-connection)
   * [Closing Connection](#closing-connection)
-    + [WebSocket Transport, Agent Initiated](#websocket-transport-agent-initiated)
+    + [WebSocket Transport, OpAMP Client Initiated](#websocket-transport-agent-initiated)
     + [WebSocket Transport, Server Initiated](#websocket-transport-server-initiated)
     + [Plain HTTP Transport](#plain-http-transport-1)
   * [Restoring WebSocket Connection](#restoring-websocket-connection)
@@ -207,7 +207,8 @@ of a large fleet of mixed Agents (e.g. OpenTelemetry Collector, Fluentd, etc).
 The OpAMP Server manages Agents that provide a client-side implementation of OpAMP
 protocol, further referred to as OpAMP Client or simply Client.
 OpAMP does not assume any particular relationship between the Agent and the Client,
-the Client can be run in a separate process, a sidecar, a plugin, or be fully integrated into the Agent code.
+the Client can be run as a separate process with a different lifecycle than the Agent,
+a sidecar, a plugin, or be fully integrated into the Agent code.
 
 The Agents can optionally send their own telemetry to an OTLP
 destination when directed so by the OpAMP Server. The Agents likely also connect
@@ -240,14 +241,15 @@ type-specific and are outside the scope of this specification.
 
 OpAMP protocol works over one of the 2 supported transports: plain HTTP
 connections and WebSocket connections. Server implementations SHOULD accept both
-plain HTTP connections and WebSocket connections. Client implementations may
+plain HTTP connections and WebSocket connections. OpAMP Client implementations may
 choose to support either plain HTTP or WebSocket transport, depending on their
 needs.
 
-Typically a single Server accepts connections from many Agents. Agents
-are identified by self-assigned globally unique instance identifiers (or
+OpAMP Clients connect to OpAMP Server on behalf of the Agents.
+Typically a single Server accepts connections from many Clients. Agents
+are identified by self-assigned or Server-assigned globally unique instance identifiers (or
 instance_uid for short). The instance_uid is recorded in each message sent from
-the Agent to the Server and from the Server to the Agent.
+the Agent (via the Client) to the Server and from the Server to the Agent.
 
 The default URL path for the connection is /v1/opamp. The URL path MAY be
 configurable on the Client and on the Server.
@@ -260,7 +262,7 @@ is a WebSocket client and the Server is a WebSocket Server. The Client and the S
 communicate using binary data WebSocket messages. The payload of each WebSocket
 message is a
 [binary serialized Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
-message. The Client sends AgentToServer Protobuf messages and the Server sends
+message. On behalf of the Agent, the Client sends AgentToServer Protobuf messages and the Server sends
 ServerToAgent Protobuf messages:
 
 ```
@@ -273,21 +275,13 @@ ServerToAgent Protobuf messages:
         └────────────\ \────────┘                        └──────────────┘
 ```
 
-Typically a single Server accepts WebSocket connections from many Agents. Agents
-are identified by self-assigned or Server-assigned globally unique instance
-identifiers (or instance_uid for short). The instance_uid is recorded in each
-message sent from the Agent to the Server and from the Server to the Agent.
-
-The default URL path for the initial WebSocket's HTTP connection is /v1/opamp.
-The URL path MAY be configurable on the Agent and on the Server.
-
-OpAMP is an asynchronous, full-duplex message exchange protocol. The order and
-sequence of messages exchanged by the Agent and the Server is defined for each
+OpAMP over WebSocket is an asynchronous, full-duplex message exchange protocol. The order and
+sequence of messages exchanged by the OpAMP Client and the Server is defined for each
 particular capability in the corresponding section of this specification.
 
 The sequence is normally started by an initiating message triggered by some
 external event. For example after the connection is established the Client sends
-a AgentToServer message. In this case the "connection established" is the
+an AgentToServer message. In this case the "connection established" is the
 triggering event and the AgentToServer is the initiating message.
 
 Both the Client and the Server may begin a sequence by sending an initiating
@@ -812,7 +806,7 @@ So, essentially in such cases the sequence of messages may look like this:
 ```
           Agent   Client                                  Server
 
-                    │         ServerToAgent                 │
+            │       │         ServerToAgent                 │
             ┌───────┤◄──────────────────────────────────────┤
             │       │                                       │
             ▼       │                                       │
@@ -839,7 +833,7 @@ changed). The sequence diagram in this case look like this:
 ```
               Agent  Client                                  Server
 
-                       │         ServerToAgent                 │
+                │      │         ServerToAgent                 │
                 ┌──────┤◄──────────────────────────────────────┤
                 │      │                                       │
                 ▼      │                                       │
@@ -1175,7 +1169,8 @@ An error message if the status is erroneous.
 ## Connection Settings Management
 
 OpAMP includes features that allow the Server to manage Agent's connection
-settings for all of the destinations that the Agent connects to.
+settings for all of the destinations that the Agent connects to,
+as well as the OpAMP Client's connection settings.
 
 The following diagram shows a typical Agent that is managed by OpAMP Servers,
 sends its own telemetry to an OTLP backend and also connects to other
@@ -1202,7 +1197,8 @@ destinations to perform its work:
 ```
 
 When connecting to the OpAMP Server and to other destinations it is typically
-expected that Agents will use some sort of header-based authorization mechanism
+expected that Agents (or OpAMP Clients connecting on Agent's behalf) will use
+some sort of header-based authorization mechanism
 (e.g. an "Authorization" HTTP header or an access token in a custom header) and
 optionally also client-side certificates for TLS connections (also known as
 mutual TLS).
@@ -1218,7 +1214,7 @@ destinations:
 1. The **OpAMP Server** itself. This is typically used to manage credentials
    such as the TLS certificate or the request headers that are used for
    authorization. The Server MAY also offer a different destination endpoint to
-   direct the Client to connect to a different OpAMP Server.
+   direct the OpAMP Client to connect to a different OpAMP Server.
 2. The destinations for the Agent to send its **own telemetry**: metrics, traces
    and logs using OTLP/HTTP protocol.
 3. A set of **additional "other" connection** settings, with a string name
@@ -1309,7 +1305,7 @@ losing access after restarting and losing the offered certificate.
 
 ### Trust On First Use
 
-Clients that want to use TLS with a client certificate but do not initially have
+OpAMP Clients that want to use TLS with a client certificate but do not initially have
 a certificate can use the Trust On First Use (TOFU) flow. The sequence is the
 following:
 
@@ -1317,7 +1313,7 @@ following:
   but without a client certificate. Client sends the Agent's Status Report so that it can
   be identified.
 * The Server accepts the connection and status and awaits for an approval to
-  generate a client certificate for the Agent.
+  generate a client certificate for the OpAMP Client.
 * Server either waits for a manual approval by a human or automatically approves
   all TOFU requests if the Server is configured to do so (can be a Server-side
   option).
@@ -1328,9 +1324,9 @@ following:
 TOFU flow allows to bootstrap a secure environment without the need to perform
 Client-side installation of certificates.
 
-Exact same TOFU approach can be also used for Clients that don't have the
+Exact same TOFU approach can be also used for OpAMP Clients that don't have the
 necessary authorization headers to access the Server. The Server can detect such
-access and upon approval send the authorization headers to the Agent.
+access and upon approval send the authorization headers to the Client.
 
 ### Registration On First Use
 
@@ -1444,7 +1440,7 @@ unchanged.
 ### OpAMPConnectionSettings
 
 The OpAMPConnectionSettings message is a collection of fields which comprise an
-offer from the Server to the Agent to use the specified settings for OpAMP
+offer from the Server to the OpAMP Client to use the specified settings for OpAMP
 connection.
 
 ```protobuf
@@ -1662,8 +1658,8 @@ interval is 10 seconds. Here is the diagram that shows the operation sequence:
 ```
        Agent    Client                                Server
                                                             Metric
-                  │                                      │  Backend
-                  │ServerToAgent{ConnectionSettingsOffer}│
+        │         │                                      │  Backend
+        │         │ServerToAgent{ConnectionSettingsOffer}│
         ┌─────────│◄─────────────────────────────────────┤    │
         │         │                                      │    │
         ▼         │                                           │
@@ -1672,7 +1668,7 @@ interval is 10 seconds. Here is the diagram that shows the operation sequence:
     │Own     ├───────────────────────────────────────────────►│   │
     │Metrics │    │                                           │   │
     └────────┘    .                    ...                    .   │ Repeats
-                                                                  │
+        │                                                         │
     ┌────────┐    │                                           │   │ Periodically
     │Collect │    │                OTLP Metrics               │   │
     │Own     ├───────────────────────────────────────────────►│   │
@@ -1712,7 +1708,7 @@ ServerToAgent message is normally sent by the Server in response to a status
 report the Server has the Agent's description and may tailor the configuration
 it offers to the specific Agent if necessary.
 
-The Client MUST set the AcceptsRemoteConfig bit of AgentToServer.capabilities if
+The OpAMP Client MUST set the AcceptsRemoteConfig bit of AgentToServer.capabilities if
 the Agent is capable of accepting remote configuration. If the bit is not set
 the Server MUST not offer a remote configuration to the Agent.
 
@@ -1737,15 +1733,15 @@ set.
 Here is the typical configuration sequence diagram:
 
 ```
-    Agent      Client                             Server
+   Agent       Client                             Server
 
-                 │ AgentToServer{}                   │   ┌─────────┐
-                 ├──────────────────────────────────►├──►│ Process │
-                 │                                   │   │ Status  │
+     │           │ AgentToServer{}                   │   ┌─────────┐
+     │           ├──────────────────────────────────►├──►│ Process │
+     │           │                                   │   │ Status  │
 Local     Remote │                                   │   │ and     │
 Config    Config │ ServerToAgent{AgentRemoteConfig}  │   │ Fetch   │
-  │     ┌────────┤◄──────────────────────────────────┤◄──┤ Config  │
-  ▼     ▼        │                                   │   └─────────┘
+  │  │  ┌────────┤◄──────────────────────────────────┤◄──┤ Config  │
+  ▼  │  ▼        │                                   │   └─────────┘
 ┌─────────┐      │                                   │
 │ Config  │      │                                   │
 │ Merger  │      │                                   │
@@ -1774,13 +1770,13 @@ sequence diagram in this case looks like this:
 ```
     Agent      Client                             Server
 
-                 │                                   │
-                 │                                   │
-                 │                                   │   ┌────────┐
+     │           │                                   │
+     │           │                                   │
+     │           │                                   │   ┌────────┐
 Local     Remote │                                   │   │Initiate│
 Config    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
-  │     ┌────────┤◄──────────────────────────────────┤◄──┤Send    │
-  ▼     ▼        │                                   │   │Config  │
+  │  │  ┌────────┤◄──────────────────────────────────┤◄──┤Send    │
+  ▼  │  ▼        │                                   │   │Config  │
 ┌─────────┐      │                                   │   └────────┘
 │ Config  │      │                                   │
 │ Merger  │      │                                   │
@@ -1871,7 +1867,7 @@ message AgentRemoteConfig {
 
 Each Agent is composed of one or more packages. A package has a name and content stored
 in a file. The content of the file, functionality provided by the packages, how they are
-stored and used by the Agent  side is Agent type-specific and is outside the concerns of
+stored and used by the Agent side is Agent type-specific and is outside the concerns of
 the OpAMP protocol.
 
 There are two types of packages: top-level and sub-packages.
@@ -1912,8 +1908,8 @@ in a single file, e.g. a zip or tar file. After downloading the single package
 file the Agent may extract the files contained in it. How exactly this is done
 is Agent specific and is beyond the scope of the protocol.
 
-The Server is allowed to make a package offer only if the Agent indicated that it
-can accept packages via AcceptsPackages bit of AgentToServer.capabilities field.
+The Server is allowed to make a package offer only if the OpAMP Client indicated that
+the Agent can accept packages via AcceptsPackages bit of AgentToServer.capabilities field.
 
 ### Downloading Packages
 
@@ -1973,7 +1969,7 @@ that is specific to the Agent).
 ### Package Status Reporting
 
 During the downloading and installation process the Agent MAY periodically
-report the status of the process. To do this the Client SHOULD send an
+report the status of the process. To do this the OpAMP Client SHOULD send an
 [AgentToServer](#agenttoserver-message) message and set the
 [package_statuses](#agenttoserverpackage_statuses) field accordingly.
 
@@ -2197,7 +2193,7 @@ When retrying connection attempts the Client SHOULD honour any
 
 ## Closing Connection
 
-### WebSocket Transport, Agent Initiated
+### WebSocket Transport, OpAMP Client Initiated
 
 To close a connection the Client MUST first send an AgentToServer message with
 agent_disconnect field set. The Client MUST then send a WebSocket
