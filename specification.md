@@ -183,7 +183,6 @@ mixed Agents from different vendors.
 
 OpAMP supports the following functionality:
 
-* Maintaining Agent identity.
 * Remote configuration of the Agents.
 * Status reporting. The protocol allows the Agent to report the properties of
   the Agent such as its type and version or the operating system type and
@@ -206,8 +205,8 @@ of a large fleet of mixed Agents (e.g. OpenTelemetry Collector, Fluentd, etc).
 
 The OpAMP Server manages Agents that provide a client-side implementation of OpAMP
 protocol, further referred to as OpAMP Client or simply Client.
-OpAMP does not assume any particular relationship between the Agent and the Client,
-the Client can be run as a separate process with a different lifecycle than the Agent,
+OpAMP does not assume any particular relationship between the Agent and the Client.
+The Client can be run as a separate process with a different lifecycle than the Agent,
 a sidecar, a plugin, or be fully integrated into the Agent code.
 
 The Agents can optionally send their own telemetry to an OTLP
@@ -330,7 +329,7 @@ where only [instance_uid](#agenttoserverinstance_uid) field is set. This gives t
 opportunity to send back in the response any messages that the Server wants to
 deliver to the Agent (such as for example a new remote configuration).
 
-The default polling interval when the Agent does have anything to deliver is 30
+The default polling interval when the Agent does not have anything to deliver is 30
 seconds. This polling interval SHOULD be configurable on the Client.
 
 When using HTTP transport the sequence of messages is exactly the same as it is
@@ -1661,19 +1660,19 @@ interval is 10 seconds. Here is the diagram that shows the operation sequence:
         │         │                                      │  Backend
         │         │ServerToAgent{ConnectionSettingsOffer}│
         ┌─────────│◄─────────────────────────────────────┤    │
-        │         │                                      │    │
-        ▼         │                                           │
-    ┌────────┐    │                                           │
-    │Collect │    │                OTLP Metrics               │ ──┐
+        │                                                │    │
+        ▼                                                     │
+    ┌────────┐                                                │
+    │Collect │                     OTLP Metrics               │ ──┐
     │Own     ├───────────────────────────────────────────────►│   │
-    │Metrics │    │                                           │   │
-    └────────┘    .                    ...                    .   │ Repeats
+    │Metrics │                                                │   │
+    └────────┘                         ...                    .   │ Repeats
         │                                                         │
-    ┌────────┐    │                                           │   │ Periodically
-    │Collect │    │                OTLP Metrics               │   │
+    ┌────────┐                                                │   │ Periodically
+    │Collect │                     OTLP Metrics               │   │
     │Own     ├───────────────────────────────────────────────►│   │
-    │Metrics │    │                                           │ ──┘
-    └────────┘    │                                           │
+    │Metrics │                                                │ ──┘
+    └────────┘                                                │
 ```
 
 The Agent SHOULD report metrics of the Agent process (or processes) and any
@@ -1733,25 +1732,25 @@ set.
 Here is the typical configuration sequence diagram:
 
 ```
-   Agent       Client                             Server
+     Agent       Client                             Server
 
-     │           │ AgentToServer{}                   │   ┌─────────┐
-     │           ├──────────────────────────────────►├──►│ Process │
-     │           │                                   │   │ Status  │
-Local     Remote │                                   │   │ and     │
-Config    Config │ ServerToAgent{AgentRemoteConfig}  │   │ Fetch   │
-  │  │  ┌────────┤◄──────────────────────────────────┤◄──┤ Config  │
-  ▼  │  ▼        │                                   │   └─────────┘
-┌─────────┐      │                                   │
-│ Config  │      │                                   │
-│ Merger  │      │                                   │
-└────┬────┘      │                                   │
-     │           │                                   │
-     │Effective  │                                   │
-     │Config     │ AgentToServer{}                   │
-     └──────────►├──────────────────────────────────►│
-                 │                                   │
-                 │                                   │
+       │           │ AgentToServer{}                   │   ┌─────────┐
+       │           ├──────────────────────────────────►├──►│ Process │
+       │           │                                   │   │ Status  │
+Local  │    Remote │                                   │   │ and     │
+Config │    Config │ ServerToAgent{AgentRemoteConfig}  │   │ Fetch   │
+  │    │  ┌────────┤◄──────────────────────────────────┤◄──┤ Config  │
+  ▼    │  ▼        │                                   │   └─────────┘
+ ┌─────────┐       │                                   │
+ │ Config  │       │                                   │
+ │ Merger  │       │                                   │
+ └─────┬───┘       │                                   │
+       │           │                                   │
+       │Effective  │                                   │
+       │Config     │ AgentToServer{}                   │
+       └──────────►├──────────────────────────────────►│
+                   │                                   │
+                   │                                   │
 ```
 
 EffectiveConfig and RemoteConfigStatus fields are included in the AgentToServer
@@ -1770,23 +1769,23 @@ sequence diagram in this case looks like this:
 ```
     Agent      Client                             Server
 
-     │           │                                   │
-     │           │                                   │
-     │           │                                   │   ┌────────┐
-Local     Remote │                                   │   │Initiate│
-Config    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
-  │  │  ┌────────┤◄──────────────────────────────────┤◄──┤Send    │
-  ▼  │  ▼        │                                   │   │Config  │
-┌─────────┐      │                                   │   └────────┘
-│ Config  │      │                                   │
-│ Merger  │      │                                   │
-└────┬────┘      │                                   │
-     │           │                                   │
-     │Effective  │                                   │
-     │Config     │ AgentToServer{}                   │
-     └──────────►├──────────────────────────────────►│
-                 │                                   │
-                 │                                   │
+       │           │                                   │
+       │           │                                   │
+       │           │                                   │   ┌────────┐
+Local  │    Remote │                                   │   │Initiate│
+Config │    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
+    │  │  ┌────────┤◄──────────────────────────────────┤◄──┤Send    │
+    ▼  │  ▼        │                                   │   │Config  │
+  ┌─────────┐      │                                   │   └────────┘
+  │ Config  │      │                                   │
+  │ Merger  │      │                                   │
+  └────┬────┘      │                                   │
+       │           │                                   │
+       │Effective  │                                   │
+       │Config     │ AgentToServer{}                   │
+       └──────────►├──────────────────────────────────►│
+                   │                                   │
+                   │                                   │
 ```
 
 The Agent may ignore the Remote Configuration offer if it does not want its
