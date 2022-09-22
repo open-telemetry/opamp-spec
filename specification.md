@@ -401,13 +401,13 @@ message AgentToServer {
     string instance_uid = 1;
     uint64 sequence_num = 2;
     AgentDescription agent_description = 3;
-    AgentCapabilities capabilities = 4;
+    uint64 capabilities = 4;
     AgentHealth health = 5;
     EffectiveConfig effective_config = 6;
     RemoteConfigStatus remote_config_status = 7;
     PackageStatuses package_statuses = 8;
     AgentDisconnect agent_disconnect = 9;
-    AgentToServerFlags flags = 10;
+    uint64 flags = 10;
 }
 ```
 
@@ -586,8 +586,8 @@ message ServerToAgent {
     AgentRemoteConfig remote_config = 3;
     ConnectionSettingsOffers connection_settings = 4;
     PackagesAvailable packages_available = 5;
-    Flags flags = 6;
-    ServerCapabilities capabilities = 7;
+    uint64 flags = 6;
+    uint64 capabilities = 7;
     AgentIdentification agent_identification = 8;
     ServerToAgentCommand command = 9;
 }
@@ -630,7 +630,7 @@ This field is set when the Server has packages to offer to the Agent. See
 
 #### ServerToAgent.flags
 
-Bit flags as defined by Flags bit masks.
+Bit flags as defined by ServerToAgentFlags bit masks.
 
 `Report*` flags can be used by the Server if the Agent did not include the
 particular portion of the data in the last AgentToServer message (which is an allowed
