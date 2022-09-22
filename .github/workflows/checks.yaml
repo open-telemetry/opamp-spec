@@ -45,3 +45,10 @@ jobs:
 
     - name: validate markdown-toc
       run: git diff --exit-code ':*.md' || (echo 'Generated markdown Table of Contents is out of date, please run "make markdown-toc" and commit the changes in this PR.' && exit 1)
+
+  gen-proto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make docker-pull
+      - run: make gen-proto
