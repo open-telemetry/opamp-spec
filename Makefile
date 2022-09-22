@@ -1,7 +1,14 @@
+# Function to execute a command.
+# Accepts command to execute as first parameter.
+define exec-command
+$(1)
+
+endef
+
 ALL_DOCS := $(shell find . -type f -name '*.md' -not -path './.github/*' -not -path './node_modules/*' | sort)
 
 .PHONY: all
-all: markdown-toc markdown-link-check markdownlint
+all: markdown-toc markdown-link-check markdownlint gen-proto
 
 
 # This target runs markdown-toc on all files that contain
@@ -40,3 +47,31 @@ markdownlint:
 		npx --no -p markdownlint-cli markdownlint -c .markdownlint.yaml $$f \
 			|| exit 1; \
 	done
+
+
+GENDIR := gen
+# Find all .proto files.
+PROTO_FILES := $(wildcard proto/*.proto)
+
+PROTO_GEN_GO_DIR ?= $(GENDIR)/go
+
+OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.14.0
+
+# Docker pull image.
+.PHONY: docker-pull
+docker-pull:
+	docker pull $(OTEL_DOCKER_PROTOBUF)
+
+gen-proto: gen-go
+.PHONY: gen-proto
+
+# Generate Protobuf Go files.
+.PHONY: gen-go
+gen-go:
+	rm -rf ./$(PROTO_GEN_GO_DIR)
+	mkdir -p ./$(PROTO_GEN_GO_DIR)
+
+	# Verify generation of Go protos
+	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -v${PWD}:${PWD} \
+        -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
+        --go_out=./$(PROTO_GEN_GO_DIR) -I${PWD}/proto/ ${PWD}/$(file)))
