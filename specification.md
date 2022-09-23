@@ -382,7 +382,7 @@ The Client MAY compress the request body using gzip method and MUST specify
 "Content-Encoding: gzip" in that case. Server implementations MUST honour the
 "Content-Encoding" header and MUST support gzipped or uncompressed request bodies.
 
-The Server MAY compress the response if the Client indicated it can accept compressed
+The Server SHOULD compress the response if the Client indicated it can accept compressed
 response via the "Accept-Encoding" header.
 
 ## AgentToServer and ServerToAgent Messages
