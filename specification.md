@@ -2344,12 +2344,10 @@ When the Server is overloaded and is unstable to process the AgentToServer
 message it SHOULD respond with an ServerToAgent message, where
 [error_response](#servertoagenterror_response) is filled with
 [type](#servererrorresponsetype) field set to UNAVAILABLE.
-~~The Client SHOULD retry the message.~~ _(Note: retrying individual messages is
-not possible since we no longer have sequence ids and don't know which message
-failed)._ The Client SHOULD disconnect, wait, then reconnect again and resume its
+The Client SHOULD disconnect, wait, then reconnect again and resume its
 operation. The retry_info field may be optionally set with
 retry_after_nanoseconds field specifying how long the Client SHOULD wait before
-~~retiring the message~~ reconnecting:
+reconnecting:
 
 ```protobuf
 message RetryInfo {
