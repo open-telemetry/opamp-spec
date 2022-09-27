@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.0
+
+* Declare OpAMP Beta by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/104
+* Add Libraries, Platforms, and Agents sections to the Implementations by @andykellr in https://github.com/open-telemetry/opamp-spec/pull/108
+* Add missing ReportsHealth capability by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/111
+* Add ReportsRemoteConfig capability by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/115
+* Require that instance_uid is ULID instead of only recommending it by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/116
+* Clarify what is Agent, especially when Supervisor is used by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/117
+* Change bitfields from enum to uint64 by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/125
+* Separate the notions of Agent and Client by @PeterF778 in https://github.com/open-telemetry/opamp-spec/pull/122
+* Move proto files to opamp-spec repo by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/126
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.5.0...v0.6.0
+
 ## v0.5.0
 
 * Add basic Agent Health reporting by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/103
