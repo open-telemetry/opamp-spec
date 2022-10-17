@@ -948,8 +948,7 @@ https://github.com/open-telemetry/opentelemetry-specification/tree/main/specific
 For standalone running Agents (such as OpenTelemetry Collector) the following
 attributes SHOULD be specified:
 
-- service.name should be set to a reverse FQDN that uniquely identifies the
-  Agent type, e.g. "io.opentelemetry.collector"
+- service.name should be set to the same value that the Agent uses in its own telemetry.
 - service.namespace if it is used in the environment where the Agent runs.
 - service.version should be set to version number of the Agent build.
 - service.instance.id should be set. It may be be set equal to the Agent's
