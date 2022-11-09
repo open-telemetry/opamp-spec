@@ -12,6 +12,8 @@ Note: this document requires a simplification pass to reduce the scope, size and
 - [Introduction](#introduction)
 - [Communication Model](#communication-model)
   * [WebSocket Transport](#websocket-transport)
+    + [WebSocket Message Format](#websocket-message-format)
+    + [WebSocket Message Exchange](#websocket-message-exchange)
   * [Plain HTTP Transport](#plain-http-transport)
   * [AgentToServer and ServerToAgent Messages](#agenttoserver-and-servertoagent-messages)
     + [AgentToServer Message](#agenttoserver-message)
@@ -288,21 +290,67 @@ Supervisor is part of that entity.
 One of the supported transports for OpAMP protocol is
 [WebSocket](https://datatracker.ietf.org/doc/html/rfc6455). The OpAMP Client
 is a WebSocket client and the Server is a WebSocket Server. The Client and the Server
-communicate using binary data WebSocket messages. The payload of each WebSocket
-message is a
-[binary serialized Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
-message. On behalf of the Agent, the Client sends AgentToServer Protobuf messages and the Server sends
-ServerToAgent Protobuf messages:
+communicate using binary data WebSocket messages. The content of each WebSocket
+message is an encoded `header`, followed by a
+[binary encoded Protobuf](https://developers.google.com/protocol-buffers/docs/encoding)
+message `data` (see [WebSocket Message Format](#websocket-message-format)).
+
+On behalf of the Agent, the Client sends AgentToServer message data
+and the Server sends ServerToAgent Protobuf message data:
 
 ```
         ┌────────────\ \────────┐                        ┌──────────────┐
-        │            / /        │      AgentToServer     │              │
+        │            / /        │   Data:AgentToServer   │              │
         │            \ \ OpAmp  ├───────────────────────►│              │
         │     Agent  / /        │                        │    Server    │
-        │            \ \ Client │      ServerToAgent     │              │
+        │            \ \ Client │   Data:ServerToAgent   │              │
         │            / /        │◄───────────────────────┤              │
         └────────────\ \────────┘                        └──────────────┘
 ```
+
+### WebSocket Message Format
+
+The format of each WebSocket message is the following:
+
+```
+        ┌────────────┬────────────────────────────────────────┬───────────────────┐       
+        │ header     │ Varint encoded unsigned 64 bit integer │ 1-10 bytes        │
+        ├────────────┼────────────────────────────────────────┼───────────────────┤
+        │ data       │ Encoded Protobuf message,              │ 0 or more bytes   │
+        │            │ either AgentToServer or ServerToAgent  │                   │
+        └────────────┴────────────────────────────────────────┴───────────────────┘
+```
+
+The unencoded `header` is a 64 bit unsigned integer. In the WebSocket message the 64 bit
+unencoded `header` value is encoded into bytes using [Base 128 Varint](
+https://developers.google.com/protocol-buffers/docs/encoding#varints) format. The
+number of the bytes that the encoded `header` uses depends on the value of unencoded
+`header` and can be anything between 1 and 10 bytes.
+
+The value of the unencoded `header` is set equal to 0 in this version of the specification.
+All other `header` values are reserved for future use. Such values will be defined in
+future versions of OpAMP specification. OpAMP WebSocket message decoders that are
+compliant with this specification SHOULD check that the value of the `header` is equal
+to 0 and if it is not SHOULD assume that the WebSocket message is malformed.
+
+The `data` field contains the bytes that represent the AgentToServer or ServerToAgent
+message encoded in [Protobuf binary wire format](
+https://developers.google.com/protocol-buffers/docs/encoding).
+
+Note that both `header` and `data` fields contain a variable number of bytes.
+The decoding Base 128 Varint algorithm for the `header` knows when to stop based on the
+bytes it reads.
+
+To decode the `data` field using Protobuf decoding logic the implementation needs
+to know the number of the bytes of the `data` field. To calculate this the implementation
+MUST deduct the size of the `header` in bytes from the size of the WebSocket message
+in bytes.
+
+Note that due to the way Protobuf wire format is designed the size of the `data` in
+bytes can be 0 if the encoded AgentToServer or ServerToAgent message is empty (i.e. all
+fields are unset). This is a valid situation.
+
+### WebSocket Message Exchange
 
 OpAMP over WebSocket is an asynchronous, full-duplex message exchange protocol. The order and
 sequence of messages exchanged by the OpAMP Client and the Server is defined for each
