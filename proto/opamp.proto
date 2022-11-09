@@ -555,16 +555,16 @@ enum AgentCapabilities {
 
 // The health of the Agent.
 message AgentHealth {
-    // Set to true if the Agent is up and running.
-    bool up = 1;
+    // Set to true if the Agent is up and healthy.
+    bool healthy = 1;
 
     // Timestamp since the Agent is up, i.e. when the agent was started.
     // Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
-    // If "up" is false this field is unused.
+    // If the agent is not running MUST be set to 0.
     fixed64 start_time_unix_nano = 2;
 
-    // Human-readable error message if the Agent is in erroneous state. Typically set
-    // when up==false.
+    // Human-readable error message if the Agent is in erroneous state. SHOULD be set
+    // when healthy==false.
     string last_error = 3;
 }
 

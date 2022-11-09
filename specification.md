@@ -49,7 +49,7 @@ Note: this document requires a simplification pass to reduce the scope, size and
       - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
       - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
     + [AgentHealth Message](#agenthealth-message)
-      - [AgentHealth.up](#agenthealthup)
+      - [AgentHealth.healthy](#agenthealthhealthy)
       - [AgentHealth.start_time_unix_nano](#agenthealthstart_time_unix_nano)
       - [AgentHealth.last_error](#agenthealthlast_error)
     + [EffectiveConfig Message](#effectiveconfig-message)
@@ -1031,26 +1031,26 @@ The AgentHealth message has the following structure:
 
 ```protobuf
 message AgentHealth {
-    bool up = 1;
+    bool healthy = 1;
     fixed64 start_time_unix_nano = 2;
     string last_error = 3;
 }
 ```
 
-#### AgentHealth.up
+#### AgentHealth.healthy
 
-Set to true if the Agent is up and running.
+Set to true if the Agent is up and healthy.
 
 #### AgentHealth.start_time_unix_nano
 
 Timestamp since the Agent is up, i.e. when the agent was started.
 Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
-If "up" is false this field is unused.
+If the agent is not running MUST be set to 0.
 
 #### AgentHealth.last_error
 
-Human-readable error message if the Agent is in erroneous state. Typically set
-when up==false.
+Human-readable error message if the Agent is in erroneous state. SHOULD be set
+when healthy==false.
 
 ### EffectiveConfig Message
 
