@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.7.0
+
+* Change MAY to SHOULD for Server to Client compression by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/127
+* Remove deleted wording from the spec by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/128
+* Add link to proto directory and update Contributing section by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/130
+* Remove unnecessary recommendation about service.name by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/135
+* Adding a header for WebSocket messages to allow future extensibility by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/138
+* Clarify agent health reporting by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/137
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.6.0...v0.7.0
+
 ## v0.6.0
 
 * Declare OpAMP Beta by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/104
