@@ -154,6 +154,7 @@ Note: this document requires a simplification pass to reduce the scope, size and
   * [Interoperability of Future Capabilities](#interoperability-of-future-capabilities)
     + [Ignorable Capability Extensions](#ignorable-capability-extensions)
     + [Non-Ignorable Capability Extensions](#non-ignorable-capability-extensions)
+    + [Protobuf Schema Stability](#protobuf-schema-stability)
 - [Performance and Scale](#performance-and-scale)
 - [FAQ for Reviewers](#faq-for-reviewers)
   * [What is WebSocket?](#what-is-websocket)
@@ -2570,6 +2571,31 @@ the Client and Server which allows them to learn about the capabilities of the
 peer and adjust their behavior appropriately. How exactly the behavior is
 adjusted for future capabilities MUST be defined in the future specification of
 the new capabilities.
+
+### Protobuf Schema Stability
+
+The specification provides the follow stability guarantees of the
+[Protobuf definitions](proto/opamp.proto) for OpAMP 1.0:
+
+- Field types, numbers and names will not change.
+- Names of messages and enums will not change.
+- Numbers assigned to enum choices will not change.
+- Names of enum choices will not change.
+- The location of messages and enums, i.e. whether they are declared at the top lexical
+  scope or nested inside another message will not change.
+- Package names and directory structure will not change.
+- `optional` and `repeated` declarators of existing fields will not change.
+- No existing symbol will be deleted.
+
+Future versions of the OpAMP specification may be extended by modifying the
+Protobuf schema defined in this specification version. The following Protobuf schema
+changes are allowed, provided that they comply with the interoperability requirements
+defined elsewhere in this specification:
+
+- Adding new fields to existing messages.
+- Adding new messages or enums.
+- Adding new choices to existing enums.
+- Adding new choices to existing oneof fields.
 
 # Performance and Scale
 
