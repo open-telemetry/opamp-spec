@@ -510,25 +510,33 @@ enum AgentCapabilities {
     // The Agent will report EffectiveConfig in AgentToServer.
     ReportsEffectiveConfig         = 0x00000004;
     // The Agent can accept package offers.
+    // Status: [Beta].
     AcceptsPackages                = 0x00000008;
     // The Agent can report package status.
+    // Status: [Beta].
     ReportsPackageStatuses         = 0x00000010;
     // The Agent can report own trace to the destination specified by
     // the Server via ConnectionSettingsOffers.own_traces field.
+    // Status: [Beta].
     ReportsOwnTraces               = 0x00000020;
     // The Agent can report own metrics to the destination specified by
     // the Server via ConnectionSettingsOffers.own_metrics field.
+    // Status: [Beta].
     ReportsOwnMetrics              = 0x00000040;
     // The Agent can report own logs to the destination specified by
     // the Server via ConnectionSettingsOffers.own_logs field.
+    // Status: [Beta].
     ReportsOwnLogs                 = 0x00000080;
     // The can accept connections settings for OpAMP via
     // ConnectionSettingsOffers.opamp field.
+    // Status: [Beta].
     AcceptsOpAMPConnectionSettings = 0x00000100;
     // The can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
+    // Status: [Beta].
     AcceptsOtherConnectionSettings = 0x00000200;
     // The Agent can accept restart requests.
+    // Status: [Beta].
     AcceptsRestartCommand          = 0x00000400;
     // The Agent will report Health via AgentToServer.health field.
     ReportsHealth                  = 0x00000800;
@@ -562,6 +570,8 @@ This field SHOULD be unset if this information is unchanged since the last
 AgentToServer message.
 
 #### AgentToServer.package_statuses
+
+Status: [Beta].
 
 The list of the Agent packages, including package statuses.
 This field SHOULD be unset if this information is unchanged since the last
@@ -631,12 +641,12 @@ message ServerToAgent {
     string instance_uid = 1;
     ServerErrorResponse error_response = 2;
     AgentRemoteConfig remote_config = 3;
-    ConnectionSettingsOffers connection_settings = 4;
-    PackagesAvailable packages_available = 5;
+    ConnectionSettingsOffers connection_settings = 4; // Status: [Beta].
+    PackagesAvailable packages_available = 5; // Status: [Beta].
     uint64 flags = 6;
     uint64 capabilities = 7;
     AgentIdentification agent_identification = 8;
-    ServerToAgentCommand command = 9;
+    ServerToAgentCommand command = 9; // Status: [Beta].
 }
 ```
 
@@ -666,11 +676,15 @@ This field is set when the Server has a remote config offer for the Agent. See
 
 #### ServerToAgent.connection_settings
 
+Status: [Beta].
+
 This field is set when the Server wants the Agent to change one or more of its
 client connection settings (destination, headers, certificate, etc). See
 [Connection Settings Management](#connection-settings-management) for details.
 
 #### ServerToAgent.packages_available
+
+Status: [Beta].
 
 This field is set when the Server has packages to offer to the Agent. See
 [Packages](#packages) for details.
@@ -726,8 +740,10 @@ enum ServerCapabilities {
     // The Server can offer Packages.
     OffersPackages                 = 0x00000008;
     // The Server can accept Packages status.
+    // Status: [Beta].
     AcceptsPackagesStatus          = 0x00000010;
     // The Server can offer connection settings.
+    // Status: [Beta].
     OffersConnectionSettings       = 0x00000020;
 
     // Add new capabilities here, continuing with the least significant unused bit.
@@ -749,6 +765,8 @@ message AgentIdentification {
 ```
 
 #### ServerToAgent.command
+
+Status: [Beta].
 
 This field is set when the Server wants the Agent to
 perform a restart. This field must not be set with other fields
@@ -799,6 +817,8 @@ Error message, typically human readable.
 Additional [RetryInfo](#throttling) message about retrying if type==UNAVAILABLE.
 
 ## ServerToAgentCommand Message
+
+// Status: [Beta].
 
 The message has the following structure:
 
@@ -1114,6 +1134,8 @@ Optional error message if status==FAILED.
 
 ### PackageStatuses Message
 
+Status: [Beta].
+
 The PackageStatuses message describes the status of all packages that the Agent
 has or was offered. The message has the following structure:
 
@@ -1148,6 +1170,8 @@ and that error is not related to any particular single package.
 The field must be unset is there were no processing errors.
 
 ### PackageStatus Message
+
+Status: [Beta].
 
 The PackageStatus has the following structure:
 
@@ -1244,6 +1268,8 @@ failure.
 An error message if the status is erroneous.
 
 ## Connection Settings Management
+
+Status: [Beta].
 
 OpAMP includes features that allow the Server to manage Agent's connection
 settings for all of the destinations that the Agent connects to,
@@ -1693,6 +1719,8 @@ in the future.
 
 ## Own Telemetry Reporting
 
+Status: [Beta].
+
 Own Telemetry Reporting is an optional capability of OpAMP protocol. The Server
 can offer to the Agent a destination to which the Agent can send its own
 telemetry (metrics, traces or logs). If the Agent is capable of producing
@@ -1941,6 +1969,8 @@ message AgentRemoteConfig {
 ```
 
 ## Packages
+
+Status: [Beta].
 
 Each Agent is composed of one or more packages. A package has a name and content stored
 in a file. The content of the file, functionality provided by the packages, how they are
@@ -2323,6 +2353,8 @@ a new instance_uid, and send it as new_instance_uid value of AgentIdentification
 
 ## Authentication
 
+Status: [Beta].
+
 The Client and the Server MAY use authentication methods supported by HTTP, such
 as [Basic](https://datatracker.ietf.org/doc/html/rfc7617) authentication or
 [Bearer](https://datatracker.ietf.org/doc/html/rfc6750) authentication. The
@@ -2586,6 +2618,10 @@ The specification provides the follow stability guarantees of the
 - Package names and directory structure will not change.
 - `optional` and `repeated` declarators of existing fields will not change.
 - No existing symbol will be deleted.
+
+Note that the above guarantees do not apply to messages and fields which are
+labeled [Beta]. [Beta] message and fields are subject to weaker guarantees defined
+[here](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57).
 
 Future versions of the OpAMP specification may be extended by modifying the
 Protobuf schema defined in this specification version. The following Protobuf schema
