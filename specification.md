@@ -10,7 +10,7 @@ path_base_for_github_subdir:
 spelling: cSpell:ignore bitmask Fluentd varint opamp
 --->
 
-# OpAMP: Open Agent Management Protocol
+# Open Agent Management Protocol
 
 Status: [Beta](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57)
 
