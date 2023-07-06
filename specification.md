@@ -14,8 +14,6 @@ spelling: cSpell:ignore bitmask Fluentd varint opamp
 
 Status: [Beta](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57)
 
-> Note: this document requires a simplification pass to reduce the scope, size and complexity.
-
 <details>
 <summary>Table of Contents</summary>
 
