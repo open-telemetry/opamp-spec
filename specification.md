@@ -2480,24 +2480,24 @@ recommended for sensitive applications.
 
 We recommend that the Agent employs the zero-trust security model and does not
 automatically trust the remote configuration or other offers it receives from
-the Server. The data received from the Server SHOULD be verified and sanitized
+the Server. The data received from the Server should be verified and sanitized
 by the Agent in order to limit and prevent the damage that may be caused by
 malicious actors. We recommend the following:
 
-* The Agent SHOULD run at the minimum possible privilege to prevent itself from
+* The Agent should run at the minimum possible privilege to prevent itself from
   accessing sensitive files or perform high privilege operations. The Agent
-  SHOULD NOT run as root user, otherwise a compromised Agent may result in total
+  should not run as root user, otherwise a compromised Agent may result in total
   control of the machine by malicious actors.
-* If the Agent is capable of collecting local data it SHOULD limit the
-  collection to a specific set of directories. This limitation SHOULD be locally
-  specified and SHOULD NOT be overridable via remote configuration. If this rule
+* If the Agent is capable of collecting local data it should limit the
+  collection to a specific set of directories. This limitation should be locally
+  specified and should not be overridable via remote configuration. If this rule
   is not followed the remote configuration functionality may be exploited to
   access sensitive information on the Agent's machine.
 * If the Agent is capable of executing external code located on the machine
   where it runs and this functionality can be specified in the Agent's
-  configuration then the Agent SHOULD limit such functionality only to specific
-  scripts located in a limited set of directories. This limitation SHOULD be
-  locally specified and SHOULD NOT be overridable via remote configuration. If
+  configuration then the Agent should limit such functionality only to specific
+  scripts located in a limited set of directories. This limitation should be
+  locally specified and should not be overridable via remote configuration. If
   this rule is not followed the remote configuration functionality may be
   exploited to perform arbitrary code execution on the Agent's machine.
 
@@ -2539,7 +2539,7 @@ recommend the following:
 * Any downloadable executable code (e.g. executable packages)
   need to be code-signed. The actual code-signing and verification mechanism is
   Agent specific and is outside the concerns of the OpAMP specification.
-* The Agent SHOULD verify executable code in downloaded files to ensure the code
+* The Agent should verify executable code in downloaded files to ensure the code
   signature is valid.
 * The downloadable code can be signed with the signature included in the file content or
   have a detached signature recorded in the DownloadableFile
@@ -2548,10 +2548,10 @@ recommend the following:
 * If Certificate Authority is used for code signing it is recommended that the
   Certificate Authority and its private key is not co-located with the OpAMP
   Server, so that a compromised Server cannot sign malicious code.
-* The Agent SHOULD run any downloaded executable code (the packages and or any
+* The Agent should run any downloaded executable code (the packages and or any
   code that it runs as external processes) at the minimum possible privilege to
   prevent the code from accessing sensitive files or perform high privilege
-  operations. The Agent SHOULD NOT run downloaded code as root user.
+  operations. The Agent should not run downloaded code as root user.
 
 ## Interoperability
 
