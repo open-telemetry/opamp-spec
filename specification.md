@@ -167,7 +167,6 @@ Status: [Beta](https://github.com/open-telemetry/community/blob/47813530864b9fe5
     + [Ignorable Capability Extensions](#ignorable-capability-extensions)
     + [Non-Ignorable Capability Extensions](#non-ignorable-capability-extensions)
     + [Protobuf Schema Stability](#protobuf-schema-stability)
-- [Performance and Scale](#performance-and-scale)
 - [FAQ for Reviewers](#faq-for-reviewers)
   * [What is WebSocket?](#what-is-websocket)
   * [Why not Use TCP Instead of WebSocket?](#why-not-use-tcp-instead-of-websocket)
@@ -2645,10 +2644,6 @@ defined elsewhere in this specification:
 - Adding new messages or enums.
 - Adding new choices to existing enums.
 - Adding new choices to existing oneof fields.
-
-## Performance and Scale
-
-TBD
 
 ## FAQ for Reviewers
 
