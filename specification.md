@@ -1977,6 +1977,7 @@ The message has the following structure:
 ```protobuf
 message AgentRemoteConfig {
   AgentConfigMap config = 1;
+  bytes config_hash = 2;
 }
 ```
 
