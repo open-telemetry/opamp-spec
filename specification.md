@@ -12,7 +12,7 @@ spelling: cSpell:ignore bitmask Fluentd varint opamp
 
 # Open Agent Management Protocol
 
-Status: [Beta](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57)
+Status: [Beta]
 
 <details>
 <summary>Table of Contents</summary>
@@ -580,7 +580,7 @@ AgentToServer message.
 
 ##### AgentToServer.package_statuses
 
-Status: [Beta].
+Status: [Beta]
 
 The list of the Agent packages, including package statuses.
 This field SHOULD be unset if this information is unchanged since the last
@@ -685,7 +685,7 @@ This field is set when the Server has a remote config offer for the Agent. See
 
 ##### ServerToAgent.connection_settings
 
-Status: [Beta].
+Status: [Beta]
 
 This field is set when the Server wants the Agent to change one or more of its
 client connection settings (destination, headers, certificate, etc). See
@@ -693,7 +693,7 @@ client connection settings (destination, headers, certificate, etc). See
 
 ##### ServerToAgent.packages_available
 
-Status: [Beta].
+Status: [Beta]
 
 This field is set when the Server has packages to offer to the Agent. See
 [Packages](#packages) for details.
@@ -775,7 +775,7 @@ message AgentIdentification {
 
 ##### ServerToAgent.command
 
-Status: [Beta].
+Status: [Beta]
 
 This field is set when the Server wants the Agent to
 perform a restart. This field must not be set with other fields
@@ -1143,7 +1143,7 @@ Optional error message if status==FAILED.
 
 #### PackageStatuses Message
 
-Status: [Beta].
+Status: [Beta]
 
 The PackageStatuses message describes the status of all packages that the Agent
 has or was offered. The message has the following structure:
@@ -1180,7 +1180,7 @@ The field must be unset is there were no processing errors.
 
 #### PackageStatus Message
 
-Status: [Beta].
+Status: [Beta]
 
 The PackageStatus has the following structure:
 
@@ -1278,7 +1278,7 @@ An error message if the status is erroneous.
 
 ### Connection Settings Management
 
-Status: [Beta].
+Status: [Beta]
 
 OpAMP includes features that allow the Server to manage Agent's connection
 settings for all of the destinations that the Agent connects to,
@@ -1728,7 +1728,7 @@ in the future.
 
 ### Own Telemetry Reporting
 
-Status: [Beta].
+Status: [Beta]
 
 Own Telemetry Reporting is an optional capability of OpAMP protocol. The Server
 can offer to the Agent a destination to which the Agent can send its own
@@ -1980,7 +1980,7 @@ message AgentRemoteConfig {
 
 ### Packages
 
-Status: [Beta].
+Status: [Beta]
 
 Each Agent is composed of one or more packages. A package has a name and content stored
 in a file. The content of the file, functionality provided by the packages, how they are
@@ -2363,7 +2363,7 @@ a new instance_uid, and send it as new_instance_uid value of AgentIdentification
 
 ### Authentication
 
-Status: [Beta].
+Status: [Beta]
 
 The Client and the Server MAY use authentication methods supported by HTTP, such
 as [Basic](https://datatracker.ietf.org/doc/html/rfc7617) authentication or
@@ -2630,8 +2630,8 @@ The specification provides the follow stability guarantees of the
 - No existing symbol will be deleted.
 
 Note that the above guarantees do not apply to messages and fields which are
-labeled [Beta]. [Beta] message and fields are subject to weaker guarantees defined
-[here](https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57).
+labeled `[Beta]`. [Beta] message and fields are subject to weaker guarantees as defined
+in the [maturity matrix][beta].
 
 Future versions of the OpAMP specification may be extended by modifying the
 Protobuf schema defined in this specification version. The following Protobuf schema
@@ -2748,3 +2748,5 @@ reduce the number of connections to the Server when a very large number
 ### Other
 
 * [Websocket Load Balancing](https://pdf.sciencedirectassets.com/280203/1-s2.0-S1877050919X0006X/1-s2.0-S1877050919303576/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEI3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIAhC7%2Bztk8aH29lDsWYFIHLt97kwOE4PoWkiPfH2OTQwAiEA65oLMq1RhzF6b5pSixhnPVLT9G2iKkG145XtdpW4d4IqgwQIpv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAEGgwwNTkwMDM1NDY4NjUiDDtEVrp4vXmh0hvwWyrXAxnfLN4%2BsMMF7wxoXOiBFQjn%2FJLpSLUIWghc87%2Bx2tbvdCIC%2BQV4JCY9rOK3p9rogqh9yoI2yem4SHASzL%2BQUQMOiGWagk%2FzyCNdS0y%2FLzHkKDahvRMJGKxWeXErbsuvPCufnbDpNHmKD0vnT5sqpOoM64%2FJVxvd9QYx48xasNMtXZ8%2BFm9wPpNQnsWSEZKYiOKLaLfnATzcXADJmOCTVQbwZoT4%2BFKWcoujBxSBHE9kw7S749ywQ9bOtgNWid5R2dj0z%2Br6C63SnBS3IdMSZ2qO4H3XTYY5pbfNCfR57zKIdwyp3zLJr5%2BtTEz1YR9FXwWF9niDEr0v2qu%2FlL7%2BGHsak8UQ4hZ0BFlZtcIRNW1lpZd9bNSINb3d6MnGeYrkhxQVP0KcZsowP9672IYzuMD4nK1X4Hv7bMqeO7ojuSf%2F2ND9NXn0Ldr%2BX0lzESv10LyhElCGfFJ4EZjIxYOKZdee1Zc1USdj1kNx1OC0cefIN1ixiA0OIbtWVz1lI6n1LYpngeUYngGP0ZFb%2Br%2FbleC3WarDHWIn4NNjI1aQW3P9fTmKEan3b3skRIBbwM8%2FrwRJGYQ03JaCKuU4xbogz9uEL%2BbpJ1SB7En8pS8xuSiE1kzvnsF0FTCEvMSIBjqlAadtZOgWRUk2FxdoYsCK43DYqD6zjbDrRBfyIXTJGlJYKt5iR3SCi8ySacO1aPZhah9ir179nYi5dVYnf5c6%2Fe8Q5Mo1uRtisouWJZSjAOhmRY7a76fSqyHwj088aI5t1pcempNCOnsM4SfyrZJ9UE%2FKfb5YsJ71VwRPZ%2BXZ%2FvZnQlW7e6NJqWswhre0pQftkShN%2BbpE%2FTzusekzm6q3w6b3ynUN8A%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20210809T134614Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTY2T5F5OYZ%2F20210809%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=6098b604ebac38723d26ae66e527b397312a6371ad19e1a4fbfe94ca9c61e1a9&hash=ebd5b943d3aff77c6bfb8853fab1598db53996f5f018d688364a41dd71c15d92&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1877050919303576&tid=spdf-3c0a3a1a-bd3b-40d0-af0d-48a46859c89a&sid=d21b79c59bbb0348b79945c084cc3b66983agxrqa&type=client)
+
+[beta]: https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57
