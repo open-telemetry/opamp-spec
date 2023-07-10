@@ -1020,8 +1020,8 @@ message AgentDescription {
 
 Attributes that identify the Agent.
 
-Keys/values are according to OpenTelemetry semantic conventions, see:
-https://github.com/open-telemetry/opentelemetry-specification/tree/main/specification/resource/semantic_conventions
+Keys/values are according to OpenTelemetry [resource semantic
+conventions](https://github.com/open-telemetry/semantic-conventions/tree/main/docs/resource).
 
 For standalone running Agents (such as OpenTelemetry Collector) the following
 attributes SHOULD be specified:
