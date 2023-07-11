@@ -7,7 +7,7 @@ github_project_repo: *repo
 path_base_for_github_subdir:
   from: content/en/docs/specs/opamp/index.md
   to: specification.md
-spelling: cSpell:ignore bitmask Fluentd varint opamp
+spelling: cSpell:ignore bitmask Flipr Fluentd varint opamp oneof protoc Rpbjpvc
 --->
 
 # Open Agent Management Protocol
@@ -667,7 +667,7 @@ is multiplexed into one WebSocket connection (for example when a terminating
 proxy is used) the instance_uid field allows to distinguish which Agent the
 ServerToAgent message is addressed to.
 
-Note: the value can be overriden by Server by sending a new one in the
+Note: the value can be overridden by Server by sending a new one in the
 AgentIdentification field. When this happens then Agent MUST update its
 instance_uid to the value provided and use it for all further communication.
 
@@ -761,7 +761,7 @@ enum ServerCapabilities {
 
 ##### ServerToAgent.agent_identification
 
-Properties related to identification of the Agent, which can be overriden by the
+Properties related to identification of the Agent, which can be overridden by the
 Server if needed. When new_instance_uid is set, Agent MUST update instance_uid
 to the value provided and use it for all further communication. The new_instance_uid MUST
 be a [ULID](https://github.com/ulid/spec) formatted as a 26 character string in canonical
@@ -1641,7 +1641,7 @@ For fields which reference other messages the field is considered unset
 when the reference is unset.
 
 For primitive field (string) we rely on the "flags" to describe that the
-field is not set (this is done to overcome the limitation of old protoc
+field is not set (this is done to overcome the limitation of old `protoc`
 compilers don't generate methods that allow to check for the presence of
 the field.
 
@@ -2356,10 +2356,10 @@ The Server MAY disconnect or deny serving requests if it detects that the same
 Client instance has more than one simultaneous connection or if multiple Agent
 instances are using the same instance_uid.
 
-The Server SHOULD detect duplicate instance_uids (which may happen for example
+The Server SHOULD detect duplicate `instance_uid`s (which may happen for example
 when Agents are using bad UID generators or due to cloning of the VMs where the
-Agent runs). When a duplicate instance_uid is detected, Server SHOULD generate
-a new instance_uid, and send it as new_instance_uid value of AgentIdentification.
+Agent runs). When a duplicate `instance_uid` is detected, Server SHOULD generate
+a new `instance_uid`, and send it as `new_instance_uid` value of AgentIdentification.
 
 ### Authentication
 
