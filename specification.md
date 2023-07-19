@@ -1478,6 +1478,8 @@ without disrupting the access to all other Agents.
 
 #### Agent-initiated CSR Flow
 
+Status: [Development]
+
 This is an Agent-initiated flow that allows the Client to send a Certificate
 Signing Request (CSR) to the Server and obtain a self-signed or CA-signed client
 certificate that the Client can use for subsequent OpAMP connections.
@@ -1542,7 +1544,8 @@ The sequence is the following:
   will be set to the CA's public key. The private_key field will not be set, since in
   this flow the Agent possesses the private key and the Server does not possess it.
 - (8) Upon successful completion of verification of the offered new client certificate,
-  the Agent removes the bootstrap certificate.
+  the Agent removes the bootstrap certificate if one was used and uses the new
+  certificate for future connections.
 
 When sending OpAMPConnectionSettings to the Agent the Server MAY include fields
 other than `certificate`, thus enabling the Server to replace Agent's certificate,
@@ -1552,7 +1555,12 @@ If any of the steps 4-6 fails the Server MUST respond to the Agent with a
 [ServerErrorResponse](#servererrorresponse-message) with the `type` field set
 to `ServerErrorResponseType_BadRequest`.
 
+The exact same flow may be used by the Agent to re-request a new certificate anytime.
+For example the Agent may do it when the current certificate expiration date approaches.
+
 ##### Using instance_uid in the CSR
+
+Status: [Development]
 
 The implementation may choose to use Agent's instance_uid as one of the CSR fields
 (or part of the field) and the Server may in such implementations verify that the
@@ -1569,7 +1577,7 @@ of the instance_uid requires re-generation of the client certificate. Such chang
 possible for example if the Server instructs the Agent to use a new instance_uid
 via [new_instance_uid](#servertoagentagent_identification) field.
 
-When instructed by the Server to changes its instance_uid the Agent must also repeat the
+When instructed by the Server to change its instance_uid the Agent must also repeat the
 [Agent-initiated CSR Flow](#agent-initiated-csr-flow) this time using the new
 instance_uid as one of the CSR fields. The Server must be ready to receive a CSR like
 that, while the Agent is still using the old certificate that contains the old
