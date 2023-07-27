@@ -7,7 +7,7 @@ github_project_repo: *repo
 path_base_for_github_subdir:
   from: content/en/docs/specs/opamp/index.md
   to: specification.md
-spelling: cSpell:ignore bitmask Flipr Fluentd varint opamp oneof protoc Rpbjpvc
+cSpell:ignore: bitmask Flipr Fluentd oneof protoc Rpbjpvc varint
 --->
 
 # Open Agent Management Protocol
