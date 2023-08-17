@@ -1372,8 +1372,8 @@ of connection settings for "other" destinations is described in
 [Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations).
 The handling of OpAMP connection settings is described below.
 
-It is also possible the Agent to make a request the Server to initiate the connection
-settings creation. This process is described in
+It is also possible for the Agent to make a request to the Server to initiate the
+connection settings creation. This process is described in
 [Agent-initiated CSR Flow](#agent-initiated-csr-flow) section.
 
 #### OpAMP Connection Setting Offer Flow
@@ -1485,8 +1485,8 @@ Signing Request (CSR) to the Server and obtain a self-signed or CA-signed client
 certificate that the Client can use for subsequent OpAMP connections.
 
 This flow is currently only supported for OpAMP connections. It is not possible
-for the Agent to send a CSR request for own telemetry connection or for other
-connections types.
+for the Agent to send a CSR request for own telemetry connections or for other
+connection types.
 
 ```
                    Client                                 Server
@@ -1521,7 +1521,7 @@ connections types.
 ```
 
 The sequence is the following:
-- (1) The Client connects to the Server. The Client SHOULD use a regular TLS, validating
+- (1) The Client connects to the Server. The Client SHOULD use regular TLS and validate
   the Server's identity. The Agent may also use a bootstrap client certificate that is
   already trusted by the Server. (Note: the distribution and installation method of
   the bootstrap certificate is not part of this specification).
@@ -1533,17 +1533,17 @@ The sequence is the following:
 - (5) The Server either waits for a manual approval by a human or automatically
   approves all TOFU requests if the Server is configured to do so (can be a
   Server-side option).
-- (6) Once approved the Server creates a client certificate. The Server does this
+- (6) Once approved, the Server creates a client certificate. The Server does this
   either by issuing a self-signed certificate (acting as a local CA) or proxies the
   CSR to a CA and obtains a client certificate from the CA.
-- After obtaining the client certificate from the CA the flow is essentially
+- (7) After obtaining the client certificate from the CA the flow is essentially
   identical to [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
   steps, starting by offering the connection settings that carry the created client
-  certificate (7). The OpAMPConnectionSettings.certificate message will have the
+  certificate. The OpAMPConnectionSettings.certificate message will have the
   public_key field set to the client certificate. If a CA is used the ca_public_key field
   will be set to the CA's public key. The private_key field will not be set, since in
   this flow the Agent possesses the private key and the Server does not possess it.
-- (8) Upon successful completion of verification of the offered new client certificate,
+- (8) Upon successfully verifying of the offered new client certificate,
   the Agent removes the bootstrap certificate if one was used and uses the new
   certificate for future connections.
 
@@ -1568,19 +1568,19 @@ connecting Agent's instance_uid in the payloads matches the certificate's conten
 This prevents Agents impersonating other Agents.
 
 When the Server receives a CSR containing the instance_uid in CSR fields the Server
-MUST verify that [instance_uid](#agenttoserverinstance_uid) field in AgentToServer
+MUST verify that the [instance_uid](#agenttoserverinstance_uid) field in AgentToServer
 message matches the instance_uid in the CSR fields. This enforces that the Agent
 may only ask for a certificate for itself.
 
 If the instance_uid is part of the CSR and the issued client certificate then any change
 of the instance_uid requires re-generation of the client certificate. Such change is
 possible for example if the Server instructs the Agent to use a new instance_uid
-via [new_instance_uid](#servertoagentagent_identification) field.
+via the [new_instance_uid](#servertoagentagent_identification) field.
 
 When instructed by the Server to change its instance_uid the Agent must also repeat the
 [Agent-initiated CSR Flow](#agent-initiated-csr-flow) this time using the new
-instance_uid as one of the CSR fields. The Server must be ready to receive a CSR like
-that, while the Agent is still using the old certificate that contains the old
+instance_uid as one of the CSR fields. The Server must then be ready to receive a CSR
+while the Agent is still using the old certificate that contains the old
 instance_uid.
 
 In other words: an incoming CSR may ask for a new certificate that references an
@@ -1640,7 +1640,7 @@ message ConnectionSettingsRequest {
 }
 ```
 
-`opamp` field is set to indicate a request for OpAMP connection settings.
+The `opamp` field is set to indicate a request for OpAMP connection settings.
 If this field is unset then the ConnectionSettingsRequest message is empty and is
 not actionable for the Server.
 
@@ -1672,7 +1672,7 @@ message CertificateRequest {
 }
 ```
 
-`csr` field is the PEM-encoded Client Certificate Signing Request (CSR), signed by
+The `csr` field is the PEM-encoded Client Certificate Signing Request (CSR), signed by
 client's private key.
 
 The Server SHOULD validate the request and SHOULD respond with a
