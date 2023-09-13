@@ -1649,7 +1649,7 @@ not actionable for the Server.
 Status: [Development]
 
 OpAMPConnectionSettingsRequest is a request for the Server to produce
-a OpAMPConnectionSettings in its response.
+an OpAMPConnectionSettings in its response.
 
 Used for [Agent-initiated CSR Flow](#agent-initiated-csr-flow).
 
