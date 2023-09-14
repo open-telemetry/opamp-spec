@@ -76,6 +76,11 @@ message AgentToServer {
 
     // Bit flags as defined by AgentToServerFlags bit masks.
     uint64 flags = 10;
+
+    // A request to create connection settings. This field is set for flows where
+    // the Agent initiates the creation of connection settings.
+    // Status: [Development]
+    ConnectionSettingsRequest connection_settings_request = 11;
 }
 
 enum AgentToServerFlags {
@@ -96,6 +101,38 @@ enum AgentToServerFlags {
 // this message stream using AgentConnect message, even if the corresponding
 // AgentDisconnect message were not explicitly received from the Agent.
 message AgentDisconnect {
+}
+
+// ConnectionSettingsRequest is a request from the Agent to the Server to create
+// and respond with an offer of connection settings for the Agent.
+// Status: [Development]
+message ConnectionSettingsRequest {
+    // Request for OpAMP connection settings. If this field is unset
+    // then the ConnectionSettingsRequest message is empty and is not actionable
+    // for the Server.
+    OpAMPConnectionSettingsRequest opamp = 1;
+
+    // In the future we can add request fields for non-OpAMP connection types
+    // (own telemetry, other connections).
+}
+
+// OpAMPConnectionSettingsRequest is a request for the Server to produce
+// a OpAMPConnectionSettings in its response.
+// Status: [Development]
+message OpAMPConnectionSettingsRequest {
+    // A request to create a client certificate. This is used to initiate a
+    // Client Signing Request (CSR) flow.
+    // Required.
+    CertificateRequest certificate_request = 1;
+}
+
+// Status: [Development]
+message CertificateRequest {
+    // PEM-encoded Client Certificate Signing Request (CSR), signed by client's private key.
+    // The Server SHOULD validate the request and SHOULD respond with a
+    // OpAMPConnectionSettings where the certificate.public_key contains the issued
+    // certificate.
+    bytes csr = 1;
 }
 
 message ServerToAgent {
@@ -179,6 +216,9 @@ enum ServerCapabilities {
     // The Server can offer connection settings.
     // Status: [Beta]
     ServerCapabilities_OffersConnectionSettings = 0x00000020;
+    // The Server can accept ConnectionSettingsRequest and respond with an offer.
+    // Status: [Development]
+    ServerCapabilities_AcceptsConnectionSettingsRequest = 0x00000040;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }

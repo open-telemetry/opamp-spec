@@ -37,6 +37,7 @@ Status: [Beta]
       - [AgentToServer.package_statuses](#agenttoserverpackage_statuses)
       - [AgentToServer.agent_disconnect](#agenttoserveragent_disconnect)
       - [AgentToServer.flags](#agenttoserverflags)
+      - [AgentToServer.connection_settings_request](#agenttoserverconnection_settings_request)
     + [ServerToAgent Message](#servertoagent-message)
       - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
       - [ServerToAgent.error_response](#servertoagenterror_response)
@@ -84,9 +85,14 @@ Status: [Beta]
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
     + [Registration On First Use](#registration-on-first-use)
+    + [Agent-initiated CSR Flow](#agent-initiated-csr-flow)
+      - [Using instance_uid in the CSR](#using-instance_uid-in-the-csr)
     + [Revoking Access](#revoking-access)
     + [Certificate Generation](#certificate-generation)
     + [Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations)
+    + [ConnectionSettingsRequest Message](#connectionsettingsrequest-message)
+    + [OpAMPConnectionSettingsRequest Message](#opampconnectionsettingsrequest-message)
+    + [CertificateRequest Message](#certificaterequest-message)
     + [ConnectionSettingsOffers Message](#connectionsettingsoffers-message)
       - [ConnectionSettingsOffers.hash](#connectionsettingsoffershash)
       - [ConnectionSettingsOffers.opamp](#connectionsettingsoffersopamp)
@@ -459,6 +465,7 @@ message AgentToServer {
     PackageStatuses package_statuses = 8;
     AgentDisconnect agent_disconnect = 9;
     uint64 flags = 10;
+    ConnectionSettingsRequest connection_settings_request = 11; // Status: [Development]
 }
 ```
 
@@ -601,6 +608,15 @@ enum AgentToServerFlags {
     RequestInstanceUid     = 0x00000001;
 }
 ```
+
+##### AgentToServer.connection_settings_request
+
+Status: [Development]
+
+A request to create connection settings. This field is set for flows where
+the Agent initiates the creation of connection settings.
+
+See [ConnectionSettingsRequest](#connectionsettingsrequest-message) message for details.
 
 #### ServerToAgent Message
 
@@ -749,6 +765,9 @@ enum ServerCapabilities {
     // The Server can offer connection settings.
     // Status: [Beta]
     OffersConnectionSettings       = 0x00000020;
+    // The Server can accept ConnectionSettingsRequest and respond with an offer.
+    // Status: [Development]
+    AcceptsConnectionSettingsRequest = 0x00000040;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -1353,9 +1372,13 @@ of connection settings for "other" destinations is described in
 [Connection Settings for "Other" Destinations](#connection-settings-for-other-destinations).
 The handling of OpAMP connection settings is described below.
 
+It is also possible for the Agent to make a request to the Server to initiate the
+connection settings creation. This process is described in
+[Agent-initiated CSR Flow](#agent-initiated-csr-flow) section.
+
 #### OpAMP Connection Setting Offer Flow
 
-Here is how the OpAMP connection settings change happens:
+Here is how the server-initiated OpAMP connection settings change happens:
 
 ```
                    Client                                 Server
@@ -1453,6 +1476,121 @@ immediately after successful connection each Agent will acquire their own unique
 connection credentials. This way individual Agent's credentials may be revoked
 without disrupting the access to all other Agents.
 
+#### Agent-initiated CSR Flow
+
+Status: [Development]
+
+This is an Agent-initiated flow that allows the Client to send a Certificate
+Signing Request (CSR) to the Server and obtain a self-signed or CA-signed client
+certificate that the Client can use for subsequent OpAMP connections.
+
+This flow is currently only supported for OpAMP connections. It is not possible
+for the Agent to send a CSR request for own telemetry connections or for other
+connection types.
+
+```
+                   Client                                 Server
+
+                     │ (1)           Connect                 │
+                     ├──────────────────────────────────────►│
+                     │                 ...                   │
+┌───────────┐        │                                       │          ┌───────────┐
+│ Generate  │  (2)   │ (3)     AgentToServer{CSR}            │(4)       │           │
+│ Keypair   ├───────►├──────────────────────────────────────►├─────────►│  Approve  │
+│ and CSR   │        │                 ...                   │          │           │
+└───────────┘        │                                       │          └─────┬─────┘
+                     │                                       │                │(5)
+                     │                                       │                │
+                     │                                       │                ▼
+                     │                                       │          ┌───────────┐
+┌───────────┐        │ServerToAgent{ConnectionSettingsOffers}│ (7)      │Create     │
+│           │◄───────┤◄──────────────────────────────────────┤◄─────────┤Certificate│
+│Credentials│ Save   │                                       │          │    (6)    │
+│   Store   │        │             Disconnect                │          └───────────┘
+│           ├───────►├──────────────────────────────────────►│
+└───────────┘        │                                       │
+                     │    Connect, New settings              │          ┌───────────┐
+                     ├──────────────────────────────────────►├─────────►│           │
+                     │                                       │ Delete   │Credentials│
+┌───────────┐        │    Connection established             │ old      │   Store   │
+│           │◄───────┤◄─────────────────────────────────────►│◄─────────┤           │
+│Credentials│Delete  │                                       │          └───────────┘
+│   Store   │old (8) │                                       │
+│           ├───────►│                                       │
+└───────────┘        │                                       │
+```
+
+The sequence is the following:
+- (1) The Client connects to the Server. The Client SHOULD use regular TLS and validate
+  the Server's identity. The Agent may also use a bootstrap client certificate that is
+  already trusted by the Server. (Note: the distribution and installation method of
+  the bootstrap certificate is not part of this specification).
+- (2) The Agent generates a keypair and a Certificate Signing Request (CSR). The CSR
+  contains the information that client wants to use for subsequent authentication.
+- (3) The Client sends an AgentToServer message containing the CSR.
+- (4) If a bootstrap certificate is provided the Server validates it (e.g. with a
+  trusted CA) and awaits for an approval to generate a client certificate for the Agent.
+- (5) The Server either waits for a manual approval by a human or automatically
+  approves all TOFU requests if the Server is configured to do so (can be a
+  Server-side option).
+- (6) Once approved, the Server creates a client certificate. The Server does this
+  either by issuing a self-signed certificate (acting as a local CA) or proxies the
+  CSR to a CA and obtains a client certificate from the CA.
+- (7) After obtaining the client certificate from the CA the flow is essentially
+  identical to [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
+  steps, starting by offering the connection settings that carry the created client
+  certificate. The OpAMPConnectionSettings.certificate message will have the
+  public_key field set to the client certificate. If a CA is used the ca_public_key field
+  will be set to the CA's public key. The private_key field will not be set, since in
+  this flow the Agent possesses the private key and the Server does not possess it.
+- (8) Upon successfully verifying of the offered new client certificate,
+  the Agent removes the bootstrap certificate if one was used and uses the new
+  certificate for future connections.
+
+When sending OpAMPConnectionSettings to the Agent the Server MAY include fields
+other than `certificate`, thus enabling the Server to replace Agent's certificate,
+connection headers and other settings at once.
+
+If any of the steps 4-6 fails the Server MUST respond to the Agent with a
+[ServerErrorResponse](#servererrorresponse-message) with the `type` field set
+to `ServerErrorResponseType_BadRequest`.
+
+The exact same flow may be used by the Agent to re-request a new certificate anytime.
+For example the Agent may do it when the current certificate expiration date approaches.
+
+##### Using instance_uid in the CSR
+
+Status: [Development]
+
+The implementation may choose to use Agent's instance_uid as one of the CSR fields
+(or part of the field) and the Server may in such implementations verify that the
+connecting Agent's instance_uid in the payloads matches the certificate's content.
+This prevents Agents impersonating other Agents.
+
+When the Server receives a CSR containing the instance_uid in CSR fields the Server
+MUST verify that the [instance_uid](#agenttoserverinstance_uid) field in AgentToServer
+message matches the instance_uid in the CSR fields. This enforces that the Agent
+may only ask for a certificate for itself.
+
+If the instance_uid is part of the CSR and the issued client certificate then any change
+of the instance_uid requires re-generation of the client certificate. Such change is
+possible for example if the Server instructs the Agent to use a new instance_uid
+via the [new_instance_uid](#servertoagentagent_identification) field.
+
+When instructed by the Server to change its instance_uid the Agent must also repeat the
+[Agent-initiated CSR Flow](#agent-initiated-csr-flow) this time using the new
+instance_uid as one of the CSR fields. The Server must then be ready to receive a CSR
+while the Agent is still using the old certificate that contains the old
+instance_uid.
+
+In other words: an incoming CSR may ask for a new certificate that references an
+instance_uid that is different from the instance_uid that is referenced in the
+client certificate that is used by that same incoming connection. This is a valid
+situation and must not be rejected by the Server. In this situation the Server may
+also look at the instance_uid in the connecting client certificate and compare it
+to the old known instance_uid to confirm that the Agent is indeed performing
+an instance_uid change as instructed by the Server.
+
 #### Revoking Access
 
 Since the Server knows what access headers and a client certificate the Client
@@ -1488,6 +1626,58 @@ OpAMP specification.
 #### Connection Settings for "Other" Destinations
 
 TBD
+
+#### ConnectionSettingsRequest Message
+
+Status: [Development]
+
+ConnectionSettingsRequest is a request from the Agent to the Server to create
+and respond with an offer of connection settings for the Agent.
+
+```protobuf
+message ConnectionSettingsRequest {
+    OpAMPConnectionSettingsRequest opamp = 1;
+}
+```
+
+The `opamp` field is set to indicate a request for OpAMP connection settings.
+If this field is unset then the ConnectionSettingsRequest message is empty and is
+not actionable for the Server.
+
+#### OpAMPConnectionSettingsRequest Message
+
+Status: [Development]
+
+OpAMPConnectionSettingsRequest is a request for the Server to produce
+an OpAMPConnectionSettings in its response.
+
+Used for [Agent-initiated CSR Flow](#agent-initiated-csr-flow).
+
+```protobuf
+message OpAMPConnectionSettingsRequest {
+    CertificateRequest certificate_request = 1;
+}
+```
+
+certificate_request is set when the Agent requests the Server to create a client
+certificate. This field is required.
+
+#### CertificateRequest Message
+
+Status: [Development]
+
+```protobuf
+message CertificateRequest {
+    bytes csr = 1;
+}
+```
+
+The `csr` field is the PEM-encoded Client Certificate Signing Request (CSR), signed by
+client's private key.
+
+The Server SHOULD validate the request and SHOULD respond with a
+OpAMPConnectionSettings where the certificate.public_key contains the issued
+certificate.
 
 #### ConnectionSettingsOffers Message
 
