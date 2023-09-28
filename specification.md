@@ -2492,9 +2492,9 @@ authenticity of the downloaded file, for example can be the
 The exact signing and verification method is Agent specific. See
 [Code Signing](#code-signing) for recommendations.
 
-## Custom Messages
+### Custom Messages
 
-### Motivation
+#### Motivation
 
 The OpAMP protocol is intended to cover all aspects of remote management and configuration of Agents. If more
 requirements within this core functionality are identified, it is expected that the protocol will be extended to support
@@ -2507,7 +2507,7 @@ While interoperability between many Agents and Agent Management Servers is a goa
 functionality may be only supported by specific Agents and Servers. Where appropriate, implementers are encouraged to
 document their use of CustomMessage so that support can be added to additional platforms.
 
-### CustomMessage
+#### CustomMessage
 
 CustomMessage allows for custom messages to be sent between the Agent and Server. It is supported on ServerToAgent and
 AgentToServer. It requires that the Agent and Server both agree on the contents and encoding of the message. If the type
@@ -2525,25 +2525,25 @@ message CustomMessage {
 }
 ```
 
-#### CustomMessage.sequence_num
+##### CustomMessage.sequence_num
 
 The sequence_num of this CustomMessage so that the CustomMessageAck can be associated with this message. This
 number MUST be increased with each message to allow messages to be uniquely identified. In the case of a
 CustomMessage in an AgentToServer message, this MAY be the sequence_num of the enclosing AgentToServer message.
 
-#### CustomMessage.type
+##### CustomMessage.type
 
 The message type should a reverse FQDN that uniquely identifies the custom message type.
 
-#### CustomMessage.body
+##### CustomMessage.body
 
 Optional string body of the message. The Agent and Server must agree on the format of the contents.
 
-#### CustomMessage.data
+##### CustomMessage.data
 
 Optional binary data of the message. The Agent and Server must agree on the format of the contents.
 
-### CustomMessageAck
+#### CustomMessageAck
 
 CustomMessageAck MUST be returned in response to a CustomMessage. It allows the sender of the CustomMessage to determine
 if the message was successfully handled.
@@ -2565,11 +2565,11 @@ message CustomMessageAck {
 }
 ```
 
-#### CustomMessageAck.msg_sequence_num
+##### CustomMessageAck.msg_sequence_num
 
 This Ack is in response to the CustomMessage with the corresponding sequence_num.
 
-#### CustomMessageAck.status
+##### CustomMessageAck.status
 
 The status field indicates if and how the custom message was handled. Possible values are:
 
@@ -2579,23 +2579,23 @@ OK: The CustomMessage was handled successfully.
 
 ERROR: The CustomMessage was unable to be handled successfully. The error_message should contain additional information.
 
-#### CustomMessageAck.error_message
+##### CustomMessageAck.error_message
 
 Error message in string form, typically human readable.
 
-### Examples
+#### Examples
 
 The following examples describe possible uses of CustomMessage but are not intended to be part of any specification.
 They only describe how CustomMessage might be used. In these examples, "io.opentelemetry." is used to create the FQDN of
 the message types.
 
-#### Pause/Resume
+##### Pause/Resume
 
 Suppose an Agent supports the ability to pause and resume collection. When paused, no telemetry data is collected or
 sent. Resume will resume the collection and sending of telemetry data. To allow a Server to control this behavior,
 CustomMessage could be used.
 
-##### Pause
+###### Pause
 
 Server sends a ServerToAgent message containing a CustomMessage with a unique sequence_num _N_ and type
 "io.opentelemetry.pause". No body or data is sent because this is a simple command with no additional information.
@@ -2610,17 +2610,17 @@ If the Agent supports this message but encounters an error trying to pause, it r
 containing a CustomMessageAck with a msg_sequence_num _N_ matching the sequence_num of the CustomMessage and a status of
 ERROR with additional details in the error_message field.
 
-##### Resume
+###### Resume
 
 Similar to Pause but with a CustomMessage type "io.opentelemetry.resume".
 
-#### Service Discovery
+##### Service Discovery
 
 Service discovery involves discovering running services that are accessible to the Agent for which the Agent could
 collect telemetry. In this example the Server will send a message to the Agent to ask for available services. It will
 expect a response from the Agent containing information about the available services.
 
-##### FindServices
+###### FindServices
 
 Server sends a ServerToAgent message containing a CustomMessage with a unique sequence_num _N_ and type
 "io.opentelemetry.find_services". No body or data is sent because this is a simple request with no additional
@@ -2638,7 +2638,7 @@ If the Agent supports this message but encounters an error trying to discover se
 returns an AgentToServer message containing a CustomMessageAck with a msg_sequence_num _N_ matching the sequence_num of
 the CustomMessage and a status of ERROR with additional details in the error_message field.
 
-##### FindServicesResponse
+###### FindServicesResponse
 
 After discovering services, the Agent sends an AgentToServer message containing a CustomMessage with a unique
 sequence_num _R_, type "io.opentelemetry.find_services_response", and a string body containing the JSON encoding of a
