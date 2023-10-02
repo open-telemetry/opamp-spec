@@ -2586,7 +2586,7 @@ message CustomMessage {
 
 ##### CustomMessage.type
 
-The message type should a reverse FQDN that uniquely identifies the custom message type.
+A reverse FQDN that uniquely identifies the custom message type.
 
 ##### CustomMessage.data
 
