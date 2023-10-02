@@ -38,6 +38,8 @@ Status: [Beta]
       - [AgentToServer.agent_disconnect](#agenttoserveragent_disconnect)
       - [AgentToServer.flags](#agenttoserverflags)
       - [AgentToServer.connection_settings_request](#agenttoserverconnection_settings_request)
+      - [AgentToServer.custom_message_capabilities](#agenttoservercustom_message_capabilities)
+      - [AgentToServer.custom_message](#agenttoservercustom_message)
     + [ServerToAgent Message](#servertoagent-message)
       - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
       - [ServerToAgent.error_response](#servertoagenterror_response)
@@ -48,6 +50,8 @@ Status: [Beta]
       - [ServerToAgent.capabilities](#servertoagentcapabilities)
       - [ServerToAgent.agent_identification](#servertoagentagent_identification)
       - [ServerToAgent.command](#servertoagentcommand)
+      - [ServerToAgent.custom_message_capabilities](#servertoagentcustom_message_capabilities)
+      - [ServerToAgent.custom_message](#servertoagentcustom_message)
     + [ServerErrorResponse Message](#servererrorresponse-message)
       - [ServerErrorResponse.type](#servererrorresponsetype)
       - [ServerErrorResponse.error_message](#servererrorresponseerror_message)
@@ -148,20 +152,18 @@ Status: [Beta]
       - [DownloadableFile.signature](#downloadablefilesignature)
   * [Custom Messages](#custom-messages)
     + [Motivation](#motivation)
+    + [CustomMessageCapabilities Message](#custommessagecapabilities-message)
+      - [CustomMessageCapabilities.custom_message_types](#custommessagecapabilitiescustom_message_types)
     + [CustomMessage](#custommessage)
-      - [CustomMessage.sequence_num](#custommessagesequence_num)
       - [CustomMessage.type](#custommessagetype)
-      - [CustomMessage.body](#custommessagebody)
       - [CustomMessage.data](#custommessagedata)
-    + [CustomMessageAck](#custommessageack)
-      - [CustomMessageAck.msg_sequence_num](#custommessageackmsg_sequence_num)
-      - [CustomMessageAck.status](#custommessageackstatus)
-      - [CustomMessageAck.error_message](#custommessageackerror_message)
     + [Examples](#examples)
       - [Pause/Resume](#pauseresume)
+        * [Agent Connection](#agent-connection)
         * [Pause](#pause)
         * [Resume](#resume)
       - [Service Discovery](#service-discovery)
+        * [Agent Connection](#agent-connection-1)
         * [FindServices](#findservices)
         * [FindServicesResponse](#findservicesresponse)
 - [Connection Management](#connection-management)
@@ -484,6 +486,8 @@ message AgentToServer {
     AgentDisconnect agent_disconnect = 9;
     uint64 flags = 10;
     ConnectionSettingsRequest connection_settings_request = 11; // Status: [Development]
+    CustomMessageCapabilities custom_message_capabilities = 12; // Status: [Development]
+    CustomMessage custom_message = 13; // Status: [Development]
 }
 ```
 
@@ -636,6 +640,22 @@ the Agent initiates the creation of connection settings.
 
 See [ConnectionSettingsRequest](#connectionsettingsrequest-message) message for details.
 
+##### AgentToServer.custom_message_capabilities
+
+Status: [Development]
+
+A message indicating custom message types supported by Agent.
+
+See [CustomMessageCapabilities](#custommessagecapabilities-message) message for details.
+
+##### AgentToServer.custom_message
+
+Status: [Development]
+
+A custom message sent from an Agent to the Server.
+
+See [CustomMessage](#custommessage) message for details.
+
 #### ServerToAgent Message
 
 The body of the WebSocket message or HTTP response body is a binary serialized
@@ -685,6 +705,8 @@ message ServerToAgent {
     uint64 capabilities = 7;
     AgentIdentification agent_identification = 8;
     ServerToAgentCommand command = 9; // Status: [Beta]
+    CustomMessageCapabilities custom_message_capabilities = 10; // Status: [Development]
+    CustomMessage custom_message = 11; // Status: [Development]
 }
 ```
 
@@ -814,6 +836,22 @@ perform a restart. This field must not be set with other fields
 besides instance_uid or capabilities. All other fields will be ignored and the
 Agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
 for details.
+
+##### ServerToAgent.custom_message_capabilities
+
+Status: [Development]
+
+A message indicating custom message types supported by the Server.
+
+See [CustomMessageCapabilities](#custommessagecapabilities-message) message for details.
+
+##### ServerToAgent.custom_message
+
+Status: [Development]
+
+A custom message sent from the Server to an Agent.
+
+See [CustomMessage](#custommessage) message for details.
 
 #### ServerErrorResponse Message
 
@@ -2496,164 +2534,129 @@ The exact signing and verification method is Agent specific. See
 
 #### Motivation
 
-The OpAMP protocol is intended to cover all aspects of remote management and configuration of Agents. If more
-requirements within this core functionality are identified, it is expected that the protocol will be extended to support
-this additional behavior in future releases. However, there are some use cases that require communication with Agents
-that will not by supported by the OpAMP protocol because they are not within the scope of Agent remote management. The
-CustomMessage allows custom behavior to be implemented between a Server and Agent without having to open another
-connection or define an entirely new protocol.
+The OpAMP protocol is intended to cover all aspects of remote management and configuration
+of Agents. If more requirements within this core functionality are identified, it is
+expected that the protocol will be extended to support this additional behavior in future
+releases. However, there are some use cases that require communication with Agents that
+will not by supported by the OpAMP protocol because they are not within the scope of Agent
+remote management. The CustomMessage allows custom behavior to be implemented between a
+Server and Agent without having to open another connection or define an entirely new
+protocol.
 
-While interoperability between many Agents and Agent Management Servers is a goal of OpAMP, additional custom
-functionality may be only supported by specific Agents and Servers. Where appropriate, implementers are encouraged to
-document their use of CustomMessage so that support can be added to additional platforms.
+While interoperability between many Agents and Agent Management Servers is a goal of
+OpAMP, additional custom functionality may only be supported by specific Agents and
+Servers. Where appropriate, implementers are encouraged to document their use of
+CustomMessage so that support can be added to additional platforms.
 
-#### CustomMessage
+#### CustomMessageCapabilities Message
 
-CustomMessage allows for custom messages to be sent between the Agent and Server. It is supported on ServerToAgent and
-AgentToServer. It requires that the Agent and Server both agree on the contents and encoding of the message. If the type
-is not recognized, the message MUST be ignored and a reply with CustomMessageAck with Status NOT_SUPPORTED MUST be sent.
-
-A CustomMessage identifies the type of message and can contain a string body, binary data, neither, or both. It also contains a
-sequence_num that is used to associated a CustomMessage with a [CustomMessageAck](#CustomMessageAck).
+The Agent and Server should both use this message to signal that they support specific
+custom messages. It is supported on ServerToAgent and AgentToServer. When this message is
+sent, the list of supported custom message types should be updated to match this list. If
+this message is never sent, it is assumed that no custom message types are supported.
 
 ```protobuf
-message CustomMessage {
-    uint64 sequence_num = 1;
-    string type = 2;
-    string body = 3;
-    bytes data = 4;
+message CustomMessageCapabilities {
+  repeated string custom_message_types = 1; // Status: [Development]
 }
 ```
 
-##### CustomMessage.sequence_num
+##### CustomMessageCapabilities.custom_message_types
 
-The sequence_num of this CustomMessage so that the CustomMessageAck can be associated with this message. This
-number MUST be increased with each message to allow messages to be uniquely identified. In the case of a
-CustomMessage in an AgentToServer message, this MAY be the sequence_num of the enclosing AgentToServer message.
+A list of custom message types that are supported. Each type should match the type
+specified in a supported CustomMessage.
+
+#### CustomMessage
+
+CustomMessage allows for custom messages to be sent between the Agent and Server. It is
+supported on ServerToAgent and AgentToServer to allow for custom communication in both
+directions. It requires that the Agent and Server both agree on the contents and encoding
+of the messages. If the message type is not recognized, the message can be ignored.
+
+A CustomMessage identifies the type of message and contains binary data with the contents
+of the message. The format of the data will depend on the message type and is outside of
+the scope of the OpAMP protocol.
+
+```protobuf
+message CustomMessage {
+    string type = 1;
+    bytes data = 2;
+}
+```
 
 ##### CustomMessage.type
 
 The message type should a reverse FQDN that uniquely identifies the custom message type.
 
-##### CustomMessage.body
-
-Optional string body of the message. The Agent and Server must agree on the format of the contents.
-
 ##### CustomMessage.data
 
-Optional binary data of the message. The Agent and Server must agree on the format of the contents.
-
-#### CustomMessageAck
-
-CustomMessageAck MUST be returned in response to a CustomMessage. It allows the sender of the CustomMessage to determine
-if the message was successfully handled.
-
-Handling a CustomMessage may result in another CustomMessage in response, e.g. a Server could request information from
-an Agent and expect the Agent to reply with that information in a separate CustomMessage. The CustomMessageAck allows
-the sender to know if it should expect a reply or if the message was ignored or was an error.
-
-```protobuf
-message CustomMessageAck {
-    enum Status {
-        NOT_SUPPORTED = 0;
-        OK = 1;
-        ERROR = 2;
-    }
-    uint64 msg_sequence_num = 1;
-    Status status = 2;
-    string error_message = 3;
-}
-```
-
-##### CustomMessageAck.msg_sequence_num
-
-This Ack is in response to the CustomMessage with the corresponding sequence_num.
-
-##### CustomMessageAck.status
-
-The status field indicates if and how the custom message was handled. Possible values are:
-
-NOT_SUPPORTED: The CustomMessage was ignored because the message type was not recognized or supported. The error_message may contain additional information.
-
-OK: The CustomMessage was handled successfully.
-
-ERROR: The CustomMessage was unable to be handled successfully. The error_message should contain additional information.
-
-##### CustomMessageAck.error_message
-
-Error message in string form, typically human readable.
+Binary data of the message. The Agent and Server must agree on the format of the contents.
 
 #### Examples
 
-The following examples describe possible uses of CustomMessage but are not intended to be part of any specification.
-They only describe how CustomMessage might be used. In these examples, "io.opentelemetry." is used to create the FQDN of
-the message types.
+The following examples describe possible uses of CustomMessage but are not intended to be
+part of any specification. They only describe how CustomMessage might be used. In these
+examples, "io.opentelemetry." is used to create the FQDN of the message types.
 
 ##### Pause/Resume
 
-Suppose an Agent supports the ability to pause and resume collection. When paused, no telemetry data is collected or
-sent. Resume will resume the collection and sending of telemetry data. To allow a Server to control this behavior,
-CustomMessage could be used.
+Suppose an Agent supports the ability to pause and resume collection. When paused, no
+telemetry data is collected or sent. Resume will resume the collection and sending of
+telemetry data. To allow a Server to control this behavior, a CustomMessage could be used.
+
+###### Agent Connection
+
+On connection, the Agent sends a CustomMessageCapabilities message including the message
+types "io.opentelemetry.pause" and "io.opentelemetry.resume". In response, the Server
+sends a CustomMessageCapabilities message including "io.opentelemetry.paused" and
+"io.opentelemetry.resumed".
 
 ###### Pause
 
-Server sends a ServerToAgent message containing a CustomMessage with a unique sequence_num _N_ and type
-"io.opentelemetry.pause". No body or data is sent because this is a simple command with no additional information.
+Server sends a ServerToAgent message containing a CustomMessage with type
+"io.opentelemetry.pause". No data is sent because this is a simple command with no
+additional information.
 
-If the Agent does not support this message, it returns an AgentToServer message containing a CustomMessageAck with a
-msg_sequence_num _N_ matching the sequence_num of the CustomMessage and a status of NOT_SUPPORTED.
+If the Agent supports this message and is able to successfully pause, it returns an
+AgentToServer message containing a CustomMessage with type "io.opentelemetry.paused" with
+empty data.
 
-If the Agent supports this message and is able to successfully pause, it returns an AgentToServer message containing a
-CustomMessageAck with a msg_sequence_num _N_ matching the sequence_num of the CustomMessage and a status of OK.
-
-If the Agent supports this message but encounters an error trying to pause, it returns an AgentToServer message
-containing a CustomMessageAck with a msg_sequence_num _N_ matching the sequence_num of the CustomMessage and a status of
-ERROR with additional details in the error_message field.
+If the Agent supports this message but encounters an error trying to pause, it returns an
+AgentToServer message containing a CustomMessage with type "io.opentelemetry.paused" and a
+binary JSON-encoded response containing an error message.
 
 ###### Resume
 
-Similar to Pause but with a CustomMessage type "io.opentelemetry.resume".
+Similar to Pause but with a CustomMessage types "io.opentelemetry.resume" and
+"io.opentelemetry.resumed".
 
 ##### Service Discovery
 
-Service discovery involves discovering running services that are accessible to the Agent for which the Agent could
-collect telemetry. In this example the Server will send a message to the Agent to ask for available services. It will
-expect a response from the Agent containing information about the available services.
+Service discovery involves discovering running services that are accessible to the Agent
+for which the Agent could collect telemetry. In this example the Server will send a
+message to the Agent to ask for available services. It will expect a response from the
+Agent containing information about the available services.
+
+###### Agent Connection
+
+On connection, the Agent sends a CustomMessageCapabilities message including the message
+type "io.opentelemetry.find_services". In response, the Server sends a
+CustomMessageCapabilities message including the message type
+"io.opentelemetry.find_services_response".
 
 ###### FindServices
 
-Server sends a ServerToAgent message containing a CustomMessage with a unique sequence_num _N_ and type
-"io.opentelemetry.find_services". No body or data is sent because this is a simple request with no additional
-information.
-
-If the Agent does not support this message, it returns an AgentToServer message containing a CustomMessageAck with a
-msg_sequence_num _N_ matching the sequence_num of the CustomMessage and a status of NOT_SUPPORTED.
-
-If the Agent supports this message and is able to respond with services, it returns an AgentToServer message containing
-a CustomMessageAck with a msg_sequence_num _N_ matching the sequence_num of the CustomMessage and a status of OK. The
-CustomMessageAck does not support additional payload information so the response with a list of services will be
-returned in a separate CustomMessage.
-
-If the Agent supports this message but encounters an error trying to discover services, e.g. a permissions error, it
-returns an AgentToServer message containing a CustomMessageAck with a msg_sequence_num _N_ matching the sequence_num of
-the CustomMessage and a status of ERROR with additional details in the error_message field.
+Server sends a ServerToAgent message containing a CustomMessage with type
+"io.opentelemetry.find_services". No data is sent because this is a simple request with no
+additional information.
 
 ###### FindServicesResponse
 
-After discovering services, the Agent sends an AgentToServer message containing a CustomMessage with a unique
-sequence_num _R_, type "io.opentelemetry.find_services_response", and a string body containing the JSON encoding of a
-complex data structure containing information about all of the services it discovered.
-
-If the Server does not support this message, it returns a ServerToAgent message containing a CustomMessageAck with a
-msg_sequence_num _R_ matching the sequence_num of the CustomMessage and a status of NOT_SUPPORTED.
-
-If the Server supports this message and is able to parse the JSON body with information about the services, it returns
-an AgentToServer message containing a CustomMessageAck with a msg_sequence_num _R_ matching the sequence_num of the
-CustomMessage and a status of OK.
-
-If the Server supports this message but encounters an error trying to process the message, e.g. a JSON parsing error, it
-returns an AgentToServer message containing a CustomMessageAck with a msg_sequence_num _R_ matching the sequence_num of
-the CustomMessage and a status of ERROR with additional details in the error_message field.
+After discovering services, the Agent sends an AgentToServer message containing a
+CustomMessage with type "io.opentelemetry.find_services_response" and binary data
+containing the JSON encoding of a complex data structure containing information about all
+of the services it discovered. This data structure would also include an optional field
+for errors encountered during discovery.
 
 ## Connection Management
 
