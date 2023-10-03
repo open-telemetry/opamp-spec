@@ -81,6 +81,14 @@ message AgentToServer {
     // the Agent initiates the creation of connection settings.
     // Status: [Development]
     ConnectionSettingsRequest connection_settings_request = 11;
+
+    // A message indicating custom message types supported by Agent.
+    // Status: [Development]
+    CustomMessageCapabilities custom_message_capabilities = 12;
+
+    // A custom message sent from an Agent to the Server.
+    // Status: [Development]
+    CustomMessage custom_message = 13;
 }
 
 enum AgentToServerFlags {
@@ -180,6 +188,14 @@ message ServerToAgent {
     // will be performed.
     // Status: [Beta]
     ServerToAgentCommand command = 9;
+
+    // A message indicating custom message types supported by the Server.
+    // Status: [Development]
+    CustomMessageCapabilities custom_message_capabilities = 10;
+
+    // A custom message sent from the Server to an Agent.
+    // Status: [Development]
+    CustomMessage custom_message = 11;
 }
 
 enum ServerToAgentFlags {
@@ -816,4 +832,25 @@ message AgentConfigFile {
     // Optional MIME Content-Type that describes what's in the body field, for
     // example "text/yaml".
     string content_type = 2;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Custom messages
+/////////////////////////////////////////////////////////////////////////////////////
+
+message CustomMessageCapabilities {
+    // A list of custom message types that are supported. Each type should match the type
+    // specified in a supported CustomMessage.
+    // Status: [Development]
+    repeated string custom_message_types = 1;
+}
+
+message CustomMessage {
+    // A reverse FQDN that uniquely identifies the custom message type.
+    // Status: [Development]
+    string type = 1;
+
+    // Binary data of the message. The Agent and Server must agree on the format of the contents.
+    // Status: [Development]
+    bytes data = 2;
 }
