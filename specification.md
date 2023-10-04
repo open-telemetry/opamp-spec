@@ -487,7 +487,7 @@ message AgentToServer {
     AgentDisconnect agent_disconnect = 9;
     uint64 flags = 10;
     ConnectionSettingsRequest connection_settings_request = 11; // Status: [Development]
-    CustomMessageCapabilities custom_message_capabilities = 12; // Status: [Development]
+    CustomCapabilities custom_capabilities = 12; // Status: [Development]
     CustomMessage custom_message = 13; // Status: [Development]
 }
 ```
