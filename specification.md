@@ -644,7 +644,7 @@ See [ConnectionSettingsRequest](#connectionsettingsrequest-message) message for 
 
 Status: [Development]
 
-A message indicating custom message types supported by Agent.
+A message indicating custom message types supported by an Agent.
 
 See [CustomMessageCapabilities](#custommessagecapabilities-message) message for details.
 
