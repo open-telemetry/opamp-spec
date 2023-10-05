@@ -2627,46 +2627,49 @@ CustomMessages could be introduced.
 ###### Agent Connection
 
 On connection, the Agent sends an AgentToServer message with CustomCapabilities including
-the capabilities "io.opentelemetry.pause" and "io.opentelemetry.resume". In response, the
-Server sends a ServerToAgent message with a CustomCapabilities message including
-"io.opentelemetry.pause" and "io.opentelemetry.resume".
+the capabilities "io.opentelemetry.pause". In response, the Server sends a ServerToAgent
+message with a CustomCapabilities message including "io.opentelemetry.pause".
 
 ```
 CustomCapabilities {
-  capabilities: ["io.opentelemetry.pause", "io.opentelemetry.resume"]
+  capabilities: ["io.opentelemetry.pause"]
 }
 ```
 
 ###### Pause
 
-Server sends a ServerToAgent message containing the following CustomMessage. No data is
-sent because this is a simple command with no additional information.
+Server sends a ServerToAgent message containing the following CustomMessage with type
+"pause". No data is sent because this is a simple command with no additional information.
 
 ```
 CustomMessage {
   capability: "io.opentelemetry.pause"
-  type: "request"
+  type: "pause"
 }
 ```
 
 If the Agent supports this message and is able to successfully pause, it returns an
-AgentToServer message containing a CustomMessage with empty data.
+AgentToServer message containing a CustomMessage with type "status" and with data
+containing a binary JSON-encoded response with the new paused state.
 
 ```
 CustomMessage {
   capability: "io.opentelemetry.pause"
-  type: "response"
+  type: "status"
+  data: {
+    "paused": true
+  }
 }
 ```
 
 If the Agent supports this message but encounters an error trying to pause, it returns an
-AgentToServer message containing a CustomMessage with data containing a binary
-JSON-encoded response containing an error message.
+AgentToServer message containing a CustomMessage with type "error" and with data
+containing a binary JSON-encoded response containing an error message.
 
 ```
 CustomMessage {
   capability: "io.opentelemetry.pause"
-  type: "response"
+  type: "error"
   data: {
     "error": "Unable to pause"
   }
@@ -2675,7 +2678,15 @@ CustomMessage {
 
 ###### Resume
 
-Similar to Pause but with the capability types "io.opentelemetry.resume".
+Similar to Pause but the ServerToAgent message contains a CustomMessage with type
+"resume" and on success the new status would be { "paused": false }.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.pause"
+  type: "resume"
+}
+```
 
 ##### Service Discovery
 
