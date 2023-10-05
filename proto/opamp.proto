@@ -839,22 +839,27 @@ message AgentConfigFile {
 /////////////////////////////////////////////////////////////////////////////////////
 
 message CustomCapabilities {
-    // A list of custom capabilities that are supported. Each capability is a reverse
-    // FQDN that uniquely identifies the custom capability.
+    // A list of custom capabilities that are supported. Each capability is a reverse FQDN
+    // with optional version information that uniquely identifies the custom capability
+    // and should match a capability specified in a supported CustomMessage.
     // Status: [Development]
     repeated string capabilities = 1;
 }
 
 message CustomMessage {
-    // A reverse FQDN that uniquely identifies the custom capability.
+    // A reverse FQDN that uniquely identifies the capability and matches one of the
+    // capabilities in the CustomCapabilities message.
     // Status: [Development]
     string capability = 1;
 
-    // The custom message type.
+    // Type of message within the capability. The capability defines the types of custom
+    // messages that are used to implement the capability. The type must only be unique
+    // within the capability.
     // Status: [Development]
     string type = 2;
 
-    // Binary data of the message. The Agent and Server must agree on the format of the contents.
+    // Binary data of the message. The capability must specify the format of the contents
+    // of the data for each custom message type it defines.
     // Status: [Development]
     bytes data = 3;
 }

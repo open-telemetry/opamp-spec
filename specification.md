@@ -2574,8 +2574,9 @@ message CustomCapabilities {
 
 ##### CustomCapabilities.capabilities
 
-A list of custom capabilities that are supported. Each capability should match a
-capability specified in a supported CustomMessage.
+A list of custom capabilities that are supported. Each capability is a reverse FQDN with
+optional version information that uniquely identifies the custom capability and should
+match a capability specified in a supported CustomMessage.
 
 #### CustomMessage
 
@@ -2604,11 +2605,14 @@ in the CustomCapabilities message.
 
 ##### CustomMessage.type
 
-The custom message type.
+Type of message within the capability. The capability defines the types of custom messages
+that are used to implement the capability. The type must only be unique within the
+capability.
 
 ##### CustomMessage.data
 
-Binary data of the message. The Agent and Server must agree on the format of the contents.
+Binary data of the message. The capability must specify the format of the contents of the
+data for each custom message type it defines.
 
 #### Examples
 
