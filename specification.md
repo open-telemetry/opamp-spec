@@ -2619,10 +2619,8 @@ own FQDN.
 
 ##### Pause/Resume
 
-Suppose an Agent supports the ability to pause and resume collection. When paused, no
-telemetry data is collected or sent. Resume will resume the collection and sending of
-telemetry data. To allow a Server to control this behavior, a CustomCapability using
-CustomMessages could be introduced.
+Suppose an Agent supports the ability to pause and resume telemetry collection. When
+paused, no telemetry data is collected or sent. To allow a Server to control this behavior, a CustomCapability using CustomMessages could be introduced.
 
 ###### Agent Connection
 
