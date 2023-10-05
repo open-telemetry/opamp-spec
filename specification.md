@@ -2679,7 +2679,7 @@ CustomMessage {
 ###### Resume
 
 Similar to Pause but the ServerToAgent message contains a CustomMessage with type
-"resume" and on success the new status would be { "paused": false }.
+"resume" and on success the new status would be `{ "paused": false }`.
 
 ```
 CustomMessage {
