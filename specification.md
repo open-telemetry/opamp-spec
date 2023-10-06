@@ -59,10 +59,13 @@ Status: [Beta]
     + [AgentDescription Message](#agentdescription-message)
       - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
       - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
-    + [AgentHealth Message](#agenthealth-message)
-      - [AgentHealth.healthy](#agenthealthhealthy)
-      - [AgentHealth.start_time_unix_nano](#agenthealthstart_time_unix_nano)
-      - [AgentHealth.last_error](#agenthealthlast_error)
+    + [ComponentHealth Message](#componenthealth-message)
+      - [ComponentHealth.healthy](#componenthealthhealthy)
+      - [ComponentHealth.start_time_unix_nano](#componenthealthstart_time_unix_nano)
+      - [ComponentHealth.last_error](#componenthealthlast_error)
+      - [ComponentHealth.status](#componenthealthstatus)
+      - [ComponentHealth.status_time_unix_nano](#componenthealthstatus_time_unix_nano)
+      - [ComponentHealth.component_health_map](#componenthealthcomponent_health_map)
     + [EffectiveConfig Message](#effectiveconfig-message)
       - [EffectiveConfig.config_map](#effectiveconfigconfig_map)
     + [RemoteConfigStatus Message](#remoteconfigstatus-message)
@@ -459,7 +462,7 @@ message AgentToServer {
     uint64 sequence_num = 2;
     AgentDescription agent_description = 3;
     uint64 capabilities = 4;
-    AgentHealth health = 5;
+    ComponentHealth health = 5;
     EffectiveConfig effective_config = 6;
     RemoteConfigStatus remote_config_status = 7;
     PackageStatuses package_statuses = 8;
@@ -560,7 +563,7 @@ enum AgentCapabilities {
 
 ##### AgentToServer.health
 
-The current health of the Agent. See [AgentHealth message](#agenthealth-message).
+The current health of the Agent and sub-components. See [ComponentHealth message](#componenthealth-message).
 May be omitted if nothing changed since last AgentToServer message.
 
 ##### AgentToServer.effective_config
@@ -987,7 +990,7 @@ The Client MAY compress the AgentToServer message by omitting the sub-messages t
 since that particular data was reported last time. The following sub-messages can be subject
 to such compression:
 [AgentDescription](#agentdescription-message),
-[AgentHealth](#agenthealth-message),
+[ComponentHealth](#componenthealth-message),
 [EffectiveConfig](#effectiveconfig-message),
 [RemoteConfigStatus](#remoteconfigstatus-message) and
 [PackageStatuses](#packagestatuses-message).
@@ -1069,32 +1072,50 @@ The following attributes SHOULD be included:
 - any user-defined attributes that the end user would like to associate with
   this Agent.
 
-#### AgentHealth Message
+#### ComponentHealth Message
 
-The AgentHealth message has the following structure:
+The ComponentHealth message has the following structure:
 
 ```protobuf
-message AgentHealth {
+message ComponentHealth {
     bool healthy = 1;
     fixed64 start_time_unix_nano = 2;
     string last_error = 3;
+    string status = 4;
+    fixed64 status_time_unix_nano = 5;
+    map<string, ComponentHealth> component_health_map = 6;
 }
 ```
 
-##### AgentHealth.healthy
+##### ComponentHealth.healthy
 
 Set to true if the Agent is up and healthy.
 
-##### AgentHealth.start_time_unix_nano
+##### ComponentHealth.start_time_unix_nano
 
 Timestamp since the Agent is up, i.e. when the agent was started.
 Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
 If the agent is not running MUST be set to 0.
 
-##### AgentHealth.last_error
+##### ComponentHealth.last_error
 
 Human-readable error message if the Agent is in erroneous state. SHOULD be set
 when healthy==false.
+
+##### ComponentHealth.status
+
+Component status represented as a string. The status values are defined by agent-specific
+semantics and not at the protocol level.
+
+##### ComponentHealth.status_time_unix_nano
+
+The time when the component status was observed. Value is UNIX Epoch time in
+nanoseconds since 00:00:00 UTC on 1 January 1970.
+
+##### ComponentHealth.component_health_map
+
+A map to store more granular, sub-component health. It can nest as deeply as needed to
+describe the underlying system.
 
 #### EffectiveConfig Message
 
