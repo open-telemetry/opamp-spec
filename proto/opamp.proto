@@ -46,8 +46,10 @@ message AgentToServer {
     // This field MUST be always set.
     uint64 capabilities = 4;
 
-    // The current health of the Agent.
-    // May be omitted if nothing changed since last AgentToServer message.
+    // The current health of the Agent and sub-components. The top-level ComponentHealth represents
+    // the health of the Agent overall. May be omitted if nothing changed since last AgentToServer
+    // message.
+    // Status: [Beta]
     ComponentHealth health = 5;
 
     // The current effective configuration of the Agent. The effective configuration is
@@ -622,6 +624,7 @@ enum AgentCapabilities {
 }
 
 // The health of the Agent and sub-components
+// Status: [Beta]
 message ComponentHealth {
     // Set to true if the component is up and healthy.
     bool healthy = 1;

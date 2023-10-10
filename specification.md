@@ -563,7 +563,11 @@ enum AgentCapabilities {
 
 ##### AgentToServer.health
 
-The current health of the Agent and sub-components. See [ComponentHealth message](#componenthealth-message).
+Status: [Beta]
+
+The current health of the Agent and sub-components. The top-level ComponentHealth
+represents the health of the Agent overall. May be omitted if nothing changed since last
+AgentToServer message. See [ComponentHealth message](#componenthealth-message).
 May be omitted if nothing changed since last AgentToServer message.
 
 ##### AgentToServer.effective_config
@@ -1073,6 +1077,8 @@ The following attributes SHOULD be included:
   this Agent.
 
 #### ComponentHealth Message
+
+Status: [Beta]
 
 The ComponentHealth message has the following structure:
 
