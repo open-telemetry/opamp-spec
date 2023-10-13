@@ -46,9 +46,11 @@ message AgentToServer {
     // This field MUST be always set.
     uint64 capabilities = 4;
 
-    // The current health of the Agent.
-    // May be omitted if nothing changed since last AgentToServer message.
-    AgentHealth health = 5;
+    // The current health of the Agent and sub-components. The top-level ComponentHealth represents
+    // the health of the Agent overall. May be omitted if nothing changed since last AgentToServer
+    // message.
+    // Status: [Beta]
+    ComponentHealth health = 5;
 
     // The current effective configuration of the Agent. The effective configuration is
     // the one that is currently used by the Agent. The effective configuration may be
@@ -621,19 +623,32 @@ enum AgentCapabilities {
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
-// The health of the Agent.
-message AgentHealth {
-    // Set to true if the Agent is up and healthy.
+// The health of the Agent and sub-components
+// Status: [Beta]
+message ComponentHealth {
+    // Set to true if the component is up and healthy.
     bool healthy = 1;
 
-    // Timestamp since the Agent is up, i.e. when the agent was started.
+    // Timestamp since the component is up, i.e. when the component was started.
     // Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
-    // If the agent is not running MUST be set to 0.
+    // If the component is not running MUST be set to 0.
     fixed64 start_time_unix_nano = 2;
 
-    // Human-readable error message if the Agent is in erroneous state. SHOULD be set
+    // Human-readable error message if the component is in erroneous state. SHOULD be set
     // when healthy==false.
     string last_error = 3;
+
+    // Component status represented as a string. The status values are defined by agent-specific
+    // semantics and not at the protocol level.
+    string status = 4;
+
+    // The time when the component status was observed. Value is UNIX Epoch time in
+    // nanoseconds since 00:00:00 UTC on 1 January 1970.
+    fixed64 status_time_unix_nano = 5;
+
+    // A map to store more granular, sub-component health. It can nest as deeply as needed to
+    // describe the underlying system.
+    map<string, ComponentHealth> component_health_map = 6;
 }
 
 message EffectiveConfig {
