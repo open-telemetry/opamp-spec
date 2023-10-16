@@ -2005,7 +2005,7 @@ interval is 10 seconds. Here is the diagram that shows the operation sequence:
 The Agent SHOULD report metrics of the Agent process (or processes) and any
 custom metrics that describe the Agent state. Reported process metrics MUST
 follow the OpenTelemetry
-[conventions for processes](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/semantic_conventions/process-metrics.md).
+[conventions for processes](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/system/process-metrics.md).
 
 Similarly, the Agent SHOULD report its traces to the destination offered in the
 [own_traces](#connectionsettingsoffersown_traces) field and logs to the destination
