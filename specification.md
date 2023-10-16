@@ -2533,6 +2533,8 @@ The exact signing and verification method is Agent specific. See
 
 ### Custom Messages
 
+Status: [Development]
+
 #### Motivation
 
 The OpAMP protocol is intended to cover all aspects of remote management and configuration
