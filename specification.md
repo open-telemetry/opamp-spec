@@ -2540,7 +2540,7 @@ of Agents. If more requirements within this core functionality are identified, i
 expected that the protocol will be extended to support this additional behavior in future
 releases. However, there are some use cases that require communication with Agents that
 will not by supported by the OpAMP protocol because they are not within the scope of Agent
-remote management. CustomCapabilities and CustomMessage allow custom behavior to be
+remote management or are highly specific to one agent and not generalizable to other agent types. CustomCapabilities and CustomMessage allow custom behavior to be
 implemented between a Server and Agent without having to open another connection or define
 an entirely new protocol.
 
