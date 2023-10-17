@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.8.0
+
+* Define OpAMP Protobuf schema stability guarantees by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/141
+* Mark certain capabilities as Beta by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/147
+* Add missing "config_hash" field to AgentRemoteConfig by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/151
+* Rewrite security recommendation to be non-normative by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/152
+* Remove "Performance and Scale" section by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/154
+* Remove "needs simplification" notice by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/153
+* Add client-initiated certificate request flow (CSR) by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/162
+* Add ComponentHealth message by @mwear in https://github.com/open-telemetry/opamp-spec/pull/168
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.7.0...v0.8.0
+
 ## v0.7.0
 
 * Change MAY to SHOULD for Server to Client compression by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/127
