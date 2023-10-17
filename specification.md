@@ -1046,8 +1046,9 @@ to such compression:
 [AgentDescription](#agentdescription-message),
 [AgentHealth](#agenthealth-message),
 [EffectiveConfig](#effectiveconfig-message),
-[RemoteConfigStatus](#remoteconfigstatus-message) and
-[PackageStatuses](#packagestatuses-message).
+[RemoteConfigStatus](#remoteconfigstatus-message),
+[PackageStatuses](#packagestatuses-message), and
+[CustomCapabilities](#customcapabilities).
 
 The compression is done by omitting the sub-message in the AgentToServer message.
 If any of the fields in the sub-message has changed then the compression cannot be used
@@ -2542,9 +2543,10 @@ of Agents. If more requirements within this core functionality are identified, i
 expected that the protocol will be extended to support this additional behavior in future
 releases. However, there are some use cases that require communication with Agents that
 will not by supported by the OpAMP protocol because they are not within the scope of Agent
-remote management or are highly specific to one agent and not generalizable to other agent types. CustomCapabilities and CustomMessage allow custom behavior to be
-implemented between a Server and Agent without having to open another connection or define
-an entirely new protocol.
+remote management or are highly specific to one agent and not generalizable to other agent
+types. CustomCapabilities and CustomMessage allow custom behavior to be implemented
+between a Server and Agent without having to open another connection or define an entirely
+new protocol.
 
 While interoperability between many Agents and Agent Management Servers is a goal of
 OpAMP, additional custom functionality may only be supported by specific Agents and
