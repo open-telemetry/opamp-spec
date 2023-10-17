@@ -2556,12 +2556,20 @@ as standard OpAMP capabilities in the future.
 #### CustomCapabilities
 
 The Agent and Server should both use this message to signal that they support specific
-custom capabilities. It is supported on ServerToAgent and AgentToServer. When this message
-is sent, the list of supported custom capabilities should be updated to match this list.
-If this message is never sent, it is assumed that no custom message types are supported.
+custom capabilities. It is supported on ServerToAgent and AgentToServer. This message
+should only be sent when the list of supported custom capabilities changes. When this
+message is sent, the list of supported custom capabilities should be updated to match this
+list. If this message is never sent, it is assumed that no custom capabilities are
+supported.
 
-Capabilities are identified by a reverse FQDN with optional version information. For
-example, "com.company.capability/v2" identifies version 2 of "capability" created by
+Capabilities must be identified by a reverse FQDN with optional version information. This
+avoids collisions between capabilities introduced by different organizations. The
+capability name is composed of the reverse FQDN of the organization that created the
+custom capability, a period, and a short name identifying the capability. The version is
+optional and is separated from the capability name by a forward slash, begins with the
+letter "v", and is followed by a number identifying the version.
+
+For example, "com.company.capability/v2" identifies version 2 of "capability" created by
 "company.com".
 
 If a CustomMessage is received with a capability that is not supported, the message can be
