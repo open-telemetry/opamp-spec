@@ -2568,8 +2568,7 @@ Capabilities must be identified by a reverse FQDN with optional version informat
 avoids collisions between capabilities introduced by different organizations. The
 capability name is composed of the reverse FQDN of the organization that created the
 custom capability, a period, and a short name identifying the capability. The version is
-optional and is separated from the capability name by a forward slash, begins with the
-letter "v", and is followed by a number identifying the version.
+optional and is separated from the capability name by a forward slash.
 
 For example, "com.company.capability/v2" identifies version 2 of "capability" created by
 "company.com".
