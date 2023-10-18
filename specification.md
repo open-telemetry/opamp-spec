@@ -2632,7 +2632,7 @@ are not intended to be part of any specification. In these examples, "io.opentel
 is used to create the FQDN of the message types but each vendor is expected to use their
 own FQDN.
 
-##### Pause/Resume
+##### Pause/Resume Example
 
 Suppose an Agent supports the ability to pause and resume telemetry collection. When
 paused, no telemetry data is collected or sent. To allow a Server to control this behavior, a CustomCapability using CustomMessages could be introduced.
