@@ -2701,7 +2701,7 @@ CustomMessage {
 }
 ```
 
-##### Service Discovery
+##### Service Discovery Example
 
 Service discovery involves discovering running services that are accessible to the Agent
 for which the Agent could collect telemetry. In this example the Server will send a
