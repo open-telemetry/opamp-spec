@@ -83,6 +83,14 @@ message AgentToServer {
     // the Agent initiates the creation of connection settings.
     // Status: [Development]
     ConnectionSettingsRequest connection_settings_request = 11;
+
+    // A message indicating custom capabilities supported by the Agent.
+    // Status: [Development]
+    CustomCapabilities custom_capabilities = 12;
+
+    // A custom message sent from an Agent to the Server.
+    // Status: [Development]
+    CustomMessage custom_message = 13;
 }
 
 enum AgentToServerFlags {
@@ -182,6 +190,14 @@ message ServerToAgent {
     // will be performed.
     // Status: [Beta]
     ServerToAgentCommand command = 9;
+
+    // A message indicating custom capabilities supported by the Server.
+    // Status: [Development]
+    CustomCapabilities custom_capabilities = 10;
+
+    // A custom message sent from the Server to an Agent.
+    // Status: [Development]
+    CustomMessage custom_message = 11;
 }
 
 enum ServerToAgentFlags {
@@ -831,4 +847,34 @@ message AgentConfigFile {
     // Optional MIME Content-Type that describes what's in the body field, for
     // example "text/yaml".
     string content_type = 2;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Custom messages
+/////////////////////////////////////////////////////////////////////////////////////
+
+message CustomCapabilities {
+    // A list of custom capabilities that are supported. Each capability is a reverse FQDN
+    // with optional version information that uniquely identifies the custom capability
+    // and should match a capability specified in a supported CustomMessage.
+    // Status: [Development]
+    repeated string capabilities = 1;
+}
+
+message CustomMessage {
+    // A reverse FQDN that uniquely identifies the capability and matches one of the
+    // capabilities in the CustomCapabilities message.
+    // Status: [Development]
+    string capability = 1;
+
+    // Type of message within the capability. The capability defines the types of custom
+    // messages that are used to implement the capability. The type must only be unique
+    // within the capability.
+    // Status: [Development]
+    string type = 2;
+
+    // Binary data of the message. The capability must specify the format of the contents
+    // of the data for each custom message type it defines.
+    // Status: [Development]
+    bytes data = 3;
 }

@@ -38,6 +38,8 @@ Status: [Beta]
       - [AgentToServer.agent_disconnect](#agenttoserveragent_disconnect)
       - [AgentToServer.flags](#agenttoserverflags)
       - [AgentToServer.connection_settings_request](#agenttoserverconnection_settings_request)
+      - [AgentToServer.custom_capabilities](#agenttoservercustom_capabilities)
+      - [AgentToServer.custom_message](#agenttoservercustom_message)
     + [ServerToAgent Message](#servertoagent-message)
       - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
       - [ServerToAgent.error_response](#servertoagenterror_response)
@@ -48,6 +50,8 @@ Status: [Beta]
       - [ServerToAgent.capabilities](#servertoagentcapabilities)
       - [ServerToAgent.agent_identification](#servertoagentagent_identification)
       - [ServerToAgent.command](#servertoagentcommand)
+      - [ServerToAgent.custom_capabilities](#servertoagentcustom_capabilities)
+      - [ServerToAgent.custom_message](#servertoagentcustom_message)
     + [ServerErrorResponse Message](#servererrorresponse-message)
       - [ServerErrorResponse.type](#servererrorresponsetype)
       - [ServerErrorResponse.error_message](#servererrorresponseerror_message)
@@ -149,6 +153,23 @@ Status: [Beta]
       - [DownloadableFile.download_url](#downloadablefiledownload_url)
       - [DownloadableFile.content_hash](#downloadablefilecontent_hash)
       - [DownloadableFile.signature](#downloadablefilesignature)
+  * [Custom Messages](#custom-messages)
+    + [Motivation](#motivation)
+    + [CustomCapabilities](#customcapabilities)
+      - [CustomCapabilities.capabilities](#customcapabilitiescapabilities)
+    + [CustomMessage](#custommessage)
+      - [CustomMessage.capability](#custommessagecapability)
+      - [CustomMessage.type](#custommessagetype)
+      - [CustomMessage.data](#custommessagedata)
+    + [Examples](#examples)
+      - [Pause/Resume Example](#pauseresume-example)
+        * [Agent Connection](#agent-connection)
+        * [Pause](#pause)
+        * [Resume](#resume)
+      - [Service Discovery Example](#service-discovery-example)
+        * [Agent Connection](#agent-connection-1)
+        * [FindServices](#findservices)
+        * [FindServicesResponse](#findservicesresponse)
 - [Connection Management](#connection-management)
   * [Establishing Connection](#establishing-connection)
   * [Closing Connection](#closing-connection)
@@ -469,6 +490,8 @@ message AgentToServer {
     AgentDisconnect agent_disconnect = 9;
     uint64 flags = 10;
     ConnectionSettingsRequest connection_settings_request = 11; // Status: [Development]
+    CustomCapabilities custom_capabilities = 12; // Status: [Development]
+    CustomMessage custom_message = 13; // Status: [Development]
 }
 ```
 
@@ -625,6 +648,22 @@ the Agent initiates the creation of connection settings.
 
 See [ConnectionSettingsRequest](#connectionsettingsrequest-message) message for details.
 
+##### AgentToServer.custom_capabilities
+
+Status: [Development]
+
+A message indicating custom capabilities supported by the Agent.
+
+See [CustomCapabilities](#customcapabilities) message for details.
+
+##### AgentToServer.custom_message
+
+Status: [Development]
+
+A custom message sent from an Agent to the Server.
+
+See [CustomMessage](#custommessage) message for details.
+
 #### ServerToAgent Message
 
 The body of the WebSocket message or HTTP response body is a binary serialized
@@ -674,6 +713,8 @@ message ServerToAgent {
     uint64 capabilities = 7;
     AgentIdentification agent_identification = 8;
     ServerToAgentCommand command = 9; // Status: [Beta]
+    CustomCapabilities custom_capabilities = 10; // Status: [Development]
+    CustomMessage custom_message = 11; // Status: [Development]
 }
 ```
 
@@ -803,6 +844,22 @@ perform a restart. This field must not be set with other fields
 besides instance_uid or capabilities. All other fields will be ignored and the
 Agent will execute the command. See [ServerToAgentCommand Message](#servertoagentcommand-message)
 for details.
+
+##### ServerToAgent.custom_capabilities
+
+Status: [Development]
+
+A message indicating custom capabilities supported by the Server.
+
+See [CustomCapabilities](#customcapabilities) message for details.
+
+##### ServerToAgent.custom_message
+
+Status: [Development]
+
+A custom message sent from the Server to an Agent.
+
+See [CustomMessage](#custommessage) message for details.
 
 #### ServerErrorResponse Message
 
@@ -996,8 +1053,9 @@ to such compression:
 [AgentDescription](#agentdescription-message),
 [ComponentHealth](#componenthealth-message),
 [EffectiveConfig](#effectiveconfig-message),
-[RemoteConfigStatus](#remoteconfigstatus-message) and
-[PackageStatuses](#packagestatuses-message).
+[RemoteConfigStatus](#remoteconfigstatus-message),
+[PackageStatuses](#packagestatuses-message), and
+[CustomCapabilities](#customcapabilities).
 
 The compression is done by omitting the sub-message in the AgentToServer message.
 If any of the fields in the sub-message has changed then the compression cannot be used
@@ -2500,6 +2558,217 @@ authenticity of the downloaded file, for example can be the
 [detached GPG signature](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
 The exact signing and verification method is Agent specific. See
 [Code Signing](#code-signing) for recommendations.
+
+### Custom Messages
+
+Status: [Development]
+
+#### Motivation
+
+The OpAMP protocol is intended to cover all aspects of remote management and configuration
+of Agents. If more requirements within this core functionality are identified, it is
+expected that the protocol will be extended to support this additional behavior in future
+releases. However, there are some use cases that require communication with Agents that
+will not by supported by the OpAMP protocol because they are not within the scope of Agent
+remote management or are highly specific to one agent and not generalizable to other agent
+types. CustomCapabilities and CustomMessage allow custom behavior to be implemented
+between a Server and Agent without having to open another connection or define an entirely
+new protocol.
+
+While interoperability between many Agents and Agent Management Servers is a goal of
+OpAMP, additional custom functionality may only be supported by specific Agents and
+Servers. Where appropriate, implementers are encouraged to document their use of
+CustomMessage so that support can be added to additional platforms. If appropriate, custom
+capabilities that are widely supported by Server and Agent implementations may be adopted
+as standard OpAMP capabilities in the future.
+
+#### CustomCapabilities
+
+The Agent and Server should both use this message to signal that they support specific
+custom capabilities. It is supported on ServerToAgent and AgentToServer. This message
+should only be sent when the list of supported custom capabilities changes. When this
+message is sent, the list of supported custom capabilities should be updated to match this
+list. If this message is never sent, it is assumed that no custom capabilities are
+supported.
+
+Capabilities must be identified by a reverse FQDN with optional version information. This
+avoids collisions between capabilities introduced by different organizations. The
+capability name is composed of the reverse FQDN of the organization that created the
+custom capability, a period, and a short name identifying the capability. The version is
+optional and is separated from the capability name by a forward slash.
+
+For example, "com.company.capability/v2" identifies version 2 of "capability" created by
+"company.com".
+
+If a CustomMessage is received with a capability that is not supported, the message can be
+ignored. Support for a capability implies that all corresponding CustomMessages of that
+capability are supported. The exact behavior is specific to the custom capability.
+
+```protobuf
+message CustomCapabilities {
+  repeated string capabilities = 1; // Status: [Development]
+}
+```
+
+##### CustomCapabilities.capabilities
+
+A list of custom capabilities that are supported. Each capability is a reverse FQDN with
+optional version information that uniquely identifies the custom capability and should
+match a capability specified in a supported CustomMessage.
+
+#### CustomMessage
+
+CustomMessage allows for custom messages to be sent between the Agent and Server. It is
+supported on ServerToAgent and AgentToServer to allow for custom communication in both
+directions. It requires that the Agent and Server both agree on the contents and encoding
+of the messages. If the capability is not supported or the message type is not recognized,
+the message can be ignored.
+
+A CustomMessage identifies the type of message and contains binary data with the contents
+of the message. The format of the data will depend on the message type and is outside of
+the scope of the OpAMP protocol.
+
+```protobuf
+message CustomMessage {
+    string capability = 1;
+    string type = 2;
+    bytes data = 3;
+}
+```
+
+##### CustomMessage.capability
+
+A reverse FQDN that uniquely identifies the capability and matches one of the capabilities
+in the CustomCapabilities message.
+
+##### CustomMessage.type
+
+Type of message within the capability. The capability defines the types of custom messages
+that are used to implement the capability. The type must only be unique within the
+capability.
+
+##### CustomMessage.data
+
+Binary data of the message. The capability must specify the format of the contents of the
+data for each custom message type it defines.
+
+#### Examples
+
+The following examples describe possible uses of CustomCapabilities and CustomMessage but
+are not intended to be part of any specification. In these examples, "io.opentelemetry."
+is used to create the FQDN of the message types but each vendor is expected to use their
+own FQDN.
+
+##### Pause/Resume Example
+
+Suppose an Agent supports the ability to pause and resume telemetry collection. When
+paused, no telemetry data is collected or sent. To allow a Server to control this behavior, a CustomCapability using CustomMessages could be introduced.
+
+###### Agent Connection
+
+On connection, the Agent sends an AgentToServer message with CustomCapabilities including
+the capabilities "io.opentelemetry.pause". In response, the Server sends a ServerToAgent
+message with a CustomCapabilities message including "io.opentelemetry.pause".
+
+```
+CustomCapabilities {
+  capabilities: ["io.opentelemetry.pause"]
+}
+```
+
+###### Pause
+
+Server sends a ServerToAgent message containing the following CustomMessage with type
+"pause". No data is sent because this is a simple command with no additional information.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.pause"
+  type: "pause"
+}
+```
+
+If the Agent supports this message and is able to successfully pause, it returns an
+AgentToServer message containing a CustomMessage with type "status" and with data
+containing a binary JSON-encoded response with the new paused state.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.pause"
+  type: "status"
+  data: {
+    "paused": true
+  }
+}
+```
+
+If the Agent supports this message but encounters an error trying to pause, it returns an
+AgentToServer message containing a CustomMessage with type "error" and with data
+containing a binary JSON-encoded response containing an error message.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.pause"
+  type: "error"
+  data: {
+    "error": "Unable to pause"
+  }
+}
+```
+
+###### Resume
+
+Similar to Pause but the ServerToAgent message contains a CustomMessage with type
+"resume" and on success the new status would be `{ "paused": false }`.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.pause"
+  type: "resume"
+}
+```
+
+##### Service Discovery Example
+
+Service discovery involves discovering running services that are accessible to the Agent
+for which the Agent could collect telemetry. In this example the Server will send a
+message to the Agent to ask for available services. It will expect a response from the
+Agent containing information about the available services.
+
+###### Agent Connection
+
+On connection, the Agent sends a CustomCapabilities message including the capability
+"io.opentelemetry.discovery". In response, the Server sends a CustomCapabilities message
+including that also includes the capability "io.opentelemetry.discovery". Since this
+capability is supported by both the Agent and Server, messages associated with this
+capability can be sent to support discovery.
+
+###### FindServices
+
+Server sends a ServerToAgent message containing the following CustomMessage. No data is
+sent because this is a simple request with no additional information.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.discovery"
+  type: "find_services"
+}
+```
+
+###### FindServicesResponse
+
+After discovering services, the Agent sends an AgentToServer message containing a
+CustomMessage with the binary data containing the JSON encoding of a complex data
+structure containing information about all of the services it discovered. This data
+structure would also include an optional field for errors encountered during discovery.
+
+```
+CustomMessage {
+  capability: "io.opentelemetry.discovery"
+  type: "available_services"
+  data: { ... }
+}
+```
 
 ## Connection Management
 
