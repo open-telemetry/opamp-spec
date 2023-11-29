@@ -3146,7 +3146,7 @@ reduce the number of connections to the Server when a very large number
 
 * [Uber Flipr](https://eng.uber.com/flipr/).
 * Facebook's
-  [Holistic Configuration Management](https://research.fb.com/wp-content/uploads/2016/11/holistic-configuration-management-at-facebook.pdf)
+  [Holistic Configuration Management]( https://research.facebook.com/file/877841159827226/holistic-configuration-management-at-facebook.pdf)
   (push).
 
 ### Security and Certificate Management
