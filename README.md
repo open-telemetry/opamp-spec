@@ -40,7 +40,7 @@ Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/op
 
 ### Agent Management Platforms
 
-- [BindPlane OP](https://github.com/observIQ/bindplane-op)
+- [BindPlane OP](https://observiq.com)
 
 ### Agents
 
