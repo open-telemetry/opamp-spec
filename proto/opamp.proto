@@ -264,6 +264,18 @@ message OpAMPConnectionSettings {
     // This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
     // This field can be used to perform a client certificate revocation/rotation.
     TLSCertificate certificate = 3;
+
+    // If the Agent has nothing to deliver to the Server the Client MUST periodically send
+    // an AgentToServer message where only instance_uid field is set to keep the connection alive.
+    // This field specify an interval for keepalive messages.
+    //
+    // A Polling-based HTTP Client SHOULD use the value as polling interval.
+    //
+    // Typically used to avoid intermediaries such as load balancers closing inactive OpAMP connections.
+    // This filed is optional:
+    // if omitted, use the client-side configuration.
+    // if set to zero, the keepalive ability will be disabled.
+    optional uint64 keepalive_interval_seconds = 4;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -620,11 +632,11 @@ enum AgentCapabilities {
     // the Server via ConnectionSettingsOffers.own_logs field.
     // Status: [Beta]
     AgentCapabilities_ReportsOwnLogs                 = 0x00000080;
-    // The can accept connections settings for OpAMP via
+    // The Agent can accept connections settings for OpAMP via
     // ConnectionSettingsOffers.opamp field.
     // Status: [Beta]
     AgentCapabilities_AcceptsOpAMPConnectionSettings = 0x00000100;
-    // The can accept connections settings for other destinations via
+    // The Agent can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
     // Status: [Beta]
     AgentCapabilities_AcceptsOtherConnectionSettings = 0x00000200;

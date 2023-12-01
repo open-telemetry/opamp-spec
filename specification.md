@@ -111,6 +111,7 @@ Status: [Beta]
       - [OpAMPConnectionSettings.destination_endpoint](#opampconnectionsettingsdestination_endpoint)
       - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
       - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
+      - [OpAMPConnectionSettings.keepalive_interval_seconds](#opampconnectionsettingskeepalive_interval_seconds)
     + [TelemetryConnectionSettings](#telemetryconnectionsettings)
       - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
       - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
@@ -424,6 +425,15 @@ The WebSocket transport is typically used when it is necessary to have instant
 communication ability from the Server to the Agent without waiting for the Client
 to poll the Server like it is done when using the HTTP transport (see below).
 
+If the Agent has nothing to deliver to the Server the Client can periodically send
+an AgentToServer message where only instance_uid field is set to keep the connection alive.
+The keepalive ability is OPTIONAL and the keepalive interval SHOULD be configurable on
+the client side. If the client accepts OpAMPConnectionSettings, the keepalive interval SHOULD
+be specified by OpAMPConnectionSettings.keepalive_interval_seconds.
+
+If the client accepts OpAMPConnectionSettings, this polling interval SHOULD be specified by
+OpAMPConnectionSettings.keepalive_interval_seconds.
+
 ### Plain HTTP Transport
 
 The second supported transport for OpAMP protocol is plain HTTP connection. The
@@ -444,6 +454,8 @@ deliver to the Agent (such as for example a new remote configuration).
 
 The default polling interval when the Agent does not have anything to deliver is 30
 seconds. This polling interval SHOULD be configurable on the Client.
+If the client accepts OpAMPConnectionSettings, this polling interval SHOULD be specified by
+OpAMPConnectionSettings.keepalive_interval_seconds.
 
 When using HTTP transport the sequence of messages is exactly the same as it is
 when using the WebSocket transport. The only difference is in the timing:
@@ -1830,6 +1842,7 @@ message OpAMPConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
     TLSCertificate certificate = 3;
+    optional uint64 keepalive_interval_seconds = 4;
 }
 ```
 
@@ -1854,6 +1867,17 @@ certificate the Client SHOULD forget any previous client certificates
 for this connection.
 This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
 This field can be used to perform a client certificate revocation/rotation.
+
+##### OpAMPConnectionSettings.keepalive_interval_seconds
+
+If the Agent has nothing to deliver to the Server the Client MUST periodically send
+an AgentToServer message where only instance_uid field is set to keep the connection alive.
+This field specify an interval for keepalive messages.
+
+A Polling-based HTTP Client SHOULD use the value as polling interval.
+
+Typically used to avoid intermediaries such as load balancers closing inactive OpAMP connections.
+This filed is optional: if omitted or set to zero, the keepalive feature will be disabled.
 
 #### TelemetryConnectionSettings
 
