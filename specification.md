@@ -3135,39 +3135,31 @@ reduce the number of connections to the Server when a very large number
 ### Agent Management
 
 * Splunk
-  [Deployment Server](https://docs.splunk.com/Documentation/Splunk/8.2.2/Updating/Aboutdeploymentserver).
+  [Deployment Server](https://docs.splunk.com/Documentation/Splunk/8.2.2/Updating/Aboutdeploymentserver)
 * Centralized Configuration of vRealize
-  [Log Insight Agents](https://docs.vmware.com/en/vRealize-Log-Insight/8.4/com.vmware.log-insight.agent.admin.doc/GUID-40C13E10-1554-4F1B-B832-69CEBF85E7A0.html).
+  [Log Insight Agents](https://docs.vmware.com/en/vRealize-Log-Insight/8.4/com.vmware.log-insight.agent.admin.doc/GUID-40C13E10-1554-4F1B-B832-69CEBF85E7A0.html)
 * Google Cloud
   [Guest Agent](https://github.com/GoogleCloudPlatform/guest-agent) uses HTTP
-  [long polling](https://cloud.google.com/compute/docs/metadata/querying-metadata#waitforchange).
+  [long polling](https://cloud.google.com/compute/docs/metadata/querying-metadata#waitforchange)
 
 ### Configuration Management
 
-* [Uber Flipr](https://eng.uber.com/flipr/).
+* [Uber Flipr](https://eng.uber.com/flipr/)
 * Facebook's
-  [Holistic Configuration Management]( https://research.facebook.com/file/877841159827226/holistic-configuration-management-at-facebook.pdf)
-  (push).
+  [Holistic Configuration Management](https://research.facebook.com/file/877841159827226/holistic-configuration-management-at-facebook.pdf)
+  (push)
 
 ### Security and Certificate Management
 
-* mTLS in Go:
-  [https://kofo.dev/how-to-mtls-in-golang](https://kofo.dev/how-to-mtls-in-golang)
-* e2e audit
-  [https://pwn.recipes/posts/roll-your-own-e2ee-protocol/](https://pwn.recipes/posts/roll-your-own-e2ee-protocol/)
-* ACME certificate management protocol
-  [https://datatracker.ietf.org/doc/html/rfc8555](https://datatracker.ietf.org/doc/html/rfc8555)
-* ACME for client certificates
-  [http://www.watersprings.org/pub/id/draft-moriarty-acme-client-01.html](http://www.watersprings.org/pub/id/draft-moriarty-acme-client-01.html)
+* mTLS in Go <https://kofo.dev/how-to-mtls-in-golang>
+* ACME certificate management protocol <https://datatracker.ietf.org/doc/html/rfc8555>
+* ACME for client certificates <http://www.watersprings.org/pub/id/draft-moriarty-acme-client-01.html>
 
 ### Cloud Provider Support
 
-* AWS:
-  [https://aws.amazon.com/elasticloadbalancing/features/](https://aws.amazon.com/elasticloadbalancing/features/)
-* GCP:
-  [https://cloud.google.com/appengine/docs/flexible/go/using-websockets-and-session-affinity](https://cloud.google.com/appengine/docs/flexible/go/using-websockets-and-session-affinity)
-* Azure:
-  [https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket](https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket)
+* AWS <https://aws.amazon.com/elasticloadbalancing/features/>
+* GCP <https://cloud.google.com/appengine/docs/flexible/go/using-websockets-and-session-affinity>
+* Azure <https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket>
 
 ### Other
 
