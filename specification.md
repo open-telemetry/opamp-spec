@@ -3153,7 +3153,7 @@ reduce the number of connections to the Server when a very large number
 
 * [mTLS in Go](https://kofo.dev/how-to-mtls-in-golang)
 * [ACME certificate management protocol](https://datatracker.ietf.org/doc/html/rfc8555)
-* [ACME for client certificates](https://www.watersprings.org/pub/id/draft-moriarty-acme-client-01.html)
+* [ACME for client certificates](https://datatracker.ietf.org/doc/draft-moriarty-acme-client/)
 
 ### Cloud Provider Support
 
