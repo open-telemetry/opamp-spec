@@ -5,7 +5,7 @@ body_class: otel-docs-spec
 github_repo: &repo https://github.com/open-telemetry/opamp-spec
 github_project_repo: *repo
 path_base_for_github_subdir:
-  from: content/en/docs/specs/opamp/index.md
+  from: tmp/opamp/index.md
   to: specification.md
 cSpell:ignore: bitmask Flipr Fluentd oneof protoc Rpbjpvc varint
 --->
