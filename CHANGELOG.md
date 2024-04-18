@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.0
+
+* Add CustomMessage capability by @andykellr in https://github.com/open-telemetry/opamp-spec/pull/132
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.8.0...v0.9.0
+
 ## v0.8.0
 
 * Define OpAMP Protobuf schema stability guarantees by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/141
