@@ -22,10 +22,10 @@ Approvers ([@open-telemetry/opamp-spec-approvers](https://github.com/orgs/open-t
 
 - [Alex Boten](https://github.com/codeboten), Lightstep
 - [Andy Keller](https://github.com/andykellr), observIQ
-- [Daniel Jaglowski](https://github.com/djaglowski), observIQ
 
 Emeritus Approvers
 
+- [Daniel Jaglowski](https://github.com/djaglowski), observIQ
 - [Przemek Maciolek](https://github.com/pmm-sumo), Sumo Logic
 
 Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/open-telemetry/teams/opamp-spec-maintainers)):
