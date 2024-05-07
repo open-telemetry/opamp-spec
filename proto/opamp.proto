@@ -25,8 +25,8 @@ option go_package = "github.com/open-telemetry/opamp-go/protobufs";
 message AgentToServer {
     // Globally unique identifier of the running instance of the Agent. SHOULD remain
     // unchanged for the lifetime of the Agent process.
-    // Recommended format: https://github.com/ulid/spec
-    string instance_uid = 1;
+    // MUST be 16 bytes long and SHOULD be generated using the UUID v7 spec.
+    bytes instance_uid = 1;
 
     // The sequence number is incremented by 1 for every AgentToServer sent
     // by the Agent. This allows the Server to detect that it missed a message when
@@ -148,7 +148,7 @@ message CertificateRequest {
 message ServerToAgent {
     // Agent instance uid. MUST match the instance_uid field in AgentToServer message.
     // Used for multiplexing messages from/to multiple agents using one message stream.
-    string instance_uid = 1;
+    bytes instance_uid = 1;
 
     // error_response is set if the Server wants to indicate that something went wrong
     // during processing of an AgentToServer message. If error_response is set then
@@ -818,7 +818,8 @@ enum PackageStatusEnum {
 message AgentIdentification {
     // When new_instance_uid is set, Agent MUST update instance_uid
     // to the value provided and use it for all further communication.
-    string new_instance_uid = 1;
+    // MUST be 16 bytes long and SHOULD be generated using the UUID v7 spec.
+    bytes new_instance_uid = 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
