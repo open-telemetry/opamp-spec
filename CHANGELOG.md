@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.10.0
+
+* Replace ULIDs by 16 byte ids and recommend UUID v7 by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/186
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.9.0...v0.10.0
+
 ## v0.9.0
 
 * Add CustomMessage capability by @andykellr in https://github.com/open-telemetry/opamp-spec/pull/132
