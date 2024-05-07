@@ -20,12 +20,12 @@ to run the Protobuf compiler and verify the `*.proto` files.
 
 Approvers ([@open-telemetry/opamp-spec-approvers](https://github.com/orgs/open-telemetry/teams/opamp-spec-approvers)):
 
-- [Alex Boten](https://github.com/codeboten), Lightstep
 - [Andy Keller](https://github.com/andykellr), observIQ
-- [Daniel Jaglowski](https://github.com/djaglowski), observIQ
 
 Emeritus Approvers
 
+- [Alex Boten](https://github.com/codeboten), Lightstep
+- [Daniel Jaglowski](https://github.com/djaglowski), observIQ
 - [Przemek Maciolek](https://github.com/pmm-sumo), Sumo Logic
 
 Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/open-telemetry/teams/opamp-spec-maintainers)):
