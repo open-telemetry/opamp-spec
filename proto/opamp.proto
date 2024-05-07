@@ -271,7 +271,7 @@ message OpAMPConnectionSettings {
     //
     // A Polling-based HTTP Client MUST use the value as polling interval.
     //
-    // A heartbeat is used to keep a load balancer connection active AND inform the server that the Agent
+    // A heartbeat is used to keep a load balancer connection active and inform the server that the Agent
     // is still alive and active.
     //
     // This field is optional:
