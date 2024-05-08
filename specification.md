@@ -1867,7 +1867,7 @@ message. At a minimum the instance_uid field MUST be set. It is recommended that
 also set ComponentHealth as well. An HTTP based-client MUST use the heartbeat interval as
 its polling interval.
 
-A heartbeat is used to keep a load balancer connection active AND inform the server that
+A heartbeat is used to keep a load balancer connection active and inform the server that
 the Agent is still alive and active. A server could use the heartbeat to make decisions about
 the liveness of the connected Agent.
 
