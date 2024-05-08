@@ -221,20 +221,20 @@ mixed Agents from different vendors.
 
 OpAMP supports the following functionality:
 
-- Remote configuration of the Agents.
-- Status reporting. The protocol allows the Agent to report the properties of
+* Remote configuration of the Agents.
+* Status reporting. The protocol allows the Agent to report the properties of
   the Agent such as its type and version or the operating system type and
   version it runs on. The status reporting also allows the management Server to
   tailor the remote configuration to individual Agents or types of Agents.
-- Agent's own telemetry reporting to an
+* Agent's own telemetry reporting to an
   [OTLP](https://opentelemetry.io/docs/specs/otlp/)-compatible
   backend to monitor Agent's process metrics such as CPU or RAM usage, as well
   as Agent-specific metrics such as rate of data processing.
-- Agent heartbeating.
-- Management of downloadable Agent-specific packages.
-- Secure auto-updating capabilities (both upgrading and downgrading of the
+* Agent heartbeating.
+* Management of downloadable Agent-specific packages.
+* Secure auto-updating capabilities (both upgrading and downgrading of the
   Agents).
-- Connection credentials management, including client-side TLS certificate
+* Connection credentials management, including client-side TLS certificate
   revocation and rotation.
 
 The functionality listed above enables a 'single pane of glass' management view
@@ -935,9 +935,9 @@ will be ignored.
 
 The Client MUST send a status report:
 
-- First time immediately after connecting to the Server. The status report MUST
+* First time immediately after connecting to the Server. The status report MUST
   be the first message sent by the Client.
-- Subsequently, every time the status of the Agent changes.
+* Subsequently, every time the status of the Agent changes.
 
 The status report is sent as an [AgentToServer](#agenttoserver-message) message.
 The following fields in the message can be set to reflect the corresponding
@@ -1527,15 +1527,15 @@ OpAMP Clients that want to use TLS with a client certificate but do not initiall
 a certificate can use the Trust On First Use (TOFU) flow. The sequence is the
 following:
 
-- Client connects to the Server using regular TLS (validating Server's identity)
+* Client connects to the Server using regular TLS (validating Server's identity)
   but without a client certificate. Client sends the Agent's Status Report so that it can
   be identified.
-- The Server accepts the connection and status and awaits for an approval to
+* The Server accepts the connection and status and awaits for an approval to
   generate a client certificate for the OpAMP Client.
-- Server either waits for a manual approval by a human or automatically approves
+* Server either waits for a manual approval by a human or automatically approves
   all TOFU requests if the Server is configured to do so (can be a Server-side
   option).
-- Once approved the flow is essentially identical to
+* Once approved the flow is essentially identical to
   [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
   steps, except that there is no old client certificate to delete.
 
@@ -2336,9 +2336,9 @@ Otherwise, go to Step 2.
 For each package offered by the Server the Agent SHOULD check if it should
 download the particular package:
 
-- If the Agent does not have a package with the specified name then it SHOULD
+* If the Agent does not have a package with the specified name then it SHOULD
   download the package. See Step 3 on how to download each package file.
-- If the Agent has the package the Agent SHOULD compare the hash of the package that
+* If the Agent has the package the Agent SHOULD compare the hash of the package that
   the Agent has with the hash of the package offered by the Server in the
   [hash](#packageavailablehash) field in the [PackageAvailable](#packageavailable-message)
   message.
@@ -2354,9 +2354,9 @@ packages SHOULD be deleted by the Agent.
 For the file of the package offered by the Server the Agent SHOULD check if it
 should download the file:
 
-- If the Agent does not have a file with the specified name then it SHOULD
+* If the Agent does not have a file with the specified name then it SHOULD
   download the file.
-- If the Agent has the file then the Agent SHOULD compare the hash of the file
+* If the Agent has the file then the Agent SHOULD compare the hash of the file
   it has locally with the [hash](#downloadablefilecontent_hash) field in the
   [DownloadableFile](#downloadablefile-message) message. If hashes are the same
   the processing of this file is done. Otherwise, the offered file is different
@@ -2890,11 +2890,11 @@ a BAD_REQUEST response.
 
 The Client MAY retry sending AgentToServer message if:
 
-- AgentToServer message that requires a response was sent, however no response
+* AgentToServer message that requires a response was sent, however no response
   was received within a reasonable time (the timeout MAY be configurable).
-- AgentToServer message that requires a response was sent, however the
+* AgentToServer message that requires a response was sent, however the
   connection was lost before the response was received.
-- After receiving an UNAVAILABLE response from the Server as described in the
+* After receiving an UNAVAILABLE response from the Server as described in the
   [Throttling](#throttling) section.
 
 For messages that require a response if the Server receives the same message
@@ -2981,16 +2981,16 @@ the Server. The data received from the Server should be verified and sanitized
 by the Agent in order to limit and prevent the damage that may be caused by
 malicious actors. We recommend the following:
 
-- The Agent should run at the minimum possible privilege to prevent itself from
+* The Agent should run at the minimum possible privilege to prevent itself from
   accessing sensitive files or perform high privilege operations. The Agent
   should not run as root user, otherwise a compromised Agent may result in total
   control of the machine by malicious actors.
-- If the Agent is capable of collecting local data it should limit the
+* If the Agent is capable of collecting local data it should limit the
   collection to a specific set of directories. This limitation should be locally
   specified and should not be overridable via remote configuration. If this rule
   is not followed the remote configuration functionality may be exploited to
   access sensitive information on the Agent's machine.
-- If the Agent is capable of executing external code located on the machine
+* If the Agent is capable of executing external code located on the machine
   where it runs and this functionality can be specified in the Agent's
   configuration then the Agent should limit such functionality only to specific
   scripts located in a limited set of directories. This limitation should be
@@ -3033,19 +3033,19 @@ Any executable code that is part of a package should be signed
 to prevent a compromised Server from delivering malicious code to the Agent. We
 recommend the following:
 
-- Any downloadable executable code (e.g. executable packages)
+* Any downloadable executable code (e.g. executable packages)
   need to be code-signed. The actual code-signing and verification mechanism is
   Agent specific and is outside the concerns of the OpAMP specification.
-- The Agent should verify executable code in downloaded files to ensure the code
+* The Agent should verify executable code in downloaded files to ensure the code
   signature is valid.
-- The downloadable code can be signed with the signature included in the file content or
+* The downloadable code can be signed with the signature included in the file content or
   have a detached signature recorded in the DownloadableFile
   message's [signature](#downloadablefilesignature) field. Detached signatures may be used
   for example with [GPG signing](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
-- If Certificate Authority is used for code signing it is recommended that the
+* If Certificate Authority is used for code signing it is recommended that the
   Certificate Authority and its private key is not co-located with the OpAMP
   Server, so that a compromised Server cannot sign malicious code.
-- The Agent should run any downloaded executable code (the packages and or any
+* The Agent should run any downloaded executable code (the packages and or any
   code that it runs as external processes) at the minimum possible privilege to
   prevent the code from accessing sensitive files or perform high privilege
   operations. The Agent should not run downloaded code as root user.
@@ -3153,35 +3153,35 @@ reduce the number of connections to the Server when a very large number
 
 ### Agent Management
 
-- Splunk
+* Splunk
   [Deployment Server](https://docs.splunk.com/Documentation/Splunk/8.2.2/Updating/Aboutdeploymentserver)
-- Centralized Configuration of vRealize
+* Centralized Configuration of vRealize
   [Log Insight Agents](https://docs.vmware.com/en/vRealize-Log-Insight/8.4/com.vmware.log-insight.agent.admin.doc/GUID-40C13E10-1554-4F1B-B832-69CEBF85E7A0.html)
-- Google Cloud
+* Google Cloud
   [Guest Agent](https://github.com/GoogleCloudPlatform/guest-agent) uses HTTP
   [long polling](https://cloud.google.com/compute/docs/metadata/querying-metadata#waitforchange)
 
 ### Configuration Management
 
-- [Uber Flipr](https://eng.uber.com/flipr/)
-- Facebook's
+* [Uber Flipr](https://eng.uber.com/flipr/)
+* Facebook's
   [Holistic Configuration Management](https://research.facebook.com/file/877841159827226/holistic-configuration-management-at-facebook.pdf)
   (push)
 
 ### Security and Certificate Management
 
-- [mTLS in Go](https://kofo.dev/how-to-mtls-in-golang)
-- [ACME certificate management protocol](https://datatracker.ietf.org/doc/html/rfc8555)
-- [ACME for client certificates](https://datatracker.ietf.org/doc/draft-moriarty-acme-client/)
+* [mTLS in Go](https://kofo.dev/how-to-mtls-in-golang)
+* [ACME certificate management protocol](https://datatracker.ietf.org/doc/html/rfc8555)
+* [ACME for client certificates](https://datatracker.ietf.org/doc/draft-moriarty-acme-client/)
 
 ### Cloud Provider Support
 
-- [AWS](https://aws.amazon.com/elasticloadbalancing/features/)
-- [GCP](https://cloud.google.com/appengine/docs/flexible/go/using-websockets-and-session-affinity)
-- [Azure](https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket)
+* [AWS](https://aws.amazon.com/elasticloadbalancing/features/)
+* [GCP](https://cloud.google.com/appengine/docs/flexible/go/using-websockets-and-session-affinity)
+* [Azure](https://docs.microsoft.com/en-us/azure/application-gateway/application-gateway-websocket)
 
 ### Other
 
-- [Websocket Load Balancing](https://pdf.sciencedirectassets.com/280203/1-s2.0-S1877050919X0006X/1-s2.0-S1877050919303576/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEI3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIAhC7%2Bztk8aH29lDsWYFIHLt97kwOE4PoWkiPfH2OTQwAiEA65oLMq1RhzF6b5pSixhnPVLT9G2iKkG145XtdpW4d4IqgwQIpv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAEGgwwNTkwMDM1NDY4NjUiDDtEVrp4vXmh0hvwWyrXAxnfLN4%2BsMMF7wxoXOiBFQjn%2FJLpSLUIWghc87%2Bx2tbvdCIC%2BQV4JCY9rOK3p9rogqh9yoI2yem4SHASzL%2BQUQMOiGWagk%2FzyCNdS0y%2FLzHkKDahvRMJGKxWeXErbsuvPCufnbDpNHmKD0vnT5sqpOoM64%2FJVxvd9QYx48xasNMtXZ8%2BFm9wPpNQnsWSEZKYiOKLaLfnATzcXADJmOCTVQbwZoT4%2BFKWcoujBxSBHE9kw7S749ywQ9bOtgNWid5R2dj0z%2Br6C63SnBS3IdMSZ2qO4H3XTYY5pbfNCfR57zKIdwyp3zLJr5%2BtTEz1YR9FXwWF9niDEr0v2qu%2FlL7%2BGHsak8UQ4hZ0BFlZtcIRNW1lpZd9bNSINb3d6MnGeYrkhxQVP0KcZsowP9672IYzuMD4nK1X4Hv7bMqeO7ojuSf%2F2ND9NXn0Ldr%2BX0lzESv10LyhElCGfFJ4EZjIxYOKZdee1Zc1USdj1kNx1OC0cefIN1ixiA0OIbtWVz1lI6n1LYpngeUYngGP0ZFb%2Br%2FbleC3WarDHWIn4NNjI1aQW3P9fTmKEan3b3skRIBbwM8%2FrwRJGYQ03JaCKuU4xbogz9uEL%2BbpJ1SB7En8pS8xuSiE1kzvnsF0FTCEvMSIBjqlAadtZOgWRUk2FxdoYsCK43DYqD6zjbDrRBfyIXTJGlJYKt5iR3SCi8ySacO1aPZhah9ir179nYi5dVYnf5c6%2Fe8Q5Mo1uRtisouWJZSjAOhmRY7a76fSqyHwj088aI5t1pcempNCOnsM4SfyrZJ9UE%2FKfb5YsJ71VwRPZ%2BXZ%2FvZnQlW7e6NJqWswhre0pQftkShN%2BbpE%2FTzusekzm6q3w6b3ynUN8A%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20210809T134614Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTY2T5F5OYZ%2F20210809%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=6098b604ebac38723d26ae66e527b397312a6371ad19e1a4fbfe94ca9c61e1a9&hash=ebd5b943d3aff77c6bfb8853fab1598db53996f5f018d688364a41dd71c15d92&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1877050919303576&tid=spdf-3c0a3a1a-bd3b-40d0-af0d-48a46859c89a&sid=d21b79c59bbb0348b79945c084cc3b66983agxrqa&type=client)
+* [Websocket Load Balancing](https://pdf.sciencedirectassets.com/280203/1-s2.0-S1877050919X0006X/1-s2.0-S1877050919303576/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEI3%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIAhC7%2Bztk8aH29lDsWYFIHLt97kwOE4PoWkiPfH2OTQwAiEA65oLMq1RhzF6b5pSixhnPVLT9G2iKkG145XtdpW4d4IqgwQIpv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAEGgwwNTkwMDM1NDY4NjUiDDtEVrp4vXmh0hvwWyrXAxnfLN4%2BsMMF7wxoXOiBFQjn%2FJLpSLUIWghc87%2Bx2tbvdCIC%2BQV4JCY9rOK3p9rogqh9yoI2yem4SHASzL%2BQUQMOiGWagk%2FzyCNdS0y%2FLzHkKDahvRMJGKxWeXErbsuvPCufnbDpNHmKD0vnT5sqpOoM64%2FJVxvd9QYx48xasNMtXZ8%2BFm9wPpNQnsWSEZKYiOKLaLfnATzcXADJmOCTVQbwZoT4%2BFKWcoujBxSBHE9kw7S749ywQ9bOtgNWid5R2dj0z%2Br6C63SnBS3IdMSZ2qO4H3XTYY5pbfNCfR57zKIdwyp3zLJr5%2BtTEz1YR9FXwWF9niDEr0v2qu%2FlL7%2BGHsak8UQ4hZ0BFlZtcIRNW1lpZd9bNSINb3d6MnGeYrkhxQVP0KcZsowP9672IYzuMD4nK1X4Hv7bMqeO7ojuSf%2F2ND9NXn0Ldr%2BX0lzESv10LyhElCGfFJ4EZjIxYOKZdee1Zc1USdj1kNx1OC0cefIN1ixiA0OIbtWVz1lI6n1LYpngeUYngGP0ZFb%2Br%2FbleC3WarDHWIn4NNjI1aQW3P9fTmKEan3b3skRIBbwM8%2FrwRJGYQ03JaCKuU4xbogz9uEL%2BbpJ1SB7En8pS8xuSiE1kzvnsF0FTCEvMSIBjqlAadtZOgWRUk2FxdoYsCK43DYqD6zjbDrRBfyIXTJGlJYKt5iR3SCi8ySacO1aPZhah9ir179nYi5dVYnf5c6%2Fe8Q5Mo1uRtisouWJZSjAOhmRY7a76fSqyHwj088aI5t1pcempNCOnsM4SfyrZJ9UE%2FKfb5YsJ71VwRPZ%2BXZ%2FvZnQlW7e6NJqWswhre0pQftkShN%2BbpE%2FTzusekzm6q3w6b3ynUN8A%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20210809T134614Z&X-Amz-SignedHeaders=host&X-Amz-Expires=299&X-Amz-Credential=ASIAQ3PHCVTY2T5F5OYZ%2F20210809%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=6098b604ebac38723d26ae66e527b397312a6371ad19e1a4fbfe94ca9c61e1a9&hash=ebd5b943d3aff77c6bfb8853fab1598db53996f5f018d688364a41dd71c15d92&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1877050919303576&tid=spdf-3c0a3a1a-bd3b-40d0-af0d-48a46859c89a&sid=d21b79c59bbb0348b79945c084cc3b66983agxrqa&type=client)
 
 [beta]: https://github.com/open-telemetry/community/blob/47813530864b9fe5a5146f466a58bd2bb94edc72/maturity-matrix.yaml#L57
