@@ -649,7 +649,10 @@ enum AgentCapabilities {
     AgentCapabilities_ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     AgentCapabilities_ReportsRemoteConfig            = 0x00001000;
-
+    // The Agent can report heartbeats on a default interval of 30s.
+    // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // Status: [Beta]
+    AgentCapabilities_ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
