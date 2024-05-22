@@ -1108,7 +1108,7 @@ attributes SHOULD be specified:
 - service.name should be set to the same value that the Agent uses in its own telemetry.
 - service.namespace if it is used in the environment where the Agent runs.
 - service.version should be set to version number of the Agent build.
-- service.instance.id should be set. It may be be set equal to the Agent's
+- service.instance.id should be set. It may be set equal to the Agent's
   instance uid (equal to ServerToAgent.instance_uid field) or any other value
   that uniquely identifies the Agent in combination with other attributes.
 - any other attributes that are necessary for uniquely identifying the Agent's
