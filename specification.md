@@ -3135,9 +3135,9 @@ reduce the number of connections to the Server when a very large number
 ### Agent Management
 
 * Splunk
-  [Deployment Server](https://docs.splunk.com/Documentation/Splunk/8.2.2/Updating/Aboutdeploymentserver)
+  [Deployment Server](https://docs.splunk.com/Documentation/Splunk/latest/Updating/Aboutdeploymentserver)
 * Centralized Configuration of vRealize
-  [Log Insight Agents](https://docs.vmware.com/en/vRealize-Log-Insight/8.4/com.vmware.log-insight.agent.admin.doc/GUID-40C13E10-1554-4F1B-B832-69CEBF85E7A0.html)
+  [Log Insight Agents](https://docs.vmware.com/en/vRealize-Log-Insight/8.10/com.vmware.log-insight.agent.admin.doc/GUID-40C13E10-1554-4F1B-B832-69CEBF85E7A0.html)
 * Google Cloud
   [Guest Agent](https://github.com/GoogleCloudPlatform/guest-agent) uses HTTP
   [long polling](https://cloud.google.com/compute/docs/metadata/querying-metadata#waitforchange)
