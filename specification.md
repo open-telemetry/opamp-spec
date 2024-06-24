@@ -417,6 +417,11 @@ message may also be sent by the Client in response to the Server making a remote
 configuration offer to the Agent and Agent reporting that it accepted the
 configuration.
 
+If the client has enabled the ReportsHeartbeat capability, the websocket transport
+will send a heartbeat message to keep the websocket connection alive. By default,
+a 30s interval is used. Without heartbeats, the websocket transport may be closed
+unexpectedly by the network if the connection idles for too long.
+
 See sections under the [Operation](#operation) section for the details of the
 message sequences.
 
@@ -1865,17 +1870,16 @@ This field can be used to perform a client certificate revocation/rotation.
 
 ##### OpAMPConnectionSettings.heartbeat_interval_seconds
 
-The Client should use the offered heartbeat interval to periodically send an AgentToServer
-message. At a minimum the instance_uid field MUST be set. It is recommended that the Agent
-also set ComponentHealth as well. An HTTP based-client MUST use the heartbeat interval as
-its polling interval.
+If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
+interval to periodically send an AgentToServer message. At a minimum the instance_uid
+field MUST be set. It is recommended that the Agent also set ComponentHealth as well.
+An HTTP based-client MUST use the heartbeat interval as its polling interval.
 
 A heartbeat is used to keep a load balancer connection active and inform the server that
 the Agent is still alive and active. A server could use the heartbeat to make decisions about
 the liveness of the connected Agent.
 
-A default of a 30s should be used if not set by the OpAMPConnectionSettings. If the
-heartbeat_interval_seconds is set to 0, the heartbeat should be disabled entirely.
+A default of a 30s should be used if not set by the OpAMPConnectionSettings.
 
 #### TelemetryConnectionSettings
 

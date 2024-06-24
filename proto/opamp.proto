@@ -265,9 +265,9 @@ message OpAMPConnectionSettings {
     // This field can be used to perform a client certificate revocation/rotation.
     TLSCertificate certificate = 3;
 
-    // The Agent MUST periodically send an AgentToServer message if this field is set. At a minimum
-    // the instance_uid field MUST be set. It is recommended that the Agent also set ComponentHealth
-    // as well.
+    // The Agent MUST periodically send an AgentToServer message if the
+    // AgentCapabilities_ReportsHeartbeat capability is true. At a minimum the instance_uid
+    // field MUST be set. It is recommended that the Agent also set ComponentHealth as well.
     //
     // A Polling-based HTTP Client MUST use the value as polling interval.
     //
@@ -275,8 +275,7 @@ message OpAMPConnectionSettings {
     // is still alive and active.
     //
     // This field is optional:
-    // if omitted, a default heartbeat interval of 30 seconds should be used.
-    // if set to zero, the heartbeat ability will be disabled.
+    // if the capability is true but this field has no value, a default heartbeat interval of 30 seconds should be used.
     optional uint64 heartbeat_interval_seconds = 4;
 }
 
@@ -649,7 +648,7 @@ enum AgentCapabilities {
     AgentCapabilities_ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     AgentCapabilities_ReportsRemoteConfig            = 0x00001000;
-    // The Agent can report heartbeats on a default interval of 30s.
+    // The Agent will report heartbeats on a default interval of 30s.
     // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
     // Status: [Beta]
     AgentCapabilities_ReportsHeartbeat               = 0x00002000;
