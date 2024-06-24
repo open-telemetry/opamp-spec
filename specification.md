@@ -111,6 +111,7 @@ Status: [Beta]
       - [OpAMPConnectionSettings.destination_endpoint](#opampconnectionsettingsdestination_endpoint)
       - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
       - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
+      - [OpAMPConnectionSettings.heartbeat_interval_seconds](#opampconnectionsettingsheartbeat_interval_seconds)
     + [TelemetryConnectionSettings](#telemetryconnectionsettings)
       - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
       - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
@@ -229,6 +230,7 @@ OpAMP supports the following functionality:
   [OTLP](https://opentelemetry.io/docs/specs/otlp/)-compatible
   backend to monitor Agent's process metrics such as CPU or RAM usage, as well
   as Agent-specific metrics such as rate of data processing.
+* Agent heartbeating.
 * Management of downloadable Agent-specific packages.
 * Secure auto-updating capabilities (both upgrading and downgrading of the
   Agents).
@@ -357,8 +359,7 @@ The format of each WebSocket message is the following:
 ```
 
 The unencoded `header` is a 64 bit unsigned integer. In the WebSocket message the 64 bit
-unencoded `header` value is encoded into bytes using [Base 128 Varint](
-https://developers.google.com/protocol-buffers/docs/encoding#varints) format. The
+unencoded `header` value is encoded into bytes using [Base 128 Varint](https://developers.google.com/protocol-buffers/docs/encoding#varints) format. The
 number of the bytes that the encoded `header` uses depends on the value of unencoded
 `header` and can be anything between 1 and 10 bytes.
 
@@ -369,8 +370,7 @@ compliant with this specification SHOULD check that the value of the `header` is
 to 0 and if it is not SHOULD assume that the WebSocket message is malformed.
 
 The `data` field contains the bytes that represent the AgentToServer or ServerToAgent
-message encoded in [Protobuf binary wire format](
-https://developers.google.com/protocol-buffers/docs/encoding).
+message encoded in [Protobuf binary wire format](https://developers.google.com/protocol-buffers/docs/encoding).
 
 Note that both `header` and `data` fields contain a variable number of bytes.
 The decoding Base 128 Varint algorithm for the `header` knows when to stop based on the
@@ -417,6 +417,11 @@ message may also be sent by the Client in response to the Server making a remote
 configuration offer to the Agent and Agent reporting that it accepted the
 configuration.
 
+If the client has enabled the ReportsHeartbeat capability, the websocket transport
+will send a heartbeat message to keep the websocket connection alive. By default,
+a 30s interval is used. Without heartbeats, the websocket transport may be closed
+unexpectedly by the network if the connection idles for too long.
+
 See sections under the [Operation](#operation) section for the details of the
 message sequences.
 
@@ -444,9 +449,12 @@ deliver to the Agent (such as for example a new remote configuration).
 
 The default polling interval when the Agent does not have anything to deliver is 30
 seconds. This polling interval SHOULD be configurable on the Client.
+If the server sets OpAMPConnectionSettings.heartbeat_interval_seconds, the client MUST
+use that for its polling interval.
 
 When using HTTP transport the sequence of messages is exactly the same as it is
 when using the WebSocket transport. The only difference is in the timing:
+
 - When the Server wants to send a message to the Agent, the Server needs to wait
   for the Client to poll the Server and establish an HTTP request over which the Server's
   message can be sent back as an HTTP response.
@@ -579,7 +587,10 @@ enum AgentCapabilities {
     ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     ReportsRemoteConfig            = 0x00001000;
-
+    // The Agent can report heartbeats on a default interval of 30s.
+    // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // Status: [Beta]
+    ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
@@ -923,7 +934,7 @@ message ServerToAgentCommand {
 ```
 
 The ServerToAgentCommand message is sent when the Server wants the Agent to restart.
-This message must only contain the command, instance_uid, and capabilities fields.  All other fields
+This message must only contain the command, instance_uid, and capabilities fields. All other fields
 will be ignored.
 
 ## Operation
@@ -1127,8 +1138,8 @@ runs.
 The following attributes SHOULD be included:
 
 - os.type, os.version - to describe where the Agent runs.
-- host.* to describe the host the Agent runs on.
-- cloud.* to describe the cloud where the host is located.
+- host.\* to describe the host the Agent runs on.
+- cloud.\* to describe the cloud where the host is located.
 - any other relevant Resource attributes that describe this Agent and the
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
@@ -1606,6 +1617,7 @@ connection types.
 ```
 
 The sequence is the following:
+
 - (1) The Client connects to the Server. The Client SHOULD use regular TLS and validate
   the Server's identity. The Agent may also use a bootstrap client certificate that is
   already trusted by the Server. (Note: the distribution and installation method of
@@ -1830,6 +1842,7 @@ message OpAMPConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
     TLSCertificate certificate = 3;
+    optional uint64 heartbeat_interval_seconds = 4;
 }
 ```
 
@@ -1854,6 +1867,19 @@ certificate the Client SHOULD forget any previous client certificates
 for this connection.
 This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
 This field can be used to perform a client certificate revocation/rotation.
+
+##### OpAMPConnectionSettings.heartbeat_interval_seconds
+
+If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
+interval to periodically send an AgentToServer message. At a minimum the instance_uid
+field MUST be set. It is recommended that the Agent also set ComponentHealth as well.
+An HTTP based-client MUST use the heartbeat interval as its polling interval.
+
+A heartbeat is used to keep a load balancer connection active and inform the server that
+the Agent is still alive and active. A server could use the heartbeat to make decisions about
+the liveness of the connected Agent.
+
+A default of a 30s should be used if not set by the OpAMPConnectionSettings.
 
 #### TelemetryConnectionSettings
 
