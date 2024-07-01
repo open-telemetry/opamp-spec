@@ -1,4 +1,9 @@
 {
+  "ignorePatterns": [
+    {
+	"pattern":  "^https://www.uber.com/blog/flipr/$"
+    }
+  ],
   "retryOn429": true,
   "aliveStatusCodes": [
     200,
