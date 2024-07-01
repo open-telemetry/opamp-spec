@@ -140,7 +140,7 @@ message OpAMPConnectionSettingsRequest {
 message CertificateRequest {
     // PEM-encoded Client Certificate Signing Request (CSR), signed by client's private key.
     // The Server SHOULD validate the request and SHOULD respond with a
-    // OpAMPConnectionSettings where the certificate.public_key contains the issued
+    // OpAMPConnectionSettings where the certificate.cert contains the issued
     // certificate.
     bytes csr = 1;
 }
@@ -350,8 +350,8 @@ message Header {
 
 // Status: [Beta]
 message TLSCertificate {
-    // The (public_key,private_key) certificate pair should be issued and
-    // signed by a Certificate Authority that the destination Server recognizes.
+    // The (cert,private_key) pair should be issued and signed by a Certificate
+    // Authority (CA) that the destination Server recognizes.
     //
     // It is highly recommended that the private key of the CA certificate is NOT
     // stored on the destination Server otherwise compromising the Server will allow
@@ -363,19 +363,19 @@ message TLSCertificate {
     // Alternatively the certificate may be self-signed, assuming the Server can
     // verify the certificate.
 
-    // PEM-encoded public key of the certificate. Required.
-    bytes public_key = 1;
+    // PEM-encoded certificate. Required.
+    bytes cert = 1;
 
     // PEM-encoded private key of the certificate. Required.
     bytes private_key = 2;
 
-    // PEM-encoded public key of the CA that signed this certificate.
+    // PEM-encoded certificate of the signing CA.
     // Optional. MUST be specified if the certificate is CA-signed.
     // Can be stored by TLS-terminating intermediary proxies in order to verify
     // the connecting client's certificate in the future.
     // It is not recommended that the Agent accepts this CA as an authority for
     // any purposes.
-    bytes ca_public_key = 3;
+    bytes ca_cert = 3;
 }
 
 // Status: [Beta]
