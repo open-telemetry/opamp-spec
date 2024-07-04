@@ -122,9 +122,9 @@ Status: [Beta]
       - [OtherConnectionSettings.other_settings](#otherconnectionsettingsother_settings)
     + [Headers Message](#headers-message)
     + [TLSCertificate Message](#tlscertificate-message)
-      - [TLSCertificate.public_key](#tlscertificatepublic_key)
+      - [TLSCertificate.cert](#tlscertificatecert)
       - [TLSCertificate.private_key](#tlscertificateprivate_key)
-      - [TLSCertificate.ca_public_key](#tlscertificateca_public_key)
+      - [TLSCertificate.ca_cert](#tlscertificateca_cert)
   * [Own Telemetry Reporting](#own-telemetry-reporting)
   * [Configuration](#configuration)
     + [Configuration Files](#configuration-files)
@@ -1625,8 +1625,8 @@ The sequence is the following:
   identical to [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
   steps, starting by offering the connection settings that carry the created client
   certificate. The OpAMPConnectionSettings.certificate message will have the
-  public_key field set to the client certificate. If a CA is used the ca_public_key field
-  will be set to the CA's public key. The private_key field will not be set, since in
+  cert field set to the client certificate. If a CA is used the ca_cert field
+  will be set to the CA's certificate. The private_key field will not be set, since in
   this flow the Agent possesses the private key and the Server does not possess it.
 - (8) Upon successfully verifying of the offered new client certificate,
   the Agent removes the bootstrap certificate if one was used and uses the new
@@ -1701,9 +1701,8 @@ private Certificate Authority or signed by a public Certificate Authority. The
 Server is responsible for generating client certificates such that they are
 trusted by the destination the certificate is intended for. This requires that
 either the destinations remember and trust the individual self-signed client
-certificate's public key directly or they trust the Certificate Authority that
-is used for signing the client certificate so that the trust chain can be
-verified.
+certificate directly or they trust the Certificate Authority that is used for
+signing the client certificate so that the trust chain can be verified.
 
 How exactly the client certificates are generated is outside the scope of the
 OpAMP specification.
@@ -1761,7 +1760,7 @@ The `csr` field is the PEM-encoded Client Certificate Signing Request (CSR), sig
 client's private key.
 
 The Server SHOULD validate the request and SHOULD respond with a
-OpAMPConnectionSettings where the certificate.public_key contains the issued
+OpAMPConnectionSettings where the certificate.cert contains the issued
 certificate.
 
 #### ConnectionSettingsOffers Message
@@ -1967,31 +1966,31 @@ message Header {
 The message carries a TLS certificate that can be used as a client-side
 certificate.
 
-The (public_key,private_key) certificate pair should be issued and signed by a
-Certificate Authority that the destination Server recognizes.
+The (cert,private_key) pair should be issued and signed by a Certificate
+Authority (CA) that the destination Server recognizes.
 
 Alternatively the certificate may be self-signed, assuming the Server can verify
-the certificate. In this case the ca_public_key field can be omitted.
+the certificate. In this case the ca_cert field can be omitted.
 
 ```protobuf
 message TLSCertificate {
-    bytes public_key = 1;
+    bytes cert = 1;
     bytes private_key = 2;
-    bytes ca_public_key = 3;
+    bytes ca_cert = 3;
 }
 ```
 
-##### TLSCertificate.public_key
+##### TLSCertificate.cert
 
-PEM-encoded public key of the certificate. Required.
+PEM-encoded certificate. Required.
 
 ##### TLSCertificate.private_key
 
 PEM-encoded private key of the certificate. Required.
 
-##### TLSCertificate.ca_public_key
+##### TLSCertificate.ca_cert
 
-PEM-encoded public key of the CA that signed this certificate. Optional, MUST be
+PEM-encoded certificate of the signing CA. Optional, MUST be
 specified if the certificate is CA-signed. Can be stored by intermediary
 TLS-terminating proxies in order to verify the connecting client's certificate
 in the future.
