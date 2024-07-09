@@ -267,7 +267,7 @@ message OpAMPConnectionSettings {
 
     // The Agent MUST periodically send an AgentToServer message if the
     // AgentCapabilities_ReportsHeartbeat capability is true. At a minimum the instance_uid
-    // field MUST be set. It is recommended that the Agent also set ComponentHealth as well.
+    // field MUST be set.
     //
     // A Polling-based HTTP Client MUST use the value as polling interval.
     //
@@ -276,7 +276,7 @@ message OpAMPConnectionSettings {
     //
     // This field is optional:
     // if the capability is true but this field has no value, a default heartbeat interval of 30 seconds should be used.
-    optional uint64 heartbeat_interval_seconds = 4;
+    uint64 heartbeat_interval_seconds = 4;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an

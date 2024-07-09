@@ -1872,7 +1872,7 @@ This field can be used to perform a client certificate revocation/rotation.
 
 If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
 interval to periodically send an AgentToServer message. At a minimum the instance_uid
-field MUST be set. It is recommended that the Agent also set ComponentHealth as well.
+field MUST be set.
 An HTTP based-client MUST use the heartbeat interval as its polling interval.
 
 A heartbeat is used to keep a load balancer connection active and inform the server that
