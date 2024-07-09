@@ -502,6 +502,13 @@ message DownloadableFile {
     // https://github.com/open-telemetry/opamp-spec/blob/main/specification.md#code-signing
     // for recommendations.
     bytes signature = 3;
+
+    // Optional headers to use when downloading a file. Typically used to set
+    // access tokens or other authorization headers. For HTTP-based protocols
+    // the Agent should set these in the request headers.
+    // For example:
+    // key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
+    Headers headers = 4;
 }
 
 message ServerErrorResponse {

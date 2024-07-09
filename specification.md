@@ -153,6 +153,7 @@ Status: [Beta]
       - [DownloadableFile.download_url](#downloadablefiledownload_url)
       - [DownloadableFile.content_hash](#downloadablefilecontent_hash)
       - [DownloadableFile.signature](#downloadablefilesignature)
+      - [DownloadableFile.headers](#downloadablefileheaders)
   * [Custom Messages](#custom-messages)
     + [Motivation](#motivation)
     + [CustomCapabilities](#customcapabilities)
@@ -2343,7 +2344,9 @@ should download the file:
   and the file SHOULD be downloaded from the location specified in the
   [download_url](#downloadablefiledownload_url) field of the
   [DownloadableFile](#downloadablefile-message) message. The Agent SHOULD use an
-  HTTP GET message to download the file.
+  HTTP GET message to download the file. The Agent SHOULD include the HTTP
+  headers provided in the [headers](#downloadablefileheaders) field for the GET
+  request.
 
 The procedure outlined above allows the Agent to efficiently download only new
 or changed packages and only download new or changed files.
@@ -2536,6 +2539,7 @@ message DownloadableFile {
     string download_url = 1;
     bytes content_hash = 2;
     bytes signature = 3;
+    headers headers = 4;
 }
 ```
 
@@ -2557,6 +2561,14 @@ authenticity of the downloaded file, for example can be the
 [detached GPG signature](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
 The exact signing and verification method is Agent specific. See
 [Code Signing](#code-signing) for recommendations.
+
+##### DownloadableFile.headers
+
+Optional headers to use for the HTTP GET request. Typically used to set access
+tokens or other authorization headers. For HTTP-based protocols the Agent
+should set these in the request headers.
+For example:
+key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
 
 ### Custom Messages
 
