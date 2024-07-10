@@ -1881,6 +1881,7 @@ the Agent is still alive and active. A server could use the heartbeat to make de
 the liveness of the connected Agent.
 
 The flow for negotiating a heartbeat is described as so:
+
 ```
 ┌──────────┐                       ┌──────────┐
 │          │ (1) Connect           │          │
