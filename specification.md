@@ -1842,7 +1842,7 @@ message OpAMPConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
     TLSCertificate certificate = 3;
-    optional uint64 heartbeat_interval_seconds = 4;
+    uint64 heartbeat_interval_seconds = 4;
 }
 ```
 
