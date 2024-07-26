@@ -3008,7 +3008,8 @@ response and MAY optionally set
 header to indicate when SHOULD the Client attempt to reconnect. The Client SHOULD
 honour the corresponding requirements of HTTP specification.
 
-Note: a Retry-After header SHOULD be used only for the client's attempts to reconnect to the server. A client should still send regular [heartbeat](#opampconnectionsettingsheartbeat_interval_seconds) messages if it is configured to do so.
+Note: a Retry-After header SHOULD be used only for the client's attempts to reconnect to the server.
+A client should not attempt to send regular [heartbeat](#opampconnectionsettingsheartbeat_interval_seconds) messages while the Agent is reconnecting.
 
 The minimum recommended retry interval is 30 seconds.
 
