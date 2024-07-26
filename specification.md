@@ -588,7 +588,7 @@ enum AgentCapabilities {
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     ReportsRemoteConfig            = 0x00001000;
     // The Agent can report heartbeats on a default interval of 30s.
-    // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // The heartbeat interval is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
     // Status: [Beta]
     ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
@@ -1874,7 +1874,7 @@ If the ReportsHeartbeat capability is true, the Client MUST use the offered hear
 interval to periodically send an AgentToServer message. If the capability is true
 and the Server sets heartbeat_interval_seconds to 0, Agent heartbeats should be disabled.
 At a minimum the instance_uid field MUST be set.
-An HTTP based-client MUST use the heartbeat interval as its polling interval.
+An HTTP-based client MUST use the heartbeat interval as its polling interval.
 
 A heartbeat is used to keep a load balancer connection active and inform the server that
 the Agent is still alive and active. A server could use the heartbeat to make decisions about
@@ -1904,11 +1904,11 @@ The flow for negotiating a heartbeat is described as so:
 ```
 
 1. The agent connects to the server and optionally sets the ReportsHeartbeat capability. If the Agent does NOT set this capability, no heartbeats will occur.
-2. If the Agent sets the ReportsHeartbeat capability, the server MUST respond with either a 0 indicating that heatbeats are disabled. Otherwise, the server will set a heartbeat_interval_seconds in the OpAMPConnectionSettings message. It is recommended for servers to set a 30s interval, if desired.
+2. If the Agent sets the ReportsHeartbeat capability, the server MUST respond by setting an interval in the heartbeat_interval_seconds field within the OpAMPConnectionSettings message. The value can either be the desired interval, or `0`, indicating that the client should not send heartbeats. 30s is the recommended default interval.
 3. If the Agent sets the ReportsHeartbeat capability AND the server has set OpAMPConnectionSettings.heartbeat_interval_seconds, the Agent MUST send a heartbeat message for the interval set by the server.
 4. The Agent will continue to send heartbeats on its configured interval while alive.
 
-The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not support heartbeats by responding with an unset (or 0) for the OpAMPConnectionSettings.heartbeat_interval_seconds.
+The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not support heartbeats by responding with a value of `0` seconds in the OpAMPConnectionSettings.heartbeat_interval_seconds field.
 
 #### TelemetryConnectionSettings
 
