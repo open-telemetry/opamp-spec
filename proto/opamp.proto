@@ -508,6 +508,7 @@ message DownloadableFile {
     // the Agent should set these in the request headers.
     // For example:
     // key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
+    // Status: [Development]
     Headers headers = 4;
 }
 

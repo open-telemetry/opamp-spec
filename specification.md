@@ -2539,7 +2539,7 @@ message DownloadableFile {
     string download_url = 1;
     bytes content_hash = 2;
     bytes signature = 3;
-    headers headers = 4;
+    headers headers = 4; // Status: [Development]
 }
 ```
 
@@ -2563,6 +2563,8 @@ The exact signing and verification method is Agent specific. See
 [Code Signing](#code-signing) for recommendations.
 
 ##### DownloadableFile.headers
+
+Status: [Development]
 
 Optional headers to use for the HTTP GET request. Typically used to set access
 tokens or other authorization headers. For HTTP-based protocols the Agent
