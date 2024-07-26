@@ -593,7 +593,8 @@ enum AgentCapabilities {
     // The Agent can report heartbeats.
     // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
     // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
-    // Agent should use its own configured interval, which by default will be 30s.
+    // Agent should use its own configured interval, which by default will be 30s, the Server may not know this
+    // and should not make assumptions about it.
     // Status: [Beta]
     ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
