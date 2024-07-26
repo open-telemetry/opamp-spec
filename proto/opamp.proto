@@ -269,12 +269,12 @@ message OpAMPConnectionSettings {
     // AgentCapabilities_ReportsHeartbeat capability is true. At a minimum the instance_uid
     // field MUST be set.
     //
-    // A Polling-based HTTP Client MUST use the value as polling interval.
+    // An HTTP Client MUST use the value as polling interval, if heartbeat_interval_seconds is non zero.
     //
-    // A heartbeat is used to keep a load balancer connection active and inform the server that the Agent
+    // A heartbeat is used to keep the connection active and inform the server that the Agent
     // is still alive and active.
     //
-    // If the capability is true but this field has no value or is set to 0,
+    // If this field has no value or is set to 0,
     // the Agent should not send any heartbeats. If a server wants the Client to send
     // heartbeats, a 30s interval is recommended.
     uint64 heartbeat_interval_seconds = 4;
@@ -649,8 +649,10 @@ enum AgentCapabilities {
     AgentCapabilities_ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     AgentCapabilities_ReportsRemoteConfig            = 0x00001000;
-    // The Agent will report heartbeats on a default interval of 30s.
+    // The Agent can report heartbeats.
     // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
+    // Agent should use its own configured interval, which by default will be 30s.
     // Status: [Beta]
     AgentCapabilities_ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.

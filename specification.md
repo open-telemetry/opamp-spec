@@ -417,10 +417,12 @@ message may also be sent by the Client in response to the Server making a remote
 configuration offer to the Agent and Agent reporting that it accepted the
 configuration.
 
-If the client has enabled the ReportsHeartbeat capability, the websocket transport
-will send a heartbeat message to keep the websocket connection alive. By default,
-a 30s interval is used. Without heartbeats, the websocket transport may be closed
-unexpectedly by the network if the connection idles for too long.
+If the Client is capable of sending heartbeats the Client SHOULD set
+ReportsHeartbeat capability. If ReportsHeartbeat capability is set the
+Client SHOULD send heartbeats periodically. The interval between the
+heartbeats SHOULD be 30 seconds, unless a different value is configured
+on the Client side or unless a different interval is offered by the Server via
+`OpAMPConnectionSettings.heartbeat_interval_seconds` field.
 
 See sections under the [Operation](#operation) section for the details of the
 message sequences.
@@ -449,8 +451,9 @@ deliver to the Agent (such as for example a new remote configuration).
 
 The default polling interval when the Agent does not have anything to deliver is 30
 seconds. This polling interval SHOULD be configurable on the Client.
-If the server sets OpAMPConnectionSettings.heartbeat_interval_seconds, the client MUST
-use that for its polling interval.
+If the client has previously received and accepted OpAMP connection settings
+then the value of `OpAMPConnectionSettings.heartbeat_interval_seconds`
+SHOULD be used as the polling interval.
 
 When using HTTP transport the sequence of messages is exactly the same as it is
 when using the WebSocket transport. The only difference is in the timing:
@@ -587,8 +590,10 @@ enum AgentCapabilities {
     ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     ReportsRemoteConfig            = 0x00001000;
-    // The Agent can report heartbeats on a default interval of 30s.
-    // The heartbeat interval is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // The Agent can report heartbeats.
+    // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
+    // Agent should use its own configured interval, which by default will be 30s.
     // Status: [Beta]
     ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
@@ -1876,7 +1881,13 @@ and the Server sets heartbeat_interval_seconds to 0, Agent heartbeats should be 
 At a minimum the instance_uid field MUST be set.
 An HTTP-based client MUST use the heartbeat interval as its polling interval.
 
-A heartbeat is used to keep a load balancer connection active and inform the server that
+Any AgentToServer message where instance_uid field is set is considered a
+valid heartbeat. Note that it is not necessary to send a separate AgentToServer
+message just for heartbeating purposes if another AgentToServer message
+containing other data was just sent. The Agent must count heartbeating interval
+from the last AgentToServer message sent.
+
+A heartbeat is used to keep a connection active and inform the server that
 the Agent is still alive and active. A server could use the heartbeat to make decisions about
 the liveness of the connected Agent.
 
@@ -1903,12 +1914,12 @@ The flow for negotiating a heartbeat is described as so:
 └──────────┘                       └──────────┘
 ```
 
-1. The agent connects to the server and optionally sets the ReportsHeartbeat capability. If the Agent does NOT set this capability, no heartbeats will occur.
-2. If the Agent sets the ReportsHeartbeat capability, the server MUST respond by setting an interval in the heartbeat_interval_seconds field within the OpAMPConnectionSettings message. The value can either be the desired interval, or `0`, indicating that the client should not send heartbeats. 30s is the recommended default interval.
-3. If the Agent sets the ReportsHeartbeat capability AND the server has set OpAMPConnectionSettings.heartbeat_interval_seconds, the Agent MUST send a heartbeat message for the interval set by the server.
+1. The agent connects to the server and optionally sets the ReportsHeartbeat capability. If the Agent does not set this capability, the Server should not expect to receive heartbeats.
+2. If the Agent sets the ReportsHeartbeat capability, the server MAY respond by setting an interval in the heartbeat_interval_seconds field within the OpAMPConnectionSettings message. The value can either be the desired interval, or `0`, indicating that the client should not send heartbeats. 30s is the recommended default interval.
+3. If the Agent sets the ReportsHeartbeat capability AND the server hasn't disabled heartbeats, the Agent MUST send a heartbeat message every period, specified by the interval set by the server or using the agent's configured heartbeat interval.
 4. The Agent will continue to send heartbeats on its configured interval while alive.
 
-The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not support heartbeats by responding with a value of `0` seconds in the OpAMPConnectionSettings.heartbeat_interval_seconds field.
+The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not receive heartbeats by responding with a value of `0` seconds in the OpAMPConnectionSettings.heartbeat_interval_seconds field.
 
 #### TelemetryConnectionSettings
 
@@ -2997,7 +3008,7 @@ response and MAY optionally set
 header to indicate when SHOULD the Client attempt to reconnect. The Client SHOULD
 honour the corresponding requirements of HTTP specification.
 
-Note: this reconnect is separate from [heartbeats](#opampconnectionsettingsheartbeat_interval_seconds). A client should still send regular heartbeat messages if it is configured to do so.
+Note: a Retry-After header SHOULD be used only for the client's attempts to reconnect to the server. A client should still send regular [heartbeat](#opampconnectionsettingsheartbeat_interval_seconds) messages if it is configured to do so.
 
 The minimum recommended retry interval is 30 seconds.
 
