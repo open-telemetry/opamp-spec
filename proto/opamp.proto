@@ -264,6 +264,19 @@ message OpAMPConnectionSettings {
     // This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
     // This field can be used to perform a client certificate revocation/rotation.
     TLSCertificate certificate = 3;
+
+    // The Agent MUST periodically send an AgentToServer message if the
+    // AgentCapabilities_ReportsHeartbeat capability is true. At a minimum the instance_uid
+    // field MUST be set.
+    //
+    // An HTTP Client MUST use the value as polling interval, if heartbeat_interval_seconds is non-zero.
+    //
+    // A heartbeat is used to keep the connection active and inform the server that the Agent
+    // is still alive and active.
+    //
+    // If this field has no value or is set to 0, the Agent should not send any heartbeats.
+    // Status: [Development]
+    uint64 heartbeat_interval_seconds = 4;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -635,7 +648,13 @@ enum AgentCapabilities {
     AgentCapabilities_ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     AgentCapabilities_ReportsRemoteConfig            = 0x00001000;
-
+    // The Agent can report heartbeats.
+    // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
+    // Agent should use its own configured interval, which by default will be 30s. The Server may not
+    // know the configured interval and should not make assumptions about it.
+    // Status: [Development]
+    AgentCapabilities_ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 

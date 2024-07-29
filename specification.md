@@ -111,6 +111,7 @@ Status: [Beta]
       - [OpAMPConnectionSettings.destination_endpoint](#opampconnectionsettingsdestination_endpoint)
       - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
       - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
+      - [OpAMPConnectionSettings.heartbeat_interval_seconds](#opampconnectionsettingsheartbeat_interval_seconds)
     + [TelemetryConnectionSettings](#telemetryconnectionsettings)
       - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
       - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
@@ -229,6 +230,7 @@ OpAMP supports the following functionality:
   [OTLP](https://opentelemetry.io/docs/specs/otlp/)-compatible
   backend to monitor Agent's process metrics such as CPU or RAM usage, as well
   as Agent-specific metrics such as rate of data processing.
+* Agent heartbeating.
 * Management of downloadable Agent-specific packages.
 * Secure auto-updating capabilities (both upgrading and downgrading of the
   Agents).
@@ -357,8 +359,7 @@ The format of each WebSocket message is the following:
 ```
 
 The unencoded `header` is a 64 bit unsigned integer. In the WebSocket message the 64 bit
-unencoded `header` value is encoded into bytes using [Base 128 Varint](
-https://developers.google.com/protocol-buffers/docs/encoding#varints) format. The
+unencoded `header` value is encoded into bytes using [Base 128 Varint](https://developers.google.com/protocol-buffers/docs/encoding#varints) format. The
 number of the bytes that the encoded `header` uses depends on the value of unencoded
 `header` and can be anything between 1 and 10 bytes.
 
@@ -369,8 +370,7 @@ compliant with this specification SHOULD check that the value of the `header` is
 to 0 and if it is not SHOULD assume that the WebSocket message is malformed.
 
 The `data` field contains the bytes that represent the AgentToServer or ServerToAgent
-message encoded in [Protobuf binary wire format](
-https://developers.google.com/protocol-buffers/docs/encoding).
+message encoded in [Protobuf binary wire format](https://developers.google.com/protocol-buffers/docs/encoding).
 
 Note that both `header` and `data` fields contain a variable number of bytes.
 The decoding Base 128 Varint algorithm for the `header` knows when to stop based on the
@@ -417,6 +417,13 @@ message may also be sent by the Client in response to the Server making a remote
 configuration offer to the Agent and Agent reporting that it accepted the
 configuration.
 
+If the Client is capable of sending heartbeats the Client SHOULD set
+ReportsHeartbeat capability. If ReportsHeartbeat capability is set the
+Client SHOULD send heartbeats periodically. The interval between the
+heartbeats SHOULD be 30 seconds, unless a different value is configured
+on the Client side or unless a different interval is offered by the Server via
+`OpAMPConnectionSettings.heartbeat_interval_seconds` field.
+
 See sections under the [Operation](#operation) section for the details of the
 message sequences.
 
@@ -444,9 +451,13 @@ deliver to the Agent (such as for example a new remote configuration).
 
 The default polling interval when the Agent does not have anything to deliver is 30
 seconds. This polling interval SHOULD be configurable on the Client.
+If the client has previously received and accepted OpAMP connection settings
+then the value of `OpAMPConnectionSettings.heartbeat_interval_seconds`
+SHOULD be used as the polling interval.
 
 When using HTTP transport the sequence of messages is exactly the same as it is
 when using the WebSocket transport. The only difference is in the timing:
+
 - When the Server wants to send a message to the Agent, the Server needs to wait
   for the Client to poll the Server and establish an HTTP request over which the Server's
   message can be sent back as an HTTP response.
@@ -579,7 +590,13 @@ enum AgentCapabilities {
     ReportsHealth                  = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
     ReportsRemoteConfig            = 0x00001000;
-
+    // The Agent can report heartbeats.
+    // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
+    // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
+    // Agent should use its own configured interval, which by default will be 30s. The Server may not
+    // know the configured interval and should not make assumptions about it.
+    // Status: [Development]
+    ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
@@ -923,7 +940,7 @@ message ServerToAgentCommand {
 ```
 
 The ServerToAgentCommand message is sent when the Server wants the Agent to restart.
-This message must only contain the command, instance_uid, and capabilities fields.  All other fields
+This message must only contain the command, instance_uid, and capabilities fields. All other fields
 will be ignored.
 
 ## Operation
@@ -1127,8 +1144,8 @@ runs.
 The following attributes SHOULD be included:
 
 - os.type, os.version - to describe where the Agent runs.
-- host.* to describe the host the Agent runs on.
-- cloud.* to describe the cloud where the host is located.
+- host.\* to describe the host the Agent runs on.
+- cloud.\* to describe the cloud where the host is located.
 - any other relevant Resource attributes that describe this Agent and the
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
@@ -1606,6 +1623,7 @@ connection types.
 ```
 
 The sequence is the following:
+
 - (1) The Client connects to the Server. The Client SHOULD use regular TLS and validate
   the Server's identity. The Agent may also use a bootstrap client certificate that is
   already trusted by the Server. (Note: the distribution and installation method of
@@ -1829,6 +1847,7 @@ message OpAMPConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
     TLSCertificate certificate = 3;
+    uint64 heartbeat_interval_seconds = 4;
 }
 ```
 
@@ -1853,6 +1872,56 @@ certificate the Client SHOULD forget any previous client certificates
 for this connection.
 This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
 This field can be used to perform a client certificate revocation/rotation.
+
+##### OpAMPConnectionSettings.heartbeat_interval_seconds
+
+Status: [Development]
+
+If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
+interval to periodically send an AgentToServer message. If the capability is true
+and the Server sets heartbeat_interval_seconds to 0, Agent heartbeats should be disabled.
+At a minimum the `AgentToServer.instance_uid` field MUST be set in the heartbeats.
+An HTTP-based client MUST use the heartbeat interval as its polling interval.
+
+Any AgentToServer message where instance_uid field is set is considered a
+valid heartbeat. Note that it is not necessary to send a separate AgentToServer
+message just for heartbeating purposes if another AgentToServer message
+containing other data was just sent. The Agent must count heartbeating interval
+from the last AgentToServer message sent.
+
+A heartbeat is used to keep a connection active and inform the server that
+the Agent is still alive and active. A server could use the heartbeat to make decisions about
+the liveness of the connected Agent.
+
+The flow for negotiating a heartbeat is described as so:
+
+```
+┌──────────┐                       ┌──────────┐
+│          │ (1) Connect           │          │
+│          ├──────────────────────►│          │
+│          │                       │          │
+│          │ (2) Set Heartbeat     │          │
+│          │◄──────────────────────┤          │
+│          │     Interval          │          │
+│          │                       │          │
+│  Agent   │ (3) Send Heartbeat    │  Server  │
+│          ├──────────────────────►│          │
+│          │                       │          │
+│          │  ... heartbeat        │          │
+│          │      interval         │          │
+│          │                       │          │
+│          │ (4) Send Heartbeat    │          │
+│          ├──────────────────────►│          │
+│          │                       │          │
+└──────────┘                       └──────────┘
+```
+
+1. The agent connects to the server and optionally sets the ReportsHeartbeat capability. If the Agent does not set this capability, the Server should not expect to receive heartbeats.
+2. If the Agent sets the ReportsHeartbeat capability, the server MAY respond by setting an interval in the heartbeat_interval_seconds field within the OpAMPConnectionSettings message. The value can either be the desired interval, or `0`, indicating that the client should not send heartbeats. 30s is the recommended default interval.
+3. If the Agent sets the ReportsHeartbeat capability AND the server hasn't disabled heartbeats, the Agent MUST send a heartbeat message every period, specified by the interval set by the server or using the agent's configured heartbeat interval.
+4. The Agent will continue to send heartbeats on its configured interval while alive.
+
+The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not receive heartbeats by responding with a value of `0` seconds in the OpAMPConnectionSettings.heartbeat_interval_seconds field.
 
 #### TelemetryConnectionSettings
 
@@ -2940,6 +3009,9 @@ response and MAY optionally set
 [Retry-After](https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.3)
 header to indicate when SHOULD the Client attempt to reconnect. The Client SHOULD
 honour the corresponding requirements of HTTP specification.
+
+Note: a Retry-After header SHOULD be used only for the client's attempts to reconnect to the server.
+A client should not attempt to send regular [heartbeat](#opampconnectionsettingsheartbeat_interval_seconds) messages while the Agent is reconnecting.
 
 The minimum recommended retry interval is 30 seconds.
 
