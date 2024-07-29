@@ -593,8 +593,8 @@ enum AgentCapabilities {
     // The Agent can report heartbeats.
     // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
     // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
-    // Agent should use its own configured interval, which by default will be 30s, the Server may not know this
-    // and should not make assumptions about it.
+    // Agent should use its own configured interval, which by default will be 30s. The Server may not
+    // know the configured interval and should not make assumptions about it.
     // Status: [Beta]
     ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
@@ -1879,7 +1879,7 @@ This field can be used to perform a client certificate revocation/rotation.
 If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
 interval to periodically send an AgentToServer message. If the capability is true
 and the Server sets heartbeat_interval_seconds to 0, Agent heartbeats should be disabled.
-At a minimum the instance_uid field MUST be set.
+At a minimum the `AgentToServer.instance_uid` field MUST be set in the heartbeats.
 An HTTP-based client MUST use the heartbeat interval as its polling interval.
 
 Any AgentToServer message where instance_uid field is set is considered a
