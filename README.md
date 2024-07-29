@@ -45,3 +45,4 @@ Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/op
 ### Agents
 
 - [observIQ Distro for OpenTelemetry Collector](https://github.com/observIQ/observiq-otel-collector)
+- [OpAMP Supervisor for OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/cmd/opampsupervisor)
