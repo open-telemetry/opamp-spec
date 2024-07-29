@@ -595,7 +595,7 @@ enum AgentCapabilities {
     // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
     // Agent should use its own configured interval, which by default will be 30s. The Server may not
     // know the configured interval and should not make assumptions about it.
-    // Status: [Beta]
+    // Status: [Development]
     ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -1875,6 +1875,9 @@ This field is optional: if omitted the client SHOULD NOT use a client-side certi
 This field can be used to perform a client certificate revocation/rotation.
 
 ##### OpAMPConnectionSettings.heartbeat_interval_seconds
+
+
+Status: [Development]
 
 If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
 interval to periodically send an AgentToServer message. If the capability is true

@@ -275,6 +275,7 @@ message OpAMPConnectionSettings {
     // is still alive and active.
     //
     // If this field has no value or is set to 0, the Agent should not send any heartbeats.
+    // Status: [Development]
     uint64 heartbeat_interval_seconds = 4;
 }
 
@@ -652,7 +653,7 @@ enum AgentCapabilities {
     // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
     // Agent should use its own configured interval, which by default will be 30s. The Server may not
     // know the configured interval and should not make assumptions about it.
-    // Status: [Beta]
+    // Status: [Development]
     AgentCapabilities_ReportsHeartbeat               = 0x00002000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
