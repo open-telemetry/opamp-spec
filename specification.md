@@ -1876,7 +1876,6 @@ This field can be used to perform a client certificate revocation/rotation.
 
 ##### OpAMPConnectionSettings.heartbeat_interval_seconds
 
-
 Status: [Development]
 
 If the ReportsHeartbeat capability is true, the Client MUST use the offered heartbeat
