@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.10.0
+
+* Replace ULIDs by 16 byte ids and recommend UUID v7 by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/186
+* Amend field names in TLSCertificate message by @tpaschalis in https://github.com/open-telemetry/opamp-spec/pull/195
+* Introduce heartbeats by @jaronoff97 in https://github.com/open-telemetry/opamp-spec/pull/190
+* Allow setting Headers in DownloadableFile message by @tpaschalis in https://github.com/open-telemetry/opamp-spec/pull/197
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.9.0...v0.10.0
+
 ## v0.9.0
 
 * Add CustomMessage capability by @andykellr in https://github.com/open-telemetry/opamp-spec/pull/132
