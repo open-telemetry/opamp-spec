@@ -609,8 +609,22 @@ message AgentDescription {
     //   with this Agent.
     repeated KeyValue non_identifying_attributes = 2;
 
+    // Details about the components available in the agent.
+    ComponentDetails component_details = 3;
+
     // TODO: add ability to specify related entities (such as the Service the Agent is
     // is responsible/associated with).
+}
+
+message ComponentDetails {
+    // Extra key/value pairs that may be used to describe the component.
+    // The key/value pairs are according to semantic conventions, see:
+    // https://opentelemetry.io/docs/specs/semconv/
+    repeated KeyValue metadata = 1;
+
+    // A map of component ID to sub components details. It can nest as deeply as needed to
+    // describe the underlying system.
+    map<string, ComponentDetails> sub_component_map = 2;
 }
 
 enum AgentCapabilities {

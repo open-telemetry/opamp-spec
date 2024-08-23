@@ -63,6 +63,13 @@ Status: [Beta]
     + [AgentDescription Message](#agentdescription-message)
       - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
       - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
+      - [AgentDescription.component_details](#agentdescriptioncomponent_details)
+    + [ComponentDetails Message](#componentdetails-message)
+      - [ComponentDetails.metadata](#componentdetailsmetadata)
+      - [ComponentDetails.sub_component_map](#componentdetailssub_component_map)
+      - [Examples](#examples)
+        * [OpenTelemetry Collector](#opentelemetry-collector)
+        * [Fluent Bit](#fluent-bit)
     + [ComponentHealth Message](#componenthealth-message)
       - [ComponentHealth.healthy](#componenthealthhealthy)
       - [ComponentHealth.start_time_unix_nano](#componenthealthstart_time_unix_nano)
@@ -163,7 +170,7 @@ Status: [Beta]
       - [CustomMessage.capability](#custommessagecapability)
       - [CustomMessage.type](#custommessagetype)
       - [CustomMessage.data](#custommessagedata)
-    + [Examples](#examples)
+    + [Examples](#examples-1)
       - [Pause/Resume Example](#pauseresume-example)
         * [Agent Connection](#agent-connection)
         * [Pause](#pause)
@@ -1151,6 +1158,124 @@ The following attributes SHOULD be included:
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
   this Agent.
+
+##### AgentDescription.component_details
+
+Details about the available components in the agent.
+
+This field gives a description of what components are available, as well
+as extra metadata about the components.
+
+The structure of ComponentDetails DOES NOT need to be a 1-to-1 match with
+the ComponentHealth structure. ComponentHealth generally refers to instances of
+components, while ComponentDetails refers to the available types of components.
+
+This field is not required to be specified.
+
+#### ComponentDetails Message
+
+Status: [Beta]
+
+The ComponentDetails message has the following structure:
+
+```protobuf
+message ComponentDetails {
+    map<string, ComponentDetails> sub_component_map = 1;
+    repeated KeyValue metadata = 2;
+}
+```
+
+##### ComponentDetails.metadata
+
+Extra key/value pairs that may be used to describe the component.
+
+The key/value pairs are according to semantic conventions, see
+the [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) for more information.
+
+##### ComponentDetails.sub_component_map
+
+A map of component ID to sub components details. It can nest as deeply as needed to
+describe the underlying system.
+
+##### Examples
+
+###### OpenTelemetry Collector
+
+Here is an example of how ComponentDetails could hold information regarding the included
+components for a custom build collector:
+
+```json
+{
+  "sub_component_data": {
+    "receivers": {
+      "sub_component_data": {
+        "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0": {
+          "metadata": {
+            "type": "hostmetrics",
+          }
+        }
+      }
+    },
+    "processors": {
+      "sub_component_data": {
+        "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0": {
+          "metadata": {
+            "type": "batch",
+          }
+        },
+        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0": {
+          "metadata": {
+            "type": "transform",
+          }
+        },
+      }
+    },
+    "exporters": {
+      "sub_component_data": {
+        "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0": {
+          "metadata": {
+            "type": "nop",
+          }
+        }
+      }
+    }
+  }
+  // ... Component list continues for extensions and collectors ...
+}
+```
+
+###### Fluent Bit
+
+Here's an example of how Fluent Bit could report what components it has available.
+
+```json
+{
+  "sub_component_data": {
+    "input": {
+      "sub_component_data": {
+        "tail": {}
+      }
+    },
+    "parser": {
+      "sub_component_data": {
+        "json": {}
+      }
+    },
+    "filter": {
+      "sub_component_data": {
+        "lua": {},
+        "modify": {}
+      }
+    },
+    "output": {
+      "sub_component_data": {
+        "null": {},
+        "file": {},
+      }
+    }
+  }
+}
+```
 
 #### ComponentHealth Message
 
