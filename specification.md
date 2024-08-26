@@ -1180,8 +1180,8 @@ The ComponentDetails message has the following structure:
 
 ```protobuf
 message ComponentDetails {
-    map<string, ComponentDetails> sub_component_map = 1;
-    repeated KeyValue metadata = 2;
+    repeated KeyValue metadata = 1;
+    map<string, ComponentDetails> sub_component_map = 2;    
 }
 ```
 
