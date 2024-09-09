@@ -1168,10 +1168,12 @@ This field gives a description of what components are available, as well
 as extra metadata about the components.
 
 The structure of ComponentDetails DOES NOT need to be a 1-to-1 match with
-the ComponentHealth structure. ComponentHealth generally refers to instances of
-components, while ComponentDetails refers to the available types of components.
+the ComponentHealth structure. ComponentHealth generally refers to currently running instances of
+components, while ComponentDetails refers to the available types of components, 
+which may not be necessarily running currently. It is also possible that the same component 
+type may have more than one running instance.
 
-This field is not required to be specified.
+This is an optional field.
 
 #### ComponentDetails Message
 
@@ -1203,7 +1205,7 @@ describe the underlying system.
 ###### OpenTelemetry Collector
 
 Here is an example of how ComponentDetails could hold information regarding the included
-components for a custom build collector:
+components for a custom build of [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)::
 
 ```jsonc
 {
