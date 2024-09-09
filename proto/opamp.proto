@@ -610,7 +610,7 @@ message AgentDescription {
     repeated KeyValue non_identifying_attributes = 2;
 
     // Details about the components available in the agent.
-    map<string, ComponentDetails> component_details = 3;
+    map<string, ComponentDetails> available_components = 3;
 
     // TODO: add ability to specify related entities (such as the Service the Agent is
     // is responsible/associated with).

@@ -63,7 +63,7 @@ Status: [Beta]
     + [AgentDescription Message](#agentdescription-message)
       - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
       - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
-      - [AgentDescription.component_details](#agentdescriptioncomponent_details)
+      - [AgentDescription.available_components](#agentdescriptionavailable_components)
     + [ComponentDetails Message](#componentdetails-message)
       - [ComponentDetails.metadata](#componentdetailsmetadata)
       - [ComponentDetails.sub_component_map](#componentdetailssub_component_map)
@@ -1117,7 +1117,7 @@ The AgentDescription message has the following structure:
 message AgentDescription {
     repeated KeyValue identifying_attributes = 1;
     repeated KeyValue non_identifying_attributes = 2;
-    map<string, ComponentDetails> component_details = 3;
+    map<string, ComponentDetails> available_components = 3;
 }
 ```
 
@@ -1160,7 +1160,7 @@ The following attributes SHOULD be included:
 - any user-defined attributes that the end user would like to associate with
   this Agent.
 
-##### AgentDescription.component_details
+##### AgentDescription.available_components
 
 Details about the available components in the agent.
 
@@ -1169,8 +1169,8 @@ as extra metadata about the components.
 
 The structure of ComponentDetails DOES NOT need to be a 1-to-1 match with
 the ComponentHealth structure. ComponentHealth generally refers to currently running instances of
-components, while ComponentDetails refers to the available types of components, 
-which may not be necessarily running currently. It is also possible that the same component 
+components, while ComponentDetails refers to the available types of components,
+which may not be necessarily running currently. It is also possible that the same component
 type may have more than one running instance.
 
 This is an optional field.
