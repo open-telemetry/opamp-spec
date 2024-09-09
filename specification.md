@@ -1117,6 +1117,7 @@ The AgentDescription message has the following structure:
 message AgentDescription {
     repeated KeyValue identifying_attributes = 1;
     repeated KeyValue non_identifying_attributes = 2;
+    map<string, ComponentDetails> component_details = 3;
 }
 ```
 
@@ -1204,38 +1205,36 @@ describe the underlying system.
 Here is an example of how ComponentDetails could hold information regarding the included
 components for a custom build collector:
 
-```json
+```jsonc
 {
-  "sub_component_data": {
-    "receivers": {
-      "sub_component_data": {
-        "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0": {
-          "metadata": {
-            "type": "hostmetrics",
-          }
+  "receivers": {
+    "sub_component_data": {
+      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0": {
+        "metadata": {
+          "type": "hostmetrics",
         }
       }
-    },
-    "processors": {
-      "sub_component_data": {
-        "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0": {
-          "metadata": {
-            "type": "batch",
-          }
-        },
-        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0": {
-          "metadata": {
-            "type": "transform",
-          }
-        },
-      }
-    },
-    "exporters": {
-      "sub_component_data": {
-        "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0": {
-          "metadata": {
-            "type": "nop",
-          }
+    }
+  },
+  "processors": {
+    "sub_component_data": {
+      "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0": {
+        "metadata": {
+          "type": "batch",
+        }
+      },
+      "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0": {
+        "metadata": {
+          "type": "transform",
+        }
+      },
+    }
+  },
+  "exporters": {
+    "sub_component_data": {
+      "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0": {
+        "metadata": {
+          "type": "nop",
         }
       }
     }
@@ -1248,30 +1247,28 @@ components for a custom build collector:
 
 Here's an example of how Fluent Bit could report what components it has available.
 
-```json
+```jsonc
 {
-  "sub_component_data": {
-    "input": {
-      "sub_component_data": {
-        "tail": {}
-      }
-    },
-    "parser": {
-      "sub_component_data": {
-        "json": {}
-      }
-    },
-    "filter": {
-      "sub_component_data": {
-        "lua": {},
-        "modify": {}
-      }
-    },
-    "output": {
-      "sub_component_data": {
-        "null": {},
-        "file": {},
-      }
+  "input": {
+    "sub_component_data": {
+      "tail": {}
+    }
+  },
+  "parser": {
+    "sub_component_data": {
+      "json": {}
+    }
+  },
+  "filter": {
+    "sub_component_data": {
+      "lua": {},
+      "modify": {}
+    }
+  },
+  "output": {
+    "sub_component_data": {
+      "null": {},
+      "file": {},
     }
   }
 }
