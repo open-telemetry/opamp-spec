@@ -91,6 +91,10 @@ message AgentToServer {
     // A custom message sent from an Agent to the Server.
     // Status: [Development]
     CustomMessage custom_message = 13;
+
+    // A message indicating the components that are available for configuration on the agent.
+    // Status: [Development]
+    AvailableComponents available_components = 14;
 }
 
 enum AgentToServerFlags {
@@ -144,6 +148,33 @@ message CertificateRequest {
     // certificate.
     bytes csr = 1;
 }
+
+// AvailableComponents contains metadata relating to the components included 
+// within the agent.
+// status: [Development]
+message AvailableComponents {
+    // A map of a unique component ID to details about the component.
+    // This may be omitted from the message if the server has not
+    // explicitly requested it be sent by setting the ReportAvailableComponents
+    // flag in the previous ServerToAgent message.
+    map<string, ComponentDetails> components = 1;
+
+    // Agent-calculated hash of the components.
+    // This hash should be included in every AvailableComponents message.
+    bytes hash = 2;
+ }
+
+message ComponentDetails {
+    // Extra key/value pairs that may be used to describe the component.
+    // The key/value pairs are according to semantic conventions, see:
+    // https://opentelemetry.io/docs/specs/semconv/
+    repeated KeyValue metadata = 1;
+
+    // A map of component ID to sub components details. It can nest as deeply as needed to
+    // describe the underlying system.
+    map<string, ComponentDetails> sub_component_map = 2;
+}
+
 
 message ServerToAgent {
     // Agent instance uid. MUST match the instance_uid field in AgentToServer message.
@@ -212,6 +243,12 @@ enum ServerToAgentFlags {
     // AgentToServer.sequence_num values.
     // The Server asks the Agent to report full status.
     ServerToAgentFlags_ReportFullState = 0x00000001;
+
+    // ReportAvailableComponents flag can be used by the server if the Agent did
+    // not include the full AvailableComponents message, but only the hash.
+    // If this flag is specified, the agent will populate available_components.components
+    // with a full description of the agent's components.
+    ServerToAgentFlags_ReportAvailableComponents = 0x00000002;
 }
 
 enum ServerCapabilities {
@@ -609,22 +646,8 @@ message AgentDescription {
     //   with this Agent.
     repeated KeyValue non_identifying_attributes = 2;
 
-    // Details about the components available in the agent.
-    map<string, ComponentDetails> available_components = 3;
-
     // TODO: add ability to specify related entities (such as the Service the Agent is
     // is responsible/associated with).
-}
-
-message ComponentDetails {
-    // Extra key/value pairs that may be used to describe the component.
-    // The key/value pairs are according to semantic conventions, see:
-    // https://opentelemetry.io/docs/specs/semconv/
-    repeated KeyValue metadata = 1;
-
-    // A map of component ID to sub components details. It can nest as deeply as needed to
-    // describe the underlying system.
-    map<string, ComponentDetails> sub_component_map = 2;
 }
 
 enum AgentCapabilities {
