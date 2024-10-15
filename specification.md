@@ -511,6 +511,7 @@ message AgentToServer {
     ConnectionSettingsRequest connection_settings_request = 11; // Status: [Development]
     CustomCapabilities custom_capabilities = 12; // Status: [Development]
     CustomMessage custom_message = 13; // Status: [Development]
+    AvailableComponents available_components = 14; // Status: [Development]
 }
 ```
 
@@ -688,6 +689,14 @@ Status: [Development]
 A custom message sent from an Agent to the Server.
 
 See [CustomMessage](#custommessage) message for details.
+
+##### AgentToServer.available_components
+
+Status: [Development]
+
+A message listing the components available in the Agent.
+
+See [AvailableComponents](#availablecomponents) message for details.
 
 #### ServerToAgent Message
 
@@ -1117,7 +1126,6 @@ The AgentDescription message has the following structure:
 message AgentDescription {
     repeated KeyValue identifying_attributes = 1;
     repeated KeyValue non_identifying_attributes = 2;
-    map<string, ComponentDetails> available_components = 3;
 }
 ```
 
@@ -1159,122 +1167,6 @@ The following attributes SHOULD be included:
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
   this Agent.
-
-##### AgentDescription.available_components
-
-Details about the available components in the agent.
-
-This field gives a description of what components are available, as well
-as extra metadata about the components.
-
-The structure of ComponentDetails DOES NOT need to be a 1-to-1 match with
-the ComponentHealth structure. ComponentHealth generally refers to currently running instances of
-components, while ComponentDetails refers to the available types of components,
-which may not be necessarily running currently. It is also possible that the same component
-type may have more than one running instance.
-
-This is an optional field.
-
-#### ComponentDetails Message
-
-Status: [Beta]
-
-The ComponentDetails message has the following structure:
-
-```protobuf
-message ComponentDetails {
-    repeated KeyValue metadata = 1;
-    map<string, ComponentDetails> sub_component_map = 2;    
-}
-```
-
-##### ComponentDetails.metadata
-
-Extra key/value pairs that may be used to describe the component.
-
-The key/value pairs are according to semantic conventions, see
-the [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) for more information.
-
-##### ComponentDetails.sub_component_map
-
-A map of component ID to sub components details. It can nest as deeply as needed to
-describe the underlying system.
-
-##### Examples
-
-###### OpenTelemetry Collector
-
-Here is an example of how ComponentDetails could hold information regarding the included
-components for a custom build of [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector)::
-
-```jsonc
-{
-  "receivers": {
-    "sub_component_data": {
-      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0": {
-        "metadata": {
-          "type": "hostmetrics",
-        }
-      }
-    }
-  },
-  "processors": {
-    "sub_component_data": {
-      "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0": {
-        "metadata": {
-          "type": "batch",
-        }
-      },
-      "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0": {
-        "metadata": {
-          "type": "transform",
-        }
-      },
-    }
-  },
-  "exporters": {
-    "sub_component_data": {
-      "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0": {
-        "metadata": {
-          "type": "nop",
-        }
-      }
-    }
-  }
-  // ... Component list continues for extensions and collectors ...
-}
-```
-
-###### Fluent Bit
-
-Here's an example of how Fluent Bit could report what components it has available.
-
-```jsonc
-{
-  "input": {
-    "sub_component_data": {
-      "tail": {}
-    }
-  },
-  "parser": {
-    "sub_component_data": {
-      "json": {}
-    }
-  },
-  "filter": {
-    "sub_component_data": {
-      "lua": {},
-      "modify": {}
-    }
-  },
-  "output": {
-    "sub_component_data": {
-      "null": {},
-      "file": {},
-    }
-  }
-}
-```
 
 #### ComponentHealth Message
 
@@ -2975,6 +2867,162 @@ CustomMessage {
   data: { ... }
 }
 ```
+
+### AvailableComponents Message
+
+Status: [Development]
+
+Each Agent may be composed of multiple sub-components. These components may have
+their own associated metadata. The AvailableComponents message allows the Agent
+to inform the OpAMP server about which components the Agent contains.
+
+The AvailableComponents message has the following structure:
+
+```protobuf
+message AvailableComponents {
+    map<string, ComponentDetails> components = 1;
+    bytes hash = 2;
+ }
+```
+
+#### AvailableComponents.components
+
+The components field contains a map of a unique ID to a [ComponentsDetails](#componentdetails) message.
+This field may be omitted from the message if the OpAMP server has not explicitly
+requested it by setting the ReportAvailableComponents flag in the preceding
+ServerToAgent message.
+
+##### Examples
+
+###### OpenTelemetry Collector
+
+Here is an example of how ComponentDetails could hold information regarding the included
+components for a custom build of [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector):
+
+```jsonc
+{
+  "receivers": {
+    "sub_component_map": {
+      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0": {
+        "metadata": {
+          "type": "hostmetrics",
+        }
+      }
+    }
+  },
+  "processors": {
+    "sub_component_map": {
+      "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0": {
+        "metadata": {
+          "type": "batch",
+        }
+      },
+      "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0": {
+        "metadata": {
+          "type": "transform",
+        }
+      },
+    }
+  },
+  "exporters": {
+    "sub_component_map": {
+      "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0": {
+        "metadata": {
+          "type": "nop",
+        }
+      }
+    }
+  }
+  // ... Component list continues for extensions and collectors ...
+}
+```
+
+###### Fluent Bit
+
+Here's an example of how Fluent Bit could report what components it has available.
+
+```jsonc
+{
+  "input": {
+    "sub_component_map": {
+      "tail": {}
+    }
+  },
+  "parser": {
+    "sub_component_map": {
+      "json": {}
+    }
+  },
+  "filter": {
+    "sub_component_map": {
+      "lua": {},
+      "modify": {}
+    }
+  },
+  "output": {
+    "sub_component_map": {
+      "null": {},
+      "file": {},
+    }
+  }
+}
+```
+
+#### AvailableComponents.hash
+
+The agent-calculated hash of the components field. The agent MUST include this hash
+if it has the ability to report the components it has available. 
+
+#### Initial Handshake
+
+In order to reduce the amount of data transmitted, the AvailableComponents message
+does not initially contain the entire components map. Instead, the AvailableComponents
+message will have the agent computed hash set, with an empty map for components.
+
+The OpAMP server may use this hash to determine whether it remembers the set of 
+AvailableComponents or not. If the hash is not found on the OpAMP server, the server
+may request the full components map is reported by setting the ReportAvailableComponents
+flag in the ServerToAgent message. If this flag is specified, then the Agent will
+populate the components field with a full description of the available components.
+
+The server may then optionally persist the components for this hash, so that the
+server does not need to request them again on subsequent connects.
+
+The AvailableComponents message is also subject to [status compression](#agent-status-compression),
+and may be omitted if the hash has not changed from its previous value.
+
+#### ComponentDetails Message
+
+Status: [Beta]
+
+The ComponentDetails messaged describes a component of the Agent.
+
+The structure of ComponentDetails DOES NOT need to be a 1-to-1 match with
+the ComponentHealth structure. ComponentHealth generally refers to currently running instances of
+components, while ComponentDetails refers to the available types of components,
+which may not be necessarily running currently. It is also possible that the same component
+type may have more than one running instance.
+
+The ComponentDetails message has the following structure:
+
+```protobuf
+message ComponentDetails {
+    repeated KeyValue metadata = 1;
+    map<string, ComponentDetails> sub_component_map = 2;    
+}
+```
+
+##### ComponentDetails.metadata
+
+Extra key/value pairs that may be used to describe the component.
+
+The key/value pairs are SHOULD conform to semantic conventions where applicable, see
+the [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/) for more information.
+
+##### ComponentDetails.sub_component_map
+
+A map of unique component ID to sub component details. It can nest as deeply as needed to
+describe the underlying system.
 
 ## Connection Management
 
