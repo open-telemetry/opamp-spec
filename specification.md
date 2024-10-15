@@ -40,6 +40,7 @@ Status: [Beta]
       - [AgentToServer.connection_settings_request](#agenttoserverconnection_settings_request)
       - [AgentToServer.custom_capabilities](#agenttoservercustom_capabilities)
       - [AgentToServer.custom_message](#agenttoservercustom_message)
+      - [AgentToServer.available_components](#agenttoserveravailable_components)
     + [ServerToAgent Message](#servertoagent-message)
       - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
       - [ServerToAgent.error_response](#servertoagenterror_response)
@@ -63,13 +64,6 @@ Status: [Beta]
     + [AgentDescription Message](#agentdescription-message)
       - [AgentDescription.identifying_attributes](#agentdescriptionidentifying_attributes)
       - [AgentDescription.non_identifying_attributes](#agentdescriptionnon_identifying_attributes)
-      - [AgentDescription.available_components](#agentdescriptionavailable_components)
-    + [ComponentDetails Message](#componentdetails-message)
-      - [ComponentDetails.metadata](#componentdetailsmetadata)
-      - [ComponentDetails.sub_component_map](#componentdetailssub_component_map)
-      - [Examples](#examples)
-        * [OpenTelemetry Collector](#opentelemetry-collector)
-        * [Fluent Bit](#fluent-bit)
     + [ComponentHealth Message](#componenthealth-message)
       - [ComponentHealth.healthy](#componenthealthhealthy)
       - [ComponentHealth.start_time_unix_nano](#componenthealthstart_time_unix_nano)
@@ -170,7 +164,7 @@ Status: [Beta]
       - [CustomMessage.capability](#custommessagecapability)
       - [CustomMessage.type](#custommessagetype)
       - [CustomMessage.data](#custommessagedata)
-    + [Examples](#examples-1)
+    + [Examples](#examples)
       - [Pause/Resume Example](#pauseresume-example)
         * [Agent Connection](#agent-connection)
         * [Pause](#pause)
@@ -179,6 +173,16 @@ Status: [Beta]
         * [Agent Connection](#agent-connection-1)
         * [FindServices](#findservices)
         * [FindServicesResponse](#findservicesresponse)
+  * [AvailableComponents Message](#availablecomponents-message)
+    + [AvailableComponents.components](#availablecomponentscomponents)
+      - [Examples](#examples-1)
+        * [OpenTelemetry Collector](#opentelemetry-collector)
+        * [Fluent Bit](#fluent-bit)
+    + [AvailableComponents.hash](#availablecomponentshash)
+    + [Initial Handshake](#initial-handshake)
+    + [ComponentDetails Message](#componentdetails-message)
+      - [ComponentDetails.metadata](#componentdetailsmetadata)
+      - [ComponentDetails.sub_component_map](#componentdetailssub_component_map)
 - [Connection Management](#connection-management)
   * [Establishing Connection](#establishing-connection)
   * [Closing Connection](#closing-connection)
@@ -696,7 +700,7 @@ Status: [Development]
 
 A message listing the components available in the Agent.
 
-See [AvailableComponents](#availablecomponents) message for details.
+See [AvailableComponents](#availablecomponents-message) message for details.
 
 #### ServerToAgent Message
 
@@ -2887,7 +2891,8 @@ message AvailableComponents {
 
 #### AvailableComponents.components
 
-The components field contains a map of a unique ID to a [ComponentsDetails](#componentdetails) message.
+The components field contains a map of a unique ID
+to a [ComponentsDetails](#componentdetails-message) message.
 This field may be omitted from the message if the OpAMP server has not explicitly
 requested it by setting the ReportAvailableComponents flag in the preceding
 ServerToAgent message.
@@ -2971,7 +2976,7 @@ Here's an example of how Fluent Bit could report what components it has availabl
 #### AvailableComponents.hash
 
 The agent-calculated hash of the components field. The agent MUST include this hash
-if it has the ability to report the components it has available. 
+if it has the ability to report the components it has available.
 
 #### Initial Handshake
 
@@ -2979,7 +2984,7 @@ In order to reduce the amount of data transmitted, the AvailableComponents messa
 does not initially contain the entire components map. Instead, the AvailableComponents
 message will have the agent computed hash set, with an empty map for components.
 
-The OpAMP server may use this hash to determine whether it remembers the set of 
+The OpAMP server may use this hash to determine whether it remembers the set of
 AvailableComponents or not. If the hash is not found on the OpAMP server, the server
 may request the full components map is reported by setting the ReportAvailableComponents
 flag in the ServerToAgent message. If this flag is specified, then the Agent will
