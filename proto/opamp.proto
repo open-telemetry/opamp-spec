@@ -283,9 +283,11 @@ message OpAMPConnectionSettings {
     map<string, string> other_settings = 5;
 
     // Optional connection specific TLS settings.
+    // Status: [Development]
     TLSConnectionSettings tls = 6;
 
     // Optional connection specific proxy settings.
+    // Status: [Development]
     ProxyConnectionSettings proxy = 7;
 }
 
@@ -319,9 +321,11 @@ message TelemetryConnectionSettings {
     map<string, string> other_settings = 4;
 
     // Optional connection specific TLS settings.
+    // Status: [Development]
     TLSConnectionSettings tls = 5;
 
     // Optional connection specific proxy settings.
+    // Status: [Development]
     ProxyConnectionSettings proxy = 6;
 }
 
@@ -370,13 +374,15 @@ message OtherConnectionSettings {
     map<string, string> other_settings = 4;
 
     // Optional connection specific TLS settings.
+    // Status: [Development]
     TLSConnectionSettings tls = 5;
 
     // Optional connection specific proxy settings.
+    // Status: [Development]
     ProxyConnectionSettings proxy = 6;
 }
 
-// Status: [Beta]
+// Status: [Development]
 message TLSConnectionSettings {
   // Insecure is false by default, if true TLS will be disabled for the connection.
   bool insecure = 1;
@@ -403,7 +409,7 @@ message TLSConnectionSettings {
   repeated string cipher_suites = 8;
 }
 
-// Status: [Beta]
+// Status: [Development]
 message ProxyConnectionSettings {
     // disable using a proxy for the connection.
     // If true configured settings, and environment variables are ignored for the connection.
@@ -432,6 +438,7 @@ message ProxyConnectionSettings {
     map<string, string> other_settings = 5;
 
     // Connection specific TLS settings.
+    // Status: [Development]
     TLSConnectionSettings tls = 6;
 }
 
