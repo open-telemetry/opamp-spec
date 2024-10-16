@@ -802,6 +802,10 @@ message PackageStatus {
 
     // Error message if the status is erroneous.
     string error_message = 7;
+
+    // Optional details that may be of interest to a user.
+    // For example the download rate, percent downloaded, or a message.
+    map<string, string> metadata = 8;
 }
 
 // The status of this package.
@@ -814,7 +818,7 @@ enum PackageStatusEnum {
     // Installation of this package has not yet started.
     PackageStatusEnum_InstallPending = 1;
 
-    // Agent is currently downloading and installing the package.
+    // Agent is currently installing the package.
     // server_offered_hash field MUST be set to indicate the version that the
     // Agent is installing. The error_message field MUST NOT be set.
     PackageStatusEnum_Installing = 2;
@@ -824,6 +828,11 @@ enum PackageStatusEnum {
     // tried to install. The error_message may also contain more details about
     // the failure.
     PackageStatusEnum_InstallFailed = 3;
+
+    // Agent is currently downloading the package.
+    // server_offered_hash field MUST be set to indicate the version that the
+    // Agent is installing. The error_message field MUST NOT be set.
+    PackageStatusEnum_Downloading = 4;
 }
 
 // Properties related to identification of the Agent, which can be overridden
