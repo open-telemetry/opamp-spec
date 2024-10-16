@@ -805,6 +805,7 @@ message PackageStatus {
 
     // Optional details that may be of interest to a user.
     // For example the download rate, percent downloaded, or a message.
+    // Status: [Development]
     map<string, string> metadata = 8;
 }
 
