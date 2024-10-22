@@ -278,17 +278,9 @@ message OpAMPConnectionSettings {
     // Status: [Development]
     uint64 heartbeat_interval_seconds = 4;
 
-    // Additional connection settings. These are Agent-specific and are up to the Agent
-    // interpret.
-    map<string, string> other_settings = 5;
-
     // Optional connection specific TLS settings.
     // Status: [Development]
-    TLSConnectionSettings tls = 6;
-
-    // Optional connection specific proxy settings.
-    // Status: [Development]
-    ProxyConnectionSettings proxy = 7;
+    TLSConnectionSettings tls = 5;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -316,17 +308,9 @@ message TelemetryConnectionSettings {
     // This field can be used to perform a client certificate revocation/rotation.
     TLSCertificate certificate = 3;
 
-    // Additional connection settings. These are Agent-specific and are up to the Agent
-    // interpret.
-    map<string, string> other_settings = 4;
-
     // Optional connection specific TLS settings.
     // Status: [Development]
-    TLSConnectionSettings tls = 5;
-
-    // Optional connection specific proxy settings.
-    // Status: [Development]
-    ProxyConnectionSettings proxy = 6;
+    TLSConnectionSettings tls = 4;
 }
 
 // The OtherConnectionSettings message is a collection of fields which comprise an
@@ -376,10 +360,6 @@ message OtherConnectionSettings {
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 5;
-
-    // Optional connection specific proxy settings.
-    // Status: [Development]
-    ProxyConnectionSettings proxy = 6;
 }
 
 // Status: [Development]
@@ -407,39 +387,6 @@ message TLSConnectionSettings {
 
   // Explicit list of cipher suites.
   repeated string cipher_suites = 8;
-}
-
-// Status: [Development]
-message ProxyConnectionSettings {
-    // disable using a proxy for the connection.
-    // If true configured settings, and environment variables are ignored for the connection.
-    bool disable = 1;
-
-    // A URL, host:port or some other destination specifier.
-    string destination_endpoint = 2;
-
-    // Optional headers to use when connecting. Typically used to set access tokens or
-    // other authorization headers. For HTTP-based protocols the Agent should
-    // set these in the request headers.
-    // For example:
-    // key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
-    Headers headers = 3;
-
-    // The Agent should use the offered certificate to connect to the destination
-    // from now on. If the Agent is able to validate and connect using the offered
-    // certificate the Agent SHOULD forget any previous client certificates
-    // for this connection.
-    // This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
-    // This field can be used to perform a client certificate revocation/rotation.
-    TLSCertificate certificate = 4;
-
-    // Other connection settings. These are Agent-specific and are up to the Agent
-    // interpret.
-    map<string, string> other_settings = 5;
-
-    // Connection specific TLS settings.
-    // Status: [Development]
-    TLSConnectionSettings tls = 6;
 }
 
 // Status: [Beta]
