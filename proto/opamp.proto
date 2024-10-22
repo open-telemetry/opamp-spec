@@ -804,9 +804,20 @@ message PackageStatus {
     string error_message = 7;
 
     // Optional details that may be of interest to a user.
-    // For example the download rate, percent downloaded, or a message.
+    // Should only be set if status is Downloading.
     // Status: [Development]
-    map<string, string> metadata = 8;
+    PackageDownloadDetails download_details = 8;
+}
+
+
+// Additional details that an agent can use to describe an in-progress package download.
+// Status: [Development]
+message PackageDownloadDetails {
+    // The package download progress as a percentage.
+    double download_percent = 1;
+
+    // The current package download rate in bytes per second.
+    uint64 download_rate = 2;
 }
 
 // The status of this package.
@@ -833,6 +844,7 @@ enum PackageStatusEnum {
     // Agent is currently downloading the package.
     // server_offered_hash field MUST be set to indicate the version that the
     // Agent is installing. The error_message field MUST NOT be set.
+    // Status: [Development]
     PackageStatusEnum_Downloading = 4;
 }
 
