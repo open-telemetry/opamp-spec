@@ -327,6 +327,10 @@ message OpAMPConnectionSettings {
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 5;
+
+    // Optional connection specific proxy settings.
+    // Status: [Development]
+    ProxyConnectionSettings proxy = 6;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -357,6 +361,10 @@ message TelemetryConnectionSettings {
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 4;
+
+    // Optional connection specific proxy settings.
+    // Status: [Development]
+    ProxyConnectionSettings proxy = 5;
 }
 
 // The OtherConnectionSettings message is a collection of fields which comprise an
@@ -406,6 +414,10 @@ message OtherConnectionSettings {
     // Optional connection specific TLS settings.
     // Status: [Development]
     TLSConnectionSettings tls = 5;
+
+    // Optional connection specific proxy settings.
+    // Status: [Development]
+    ProxyConnectionSettings proxy = 6;
 }
 
 
@@ -430,6 +442,18 @@ message TLSConnectionSettings {
 
   // Explicit list of cipher suites.
   repeated string cipher_suites = 6;
+}
+
+// Status: [Development]
+message ProxyConnectionSettings {
+    // A URL, host:port or some other destination specifier.
+    string destination_endpoint = 1;
+
+    // Optional headers to send to proxies during CONNECT requests.
+    // These headers can be ignored for non-HTTP based proxies.
+    // For example:
+    // key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
+    Headers connect_headers = 2;
 }
 
 // Status: [Beta]

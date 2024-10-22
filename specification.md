@@ -115,18 +115,24 @@ Status: [Beta]
       - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
       - [OpAMPConnectionSettings.heartbeat_interval_seconds](#opampconnectionsettingsheartbeat_interval_seconds)
       - [OpAMPConnectionSettings.tls](#opampconnectionsettingstls)
+      - [OpAMPConnectionSettings.proxy](#opampconnectionsettingsproxy)
     + [TelemetryConnectionSettings](#telemetryconnectionsettings)
       - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
       - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
       - [TelemetryConnectionSettings.certificate](#telemetryconnectionsettingscertificate)
       - [TelemetryConnectionSettings.tls](#telemetryconnectionsettingstls)
+      - [TelemetryConnectionSettings.proxy](#telemetryconnectionsettingsproxy)
     + [OtherConnectionSettings](#otherconnectionsettings)
       - [OtherConnectionSettings.destination_endpoint](#otherconnectionsettingsdestination_endpoint)
       - [OtherConnectionSettings.headers](#otherconnectionsettingsheaders)
       - [OtherConnectionSettings.certificate](#otherconnectionsettingscertificate)
       - [OtherConnectionSettings.other_settings](#otherconnectionsettingsother_settings)
       - [OtherConnectionSettings.tls](#otherconnectionsettingstls)
+      - [OtherConnectionSettings.proxy](#otherconnectionsettingsproxy)
     + [TLSConnectionSettings Message](#tlsconnectionsettings-message)
+    + [ProxyConnectionSettings Message](#proxyconnectionsettings-message)
+      - [ProxyConnectionSettings.destination_endpoint](#proxyconnectionsettingsdestination_endpoint)
+      - [ProxyConnectionSettings.connect_headers](#proxyconnectionsettingsconnect_headers)
     + [Headers Message](#headers-message)
     + [TLSCertificate Message](#tlscertificate-message)
       - [TLSCertificate.cert](#tlscertificatecert)
@@ -1909,6 +1915,7 @@ message OpAMPConnectionSettings {
     TLSCertificate certificate = 3;
     uint64 heartbeat_interval_seconds = 4;
     TLSConnectionSettings tls = 5;
+    ProxyConnectionSettings proxy = 6;
 }
 ```
 
@@ -1990,6 +1997,12 @@ Status: [Development]
 
 Optional OpAMP specific TLS settings.
 
+##### OpAMPConnectionSettings.proxy
+
+Status: [Development]
+
+Optional OpAMP specific proxy settings.
+
 #### TelemetryConnectionSettings
 
 The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -2002,6 +2015,7 @@ message TelemetryConnectionSettings {
     Headers headers = 2;
     TLSCertificate certificate = 3;
     TLSConnectionSettings tls = 4;
+    ProxyConnectionSettings proxy = 5;
 }
 ```
 
@@ -2034,6 +2048,12 @@ Status: [Development]
 
 Optional telemetry specific TLS settings.
 
+##### TelemetryConnectionSettings.proxy
+
+Status: [Development]
+
+Optional telemetry specific proxy settings.
+
 #### OtherConnectionSettings
 
 The OtherConnectionSettings message is a collection of fields which comprise an
@@ -2064,6 +2084,7 @@ message OtherConnectionSettings {
     TLSCertificate certificate = 3;
     map<string, string> other_settings = 4;
     TLSConnectionSettings tls = 5;
+    ProxyConnectionSettings proxy = 6;
 }
 ```
 
@@ -2099,6 +2120,12 @@ Status: [Development]
 
 Optional connection specific TLS settings.
 
+##### OtherConnectionSettings.proxy
+
+Status: [Development]
+
+Optional connection specific proxy settings.
+
 #### TLSConnectionSettings Message
 
 Status: [Development]
@@ -2118,6 +2145,38 @@ message TLSConnectionSettings {
   repeated string cipher_suites = 6;
 }
 ```
+
+#### ProxyConnectionSettings Message
+
+Status: [Development]
+
+The message carries optional proxy settings that are used to configure a
+client's connection. If the Agent is able to validate the connection settings,
+the Agent SHOULD forget any previous proxy settings. If this message is not
+included, the client SHOULD use the agent's default proxy settings for the
+connection.
+
+If the proxy requires an mTLS certificate, or any TLS settings the Client
+SHOULD use the associated connection's settings.
+
+```protobuf
+message ProxyConnectionSettings {
+    string destination_endpoint = 1;
+    Headers connect_headers = 2;
+}
+```
+
+##### ProxyConnectionSettings.destination_endpoint
+
+The destination_endpoint MUST be a non-empty URL, for example:
+`https://example.com:8443` or `127.0.0.1:8443`
+
+##### ProxyConnectionSettings.connect_headers
+
+Option headers the Client should set for HTTP based proxies initial CONNECT
+request. Other proxy types, such as SOCKS5 may ignore these headers.
+For example:
+key="Authorization", Value="Basic YWxhZGRpbjpvcGVuc2VzYW1l".
 
 #### Headers Message
 
