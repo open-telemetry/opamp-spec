@@ -88,6 +88,7 @@ Status: [Beta]
       - [PackageStatus.server_offered_hash](#packagestatusserver_offered_hash)
       - [PackageStatus.status](#packagestatusstatus)
       - [PackageStatus.error_message](#packagestatuserror_message)
+      - [PackageStatus.download_details](#packagestatusdownload_details)
   * [Connection Settings Management](#connection-settings-management)
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
@@ -1315,11 +1316,14 @@ message PackageStatus {
     bytes server_offered_hash = 5;
     enum Status {
         INSTALLED = 0;
-        INSTALLING = 1;
-        INSTALL_FAILED = 2;
+        INSTALL_PENDING = 1;
+        INSTALLING = 2;
+        INSTALL_FAILED = 3;
+        DOWNLOADING = 4;
     }
     Status status = 6;
     string error_message = 7;
+    PackageDownloadDetails download_details = 8;
 }
 ```
 
@@ -1397,6 +1401,20 @@ failure.
 ##### PackageStatus.error_message
 
 An error message if the status is erroneous.
+
+##### PackageStatus.download_details
+
+Status: [Development]
+
+The download_details contains additional details that descibe a package download.
+It should only be set if the status is `DOWNLOADING`.
+
+```protobuf
+message PackageDownloadDetails {
+  double download_percent = 1;
+  uint64 download_bytes_per_second = 2;
+}
+```
 
 ### Connection Settings Management
 
