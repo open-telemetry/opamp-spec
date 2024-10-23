@@ -277,6 +277,10 @@ message OpAMPConnectionSettings {
     // If this field has no value or is set to 0, the Agent should not send any heartbeats.
     // Status: [Development]
     uint64 heartbeat_interval_seconds = 4;
+
+    // Optional connection specific TLS settings.
+    // Status: [Development]
+    TLSConnectionSettings tls = 5;
 }
 
 // The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -303,6 +307,10 @@ message TelemetryConnectionSettings {
     // This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
     // This field can be used to perform a client certificate revocation/rotation.
     TLSCertificate certificate = 3;
+
+    // Optional connection specific TLS settings.
+    // Status: [Development]
+    TLSConnectionSettings tls = 4;
 }
 
 // The OtherConnectionSettings message is a collection of fields which comprise an
@@ -348,6 +356,37 @@ message OtherConnectionSettings {
     // Other connection settings. These are Agent-specific and are up to the Agent
     // interpret.
     map<string, string> other_settings = 4;
+
+    // Optional connection specific TLS settings.
+    // Status: [Development]
+    TLSConnectionSettings tls = 5;
+}
+
+// Status: [Development]
+message TLSConnectionSettings {
+  // Insecure is false by default, if true TLS will be disabled for the connection.
+  bool insecure = 1;
+
+  // Optional path to the CA file on disk
+  string ca_file_path = 2;
+
+  // Alternative to ca_file_path, Provides CA cert contents as a string
+  string ca_pem_contents = 3;
+
+  // Load system CA pool alongside any specifed CAs (provided through ca_file or ca_path).
+  bool include_system_ca_certs_pool = 4;
+
+  // skip certificate verification
+  bool insecure_skip_verify = 5;
+
+  // Miniumum accepted TLS version; default "1.2".
+  string min_version = 6;
+
+  // Maxiumum accepted TLS version; default "".
+  string max_version = 7;
+
+  // Explicit list of cipher suites.
+  repeated string cipher_suites = 8;
 }
 
 // Status: [Beta]
