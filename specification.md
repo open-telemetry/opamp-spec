@@ -2087,7 +2087,6 @@ Status: [Development]
 
 Optional connection specific TLS settings.
 
-
 #### TLSConnectionSettings Message
 
 Status: [Development]
