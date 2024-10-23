@@ -368,10 +368,10 @@ message TLSConnectionSettings {
   bool insecure = 1;
 
   // Optional path to the CA file on disk
-  string ca_file = 2;
+  string ca_file_path = 2;
 
-  // Alternative to ca_file, Provides CA cert contents as a string
-  string ca_pem = 3;
+  // Alternative to ca_file_path, Provides CA cert contents as a string
+  string ca_pem_contents = 3;
 
   // Load system CA pool alongside any specifed CAs (provided through ca_file or ca_path).
   bool include_system_ca_certs_pool = 4;
