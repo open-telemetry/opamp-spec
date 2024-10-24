@@ -2984,6 +2984,9 @@ In order to reduce the amount of data transmitted, the AvailableComponents messa
 does not initially contain the entire components map. Instead, the AvailableComponents
 message will have the agent computed hash set, with an empty map for components.
 
+The initial AgentToServer message SHOULD contain the AvailableComponents message
+with just the agent computed hash set.
+
 The OpAMP server may use this hash to determine whether it remembers the set of
 AvailableComponents or not. If the hash is not found on the OpAMP server, the server
 may request for the full components map to be reported by setting the ReportAvailableComponents
