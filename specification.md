@@ -698,7 +698,8 @@ See [CustomMessage](#custommessage) message for details.
 
 Status: [Development]
 
-A message listing the components available in the Agent.
+A message listing the components available in the Agent. This field SHOULD be
+reported if and only if the ReportsAvailableComponents capability is set.
 
 See [AvailableComponents](#availablecomponents-message) message for details.
 

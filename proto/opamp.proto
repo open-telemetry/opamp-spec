@@ -708,6 +708,9 @@ enum AgentCapabilities {
     // know the configured interval and should not make assumptions about it.
     // Status: [Development]
     AgentCapabilities_ReportsHeartbeat               = 0x00002000;
+    // The will report AvailableComponents via the AgentToServer.available_components field.
+    // Status: [Development]    
+    AgentCapabilities_ReportsAvailableComponents     = 0x00004000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
