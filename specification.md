@@ -2908,32 +2908,32 @@ components for a custom build of [OpenTelemetry Collector](https://github.com/op
 {
   "receivers": {
     "sub_component_map": {
-      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0": {
+      "hostmetrics": {
         "metadata": {
-          "type": "hostmetrics",
+          "code.namespace": "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver@v0.107.0",
         }
       }
     }
   },
   "processors": {
     "sub_component_map": {
-      "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0": {
+      "batch": {
         "metadata": {
-          "type": "batch",
+          "code.namespace": "go.opentelemetry.io/collector/processor/batchprocessor@v0.107.0"
         }
       },
-      "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0": {
+      "transform": {
         "metadata": {
-          "type": "transform",
+          "code.namespace": "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor@v0.107.0"
         }
       },
     }
   },
   "exporters": {
     "sub_component_map": {
-      "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0": {
+      "nop": {
         "metadata": {
-          "type": "nop",
+          "code.namespace": "go.opentelemetry.io/collector/exporter/nopexporter@v0.107.0"
         }
       }
     }
