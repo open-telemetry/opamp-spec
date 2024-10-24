@@ -2978,6 +2978,8 @@ Here's an example of how Fluent Bit could report what components it has availabl
 
 The agent-calculated hash of the components field. The agent MUST include this hash
 if it has the ability to report the components it has available.
+Its format is determined by the agent.
+The hash SHOULD be the same for any agent that has the same set of components.
 
 #### Initial Handshake
 
