@@ -168,6 +168,14 @@ message ComponentDetails {
     // Extra key/value pairs that may be used to describe the component.
     // The key/value pairs are according to semantic conventions, see:
     // https://opentelemetry.io/docs/specs/semconv/
+    //
+    // For example, you may use the "code" semantic conventions to
+    // report the location of the code for a specific component:
+    // https://opentelemetry.io/docs/specs/semconv/attributes-registry/code/
+    // 
+    // Or you may use the "vcs" semantic conventions to report the
+    // repository the component may be a part of:
+    // https://opentelemetry.io/docs/specs/semconv/attributes-registry/vcs/
     repeated KeyValue metadata = 1;
 
     // A map of component ID to sub components details. It can nest as deeply as needed to
