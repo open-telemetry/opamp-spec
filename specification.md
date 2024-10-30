@@ -2903,7 +2903,7 @@ ServerToAgent message.
 ###### OpenTelemetry Collector
 
 Here is an example of how ComponentDetails could hold information regarding the included
-components for a custom build of [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector):
+components for a custom build of the [OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector):
 
 ```jsonc
 {
