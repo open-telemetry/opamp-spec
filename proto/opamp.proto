@@ -149,7 +149,7 @@ message CertificateRequest {
     bytes csr = 1;
 }
 
-// AvailableComponents contains metadata relating to the components included 
+// AvailableComponents contains metadata relating to the components included
 // within the agent.
 // status: [Development]
 message AvailableComponents {
@@ -172,7 +172,7 @@ message ComponentDetails {
     // For example, you may use the "code" semantic conventions to
     // report the location of the code for a specific component:
     // https://opentelemetry.io/docs/specs/semconv/attributes-registry/code/
-    // 
+    //
     // Or you may use the "vcs" semantic conventions to report the
     // repository the component may be a part of:
     // https://opentelemetry.io/docs/specs/semconv/attributes-registry/vcs/
@@ -256,6 +256,7 @@ enum ServerToAgentFlags {
     // not include the full AvailableComponents message, but only the hash.
     // If this flag is specified, the agent will populate available_components.components
     // with a full description of the agent's components.
+    // Status: [Development]
     ServerToAgentFlags_ReportAvailableComponents = 0x00000002;
 }
 
@@ -709,7 +710,7 @@ enum AgentCapabilities {
     // Status: [Development]
     AgentCapabilities_ReportsHeartbeat               = 0x00002000;
     // The agent will report AvailableComponents via the AgentToServer.available_components field.
-    // Status: [Development]    
+    // Status: [Development]
     AgentCapabilities_ReportsAvailableComponents     = 0x00004000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }

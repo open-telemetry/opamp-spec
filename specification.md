@@ -3004,8 +3004,6 @@ and may be omitted if the hash has not changed from its previous value.
 
 #### ComponentDetails Message
 
-Status: [Beta]
-
 The ComponentDetails messaged describes a component of the Agent.
 
 The structure of ComponentDetails DOES NOT need to be a 1-to-1 match with
@@ -3019,7 +3017,7 @@ The ComponentDetails message has the following structure:
 ```protobuf
 message ComponentDetails {
     repeated KeyValue metadata = 1;
-    map<string, ComponentDetails> sub_component_map = 2;    
+    map<string, ComponentDetails> sub_component_map = 2;
 }
 ```
 
