@@ -367,26 +367,23 @@ message TLSConnectionSettings {
   // Insecure is false by default, if true TLS will be disabled for the connection.
   bool insecure = 1;
 
-  // Optional path to the CA file on disk
-  string ca_file_path = 2;
-
   // Alternative to ca_file_path, Provides CA cert contents as a string
-  string ca_pem_contents = 3;
+  string ca_pem_contents = 2;
 
   // Load system CA pool alongside any specifed CAs (provided through ca_file or ca_path).
-  bool include_system_ca_certs_pool = 4;
+  bool include_system_ca_certs_pool = 3;
 
   // skip certificate verification
-  bool insecure_skip_verify = 5;
+  bool insecure_skip_verify = 4;
 
   // Miniumum accepted TLS version; default "1.2".
-  string min_version = 6;
+  string min_version = 5;
 
   // Maxiumum accepted TLS version; default "".
-  string max_version = 7;
+  string max_version = 6;
 
   // Explicit list of cipher suites.
-  repeated string cipher_suites = 8;
+  repeated string cipher_suites = 7;
 }
 
 // Status: [Beta]

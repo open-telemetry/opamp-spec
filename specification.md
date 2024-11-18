@@ -1623,7 +1623,7 @@ The sequence is as follows:
   persisted CAs.
 
 When sending OpAMPConnectionSettings to the Agent the Server MAY replace the CA
-certificates the Agent uses by specifiying a new `ca_file_path` or
+certificates the Agent uses by specifiying a new CA with
 `ca_pem_contents` as part of the [TLSConnectionSettings message](#tlsconnectionsettings-message).
 
 #### Agent-initiated CSR Flow
@@ -2096,13 +2096,12 @@ The message carries TLS settings that the client should use for the connection.
 ```protobuf
 message TLSConnectionSettings {
   bool insecure = 1;
-  string ca_file_path = 2;
-  string ca_pem_contents = 3;
-  bool include_system_ca_certs_pool = 4;
-  bool insecure_skip_verify = 5;
-  string min_version = 6;
-  string max_version = 7;
-  repeated string cipher_suites = 8;
+  string ca_pem_contents = 2;
+  bool include_system_ca_certs_pool = 3;
+  bool insecure_skip_verify = 4;
+  string min_version = 5;
+  string max_version = 6;
+  repeated string cipher_suites = 7;
 }
 ```
 
