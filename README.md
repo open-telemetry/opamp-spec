@@ -18,6 +18,25 @@ If any changes are made to Protobuf message definitions in the specification.md 
 sure to update also the `*.proto` files in the [proto](proto) directory. Run `make gen-proto`
 to run the Protobuf compiler and verify the `*.proto` files.
 
+## Proposal Requirements
+
+Proposals to add new capabilities to OpAMP specification must be accompanied by working
+prototypes in [opamp-go](https://github.com/open-telemetry/opamp-go), demonstrating
+the capability. The prototype can be a PR against opamp-go or can be on your own fork
+of opamp-go.
+
+To make a proposal create a PR in this repo that modifies the specification markdown
+and the Protobuf files and include a link to the prototype in the description. We
+advise to attend the OpAMP SIG meeting and discuss your proposal before you spend
+effort on it to make sure the proposal is aligned with SIG's vision.
+
+All new capabilities must be added in
+[Development](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0232-maturity-of-otel.md#development)
+maturity level initially. Make sure to add `[Development]` status label in the
+specification markdown and as a prefix of the added proto field or message.
+
+## Contributors
+
 Approvers ([@open-telemetry/opamp-spec-approvers](https://github.com/orgs/open-telemetry/teams/opamp-spec-approvers)):
 
 - [Andy Keller](https://github.com/andykellr), observIQ
