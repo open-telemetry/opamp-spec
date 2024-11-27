@@ -30,7 +30,7 @@ look.
 To make a proposal, create a PR in this repo that modifies the specification markdown
 and the Protobuf files and include a link to the prototype in the description. We
 advise you to attend the OpAMP SIG meeting and discuss your proposal before you spend
-effort on it to make sure the proposal is aligned with SIG's vision.
+effort on it to make sure the proposal is aligned with the SIG's vision.
 
 All new capabilities must be added in
 [Development](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0232-maturity-of-otel.md#development)
