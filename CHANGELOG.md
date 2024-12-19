@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.11.0
+
+* Add downloading state and download_details to PackageStatus by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/206
+* Add message about available components to AgentDetails by @BinaryFissionGames in https://github.com/open-telemetry/opamp-spec/pull/201
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.10.0...v0.11.0
+
 ## v0.10.0
 
 * Replace ULIDs by 16 byte ids and recommend UUID v7 by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/186
