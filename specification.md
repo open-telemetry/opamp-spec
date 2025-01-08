@@ -611,6 +611,9 @@ enum AgentCapabilities {
     // know the configured interval and should not make assumptions about it.
     // Status: [Development]
     ReportsHeartbeat               = 0x00002000;
+    // The agent will report AvailableComponents via the AgentToServer.available_components field.
+    // Status: [Development]
+    ReportsAvailableComponents     = 0x00004000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
@@ -821,6 +824,12 @@ enum Flags {
     // The Server asks the Agent to report the full status again by sending
     // a new, full AgentToServer message.
     ReportFullState = 0x00000001;
+    // ReportAvailableComponents flag can be used by the server if the Agent did
+    // not include the full AvailableComponents message, but only the hash.
+    // If this flag is specified, the agent will populate available_components.components
+    // with a full description of the agent's components.
+    // Status: [Development]
+    ServerToAgentFlags_ReportAvailableComponents = 0x00000002;
 }
 ```
 
@@ -1094,8 +1103,9 @@ to such compression:
 [ComponentHealth](#componenthealth-message),
 [EffectiveConfig](#effectiveconfig-message),
 [RemoteConfigStatus](#remoteconfigstatus-message),
-[PackageStatuses](#packagestatuses-message), and
-[CustomCapabilities](#customcapabilities).
+[PackageStatuses](#packagestatuses-message),
+[CustomCapabilities](#customcapabilities), and
+[AvailableComponents](#availablecomponents-message).
 
 The compression is done by omitting the sub-message in the AgentToServer message.
 If any of the fields in the sub-message has changed then the compression cannot be used
