@@ -1588,13 +1588,10 @@ without disrupting the access to all other Agents.
 
 Status: [Development]
 
-This is an Agent-initiated flow that allows an agent to trust the CA chain a Server
-presents on initial connection. The certificates that are a part of the chain are
-added to the CA pool for future connections.
-
-The flow is only supported for OpAMP connections. It is expected that the Server will
-provide any custom CAs needed for telemetry connections or for any other connection
-types as a  part of the offered settings.
+This is an Agent-initiated flow that allows an agent to connect to a Server without
+trusting it's CA. Initially the agent will connect without any form of verification
+and will expect the server to send the PEM content associated with its CA certificate
+as part of the ServerToAgent response using the connection settings offering.
 
 ```
 
@@ -1602,11 +1599,22 @@ types as a  part of the offered settings.
 
                      │ (1)           Connect                 │
                      ├──────────────────────────────────────►│
-                     │       Gather CAs from handshake       │
-┌────────────┐       │                                       │
-│            │  (2)  │                                       │
-│ Credentials│◄──────│ (3)        Connect with CAs           │
-│    Store   │       ├──────────────────────────────────────►│
+                     │       Do not verify certificates      │
+                     │                                       │
+                     │ServerToAgent{ConnectionSettingsOffers}│ (2)
+                     │◄──────────────────────────────────────┤
+                     │                                       │
+                     │         (3) Disconnect                │
+                     ├──────────────────────────────────────►│
+                     │                                       │
+                     │    (4) Connect, New settings          │
+                     ├──────────────────────────────────────►│
+                     │                                       │
+                     │        Connection established         │
+┌────────────┐       │◄─────────────────────────────────────►│
+│            │  (5)  │                                       │
+│    Config  │◄──────│                                       │
+│    Store   │       │                                       │
 │            │       │                                       │
 └────────────┘       │                                       │
                      │                                       │
@@ -1614,17 +1622,18 @@ types as a  part of the offered settings.
 
 The sequence is as follows:
 
-- (1) The Client connect to the Server. The Client SHOULD use TLS and validate
-  that the handshake from the server contains at least one CA that is not
-  exipired.
-- (2) The Client will save all (unexpired) CAs the Server presented into the
-  root CA pool and persist them.
-- (3) All future connections the Client makes to the server will use the
-  persisted CAs.
-
-When sending OpAMPConnectionSettings to the Agent the Server MAY replace the CA
-certificates the Agent uses by specifiying a new CA with
-`ca_pem_contents` as part of the [TLSConnectionSettings message](#tlsconnectionsettings-message).
+- (1) The Client connect to the Server. The Client SHOULD use TLS and
+  SHOULD NOT validate the certificate chain that the server presents.
+- (2) The Server will include the CA certificate chain in the response's
+   [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
+   [opamp](#connectionsettingsoffersopamp) field contains the new
+   [OpAMPConnectionSettings](#opampconnectionsettings) offered which includes
+   a [TLSConnectionSettings message](#tlsconnectionsettings-message).
+- (3) When new OpAMP connection settings are recieved, the agent will disconnect.
+- (4) The agent will re-connect to the OpAMP server using the new OpAMP connection
+   settings (and TLS verification).
+- (5) Once the connection has been established, the agent SHOULD persist the new
+   settings locally if it is able to.
 
 #### Agent-initiated CSR Flow
 
