@@ -1438,7 +1438,7 @@ It should only be set if the status is `DOWNLOADING`.
 ```protobuf
 message PackageDownloadDetails {
   double download_percent = 1;
-  uint64 download_bytes_per_second = 2;
+  double download_bytes_per_second = 2;
 }
 ```
 
