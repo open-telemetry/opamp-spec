@@ -2657,7 +2657,7 @@ message DownloadableFile {
     string download_url = 1;
     bytes content_hash = 2;
     bytes signature = 3;
-    headers headers = 4; // Status: [Development]
+    Headers headers = 4; // Status: [Development]
 }
 ```
 
