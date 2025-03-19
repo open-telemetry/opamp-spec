@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.12.0
+
+* Change PackageStatus.download_details.download_bytes_per_second to double by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/210
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.11.0...v0.12.0
+
 ## v0.11.0
 
 * Add downloading state and download_details to PackageStatus by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/206
