@@ -41,12 +41,12 @@ specification markdown and as a prefix of the added proto field or message.
 
 Approvers ([@open-telemetry/opamp-spec-approvers](https://github.com/orgs/open-telemetry/teams/opamp-spec-approvers)):
 
-- [Andy Keller](https://github.com/andykellr), observIQ
+- [Andy Keller](https://github.com/andykellr), Bindplane
 
 Emeritus Approvers
 
 - [Alex Boten](https://github.com/codeboten), Lightstep
-- [Daniel Jaglowski](https://github.com/djaglowski), observIQ
+- [Daniel Jaglowski](https://github.com/djaglowski), Bindplane
 - [Przemek Maciolek](https://github.com/pmm-sumo), Sumo Logic
 
 Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/open-telemetry/teams/opamp-spec-maintainers)):
@@ -61,10 +61,10 @@ Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/op
 
 ### Agent Management Platforms
 
-- [BindPlane OP](https://observiq.com)
+- [Bindplane](https://bindplane.com)
 
 ### Agents
 
-- [observIQ Distro for OpenTelemetry Collector](https://github.com/observIQ/observiq-otel-collector)
+- [Bindplane Distro for OpenTelemetry Collector](https://github.com/observIQ/bindplane-otel-collector)
 - [OpAMP Extension for OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/opampextension)
 - [OpAMP Supervisor for OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/cmd/opampsupervisor)
