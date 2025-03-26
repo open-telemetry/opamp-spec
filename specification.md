@@ -94,6 +94,7 @@ Status: [Beta]
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
     + [Registration On First Use](#registration-on-first-use)
+    + [Agent-initiated CA trust Flow](#agent-initiated-ca-trust-flow)
     + [Agent-initiated CSR Flow](#agent-initiated-csr-flow)
       - [Using instance_uid in the CSR](#using-instance_uid-in-the-csr)
     + [Revoking Access](#revoking-access)
@@ -114,15 +115,19 @@ Status: [Beta]
       - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
       - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
       - [OpAMPConnectionSettings.heartbeat_interval_seconds](#opampconnectionsettingsheartbeat_interval_seconds)
+      - [OpAMPConnectionSettings.tls](#opampconnectionsettingstls)
     + [TelemetryConnectionSettings](#telemetryconnectionsettings)
       - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
       - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
       - [TelemetryConnectionSettings.certificate](#telemetryconnectionsettingscertificate)
+      - [TelemetryConnectionSettings.tls](#telemetryconnectionsettingstls)
     + [OtherConnectionSettings](#otherconnectionsettings)
       - [OtherConnectionSettings.destination_endpoint](#otherconnectionsettingsdestination_endpoint)
       - [OtherConnectionSettings.headers](#otherconnectionsettingsheaders)
       - [OtherConnectionSettings.certificate](#otherconnectionsettingscertificate)
       - [OtherConnectionSettings.other_settings](#otherconnectionsettingsother_settings)
+      - [OtherConnectionSettings.tls](#otherconnectionsettingstls)
+    + [TLSConnectionSettings Message](#tlsconnectionsettings-message)
     + [Headers Message](#headers-message)
     + [TLSCertificate Message](#tlscertificate-message)
       - [TLSCertificate.cert](#tlscertificatecert)
@@ -1628,6 +1633,57 @@ immediately after successful connection each Agent will acquire their own unique
 connection credentials. This way individual Agent's credentials may be revoked
 without disrupting the access to all other Agents.
 
+#### Agent-initiated CA trust Flow
+
+Status: [Development]
+
+This is an Agent-initiated flow that allows an agent to connect to a Server without
+trusting it's CA. Initially the agent will connect without any form of verification
+and will expect the server to send the PEM content associated with its CA certificate
+as part of the ServerToAgent response using the connection settings offering.
+
+```
+
+                   Client                                 Server
+
+                     │ (1)           Connect                 │
+                     ├──────────────────────────────────────►│
+                     │       Do not verify certificates      │
+                     │                                       │
+                     │ServerToAgent{ConnectionSettingsOffers}│ (2)
+                     │◄──────────────────────────────────────┤
+                     │                                       │
+                     │         (3) Disconnect                │
+                     ├──────────────────────────────────────►│
+                     │                                       │
+                     │    (4) Connect, New settings          │
+                     ├──────────────────────────────────────►│
+                     │                                       │
+                     │        Connection established         │
+┌────────────┐       │◄─────────────────────────────────────►│
+│            │  (5)  │                                       │
+│    Config  │◄──────│                                       │
+│    Store   │       │                                       │
+│            │       │                                       │
+└────────────┘       │                                       │
+                     │                                       │
+```
+
+The sequence is as follows:
+
+- (1) The Client connect to the Server. The Client SHOULD use TLS and
+  SHOULD NOT validate the certificate chain that the server presents.
+- (2) The Server will include the CA certificate chain in the response's
+   [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
+   [opamp](#connectionsettingsoffersopamp) field contains the new
+   [OpAMPConnectionSettings](#opampconnectionsettings) offered which includes
+   a [TLSConnectionSettings message](#tlsconnectionsettings-message).
+- (3) When new OpAMP connection settings are recieved, the agent will disconnect.
+- (4) The agent will re-connect to the OpAMP server using the new OpAMP connection
+   settings (and TLS verification).
+- (5) Once the connection has been established, the agent SHOULD persist the new
+   settings locally if it is able to.
+
 #### Agent-initiated CSR Flow
 
 Status: [Development]
@@ -1898,6 +1954,7 @@ message OpAMPConnectionSettings {
     Headers headers = 2;
     TLSCertificate certificate = 3;
     uint64 heartbeat_interval_seconds = 4;
+    TLSConnectionSettings tls = 5;
 }
 ```
 
@@ -1973,6 +2030,12 @@ The flow for negotiating a heartbeat is described as so:
 
 The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not receive heartbeats by responding with a value of `0` seconds in the OpAMPConnectionSettings.heartbeat_interval_seconds field.
 
+##### OpAMPConnectionSettings.tls
+
+Status: [Development]
+
+Optional OpAMP specific TLS settings.
+
 #### TelemetryConnectionSettings
 
 The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -1984,6 +2047,7 @@ message TelemetryConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
     TLSCertificate certificate = 3;
+    TLSConnectionSettings tls = 4;
 }
 ```
 
@@ -2009,6 +2073,12 @@ certificate the Agent SHOULD forget any previous client certificates
 for this connection.
 This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
 This field can be used to perform a client certificate revocation/rotation.
+
+##### TelemetryConnectionSettings.tls
+
+Status: [Development]
+
+Optional telemetry specific TLS settings.
 
 #### OtherConnectionSettings
 
@@ -2039,6 +2109,7 @@ message OtherConnectionSettings {
     Headers headers = 2;
     TLSCertificate certificate = 3;
     map<string, string> other_settings = 4;
+    TLSConnectionSettings tls = 5;
 }
 ```
 
@@ -2068,9 +2139,33 @@ This field can be used to perform a client certificate revocation/rotation.
 Other connection settings. These are Agent-specific and are up to the Agent
 interpret.
 
+##### OtherConnectionSettings.tls
+
+Status: [Development]
+
+Optional connection specific TLS settings.
+
+#### TLSConnectionSettings Message
+
+Status: [Development]
+
+The message carries TLS settings that the client should use for the connection.
+
+```protobuf
+message TLSConnectionSettings {
+  bool insecure = 1;
+  string ca_pem_contents = 2;
+  bool include_system_ca_certs_pool = 3;
+  bool insecure_skip_verify = 4;
+  string min_version = 5;
+  string max_version = 6;
+  repeated string cipher_suites = 7;
+}
+```
+
 #### Headers Message
 
-```
+```protobuf
 message Headers {
     repeated Header headers = 1;
 }
