@@ -103,6 +103,7 @@ Status: [Beta]
     + [ConnectionSettingsRequest Message](#connectionsettingsrequest-message)
     + [OpAMPConnectionSettingsRequest Message](#opampconnectionsettingsrequest-message)
     + [CertificateRequest Message](#certificaterequest-message)
+    + [SettingsRequest Message](#settingsrequest-message)
     + [ConnectionSettingsOffers Message](#connectionsettingsoffers-message)
       - [ConnectionSettingsOffers.hash](#connectionsettingsoffershash)
       - [ConnectionSettingsOffers.opamp](#connectionsettingsoffersopamp)
