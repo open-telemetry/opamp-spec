@@ -1627,10 +1627,12 @@ without disrupting the access to all other Agents.
 
 Status: [Development]
 
-This is an Agent-initiated flow that allows an agent to connect to a Server without
-trusting it's CA. Initially the agent will connect without any form of verification
-and will expect the server to send the PEM content associated with its CA certificate
-as part of the ServerToAgent response using the connection settings offering.
+This is an Agent-initiated flow that allows an agent to connect to a Server
+without trusting its CA. Initially the agent will connect without any form of
+verification, the initial AgentToServer message will indicate that the agent
+expects connection connection settings to be offered in the response message.
+The response contains the PEM content associated with its CA certificate as part
+of the ServerToAgent response using the connection settings offering.
 
 ```
 
@@ -1640,18 +1642,21 @@ as part of the ServerToAgent response using the connection settings offering.
                      ├──────────────────────────────────────►│
                      │       Do not verify certificates      │
                      │                                       │
-                     │ServerToAgent{ConnectionSettingsOffers}│ (2)
-                     │◄──────────────────────────────────────┤
-                     │                                       │
-                     │         (3) Disconnect                │
+                     │   AgentToServer{SettingsRequest} (2)  │
                      ├──────────────────────────────────────►│
                      │                                       │
-                     │    (4) Connect, New settings          │
+                     │ServerToAgent{ConnectionSettingsOffers}│ (3)
+                     │◄──────────────────────────────────────┤
+                     │                                       │
+                     │         (4) Disconnect                │
+                     ├──────────────────────────────────────►│
+                     │                                       │
+                     │    (5) Connect, New settings          │
                      ├──────────────────────────────────────►│
                      │                                       │
                      │        Connection established         │
 ┌────────────┐       │◄─────────────────────────────────────►│
-│            │  (5)  │                                       │
+│            │  (6)  │                                       │
 │    Config  │◄──────│                                       │
 │    Store   │       │                                       │
 │            │       │                                       │
@@ -1661,17 +1666,20 @@ as part of the ServerToAgent response using the connection settings offering.
 
 The sequence is as follows:
 
-- (1) The Client connect to the Server. The Client SHOULD use TLS and
+- (1) The Client connects to the Server. The Client SHOULD use TLS and
   SHOULD NOT validate the certificate chain that the server presents.
-- (2) The Server will include the CA certificate chain in the response's
+- (2) The initial AgentToServerMessage will include a
+  [ConnectionSettingsRequest](#connectionsettingsrequest-message) message with
+  [SettingsRequest](#settingsrequest-message) an empty hash.
+- (3) The Server will include the CA certificate chain in the response's
    [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
    [opamp](#connectionsettingsoffersopamp) field contains the new
    [OpAMPConnectionSettings](#opampconnectionsettings) offered which includes
    a [TLSConnectionSettings message](#tlsconnectionsettings-message).
-- (3) When new OpAMP connection settings are recieved, the agent will disconnect.
-- (4) The agent will re-connect to the OpAMP server using the new OpAMP connection
+- (4) When new OpAMP connection settings are recieved, the agent will disconnect.
+- (5) The agent will re-connect to the OpAMP server using the new OpAMP connection
    settings (and TLS verification).
-- (5) Once the connection has been established, the agent SHOULD persist the new
+- (6) Once the connection has been established, the agent SHOULD persist the new
    settings locally if it is able to.
 
 #### Agent-initiated CSR Flow
@@ -1835,12 +1843,15 @@ and respond with an offer of connection settings for the Agent.
 ```protobuf
 message ConnectionSettingsRequest {
     OpAMPConnectionSettingsRequest opamp = 1;
+    SettingsRequest settings_request = 2;
 }
 ```
 
 The `opamp` field is set to indicate a request for OpAMP connection settings.
-If this field is unset then the ConnectionSettingsRequest message is empty and is
-not actionable for the Server.
+The `settings_request` field is set to indicate a request for all offered
+connection settings.
+If both fields are unset then the ConnectionSettingsRequest message is empty
+and is not actionable for the Server.
 
 #### OpAMPConnectionSettingsRequest Message
 
@@ -1876,6 +1887,30 @@ client's private key.
 The Server SHOULD validate the request and SHOULD respond with a
 OpAMPConnectionSettings where the certificate.cert contains the issued
 certificate.
+
+#### SettingsRequest Message
+
+Status: [Development]
+
+SettingsRequest is a request for the Server to produce all offered conenction
+settings.
+
+Used for [Agent-initiated CA trust Flow](#Agent-initiated-ca-trust-flow).
+
+```protobuf
+message SettingsRequest {
+    bytes hash = 1;
+}
+```
+
+The `bytes` field may be empty if the agent does not have any connection
+settings from the Server. If it is not empty it MUST be set to the same
+hash as was supplied in the
+[ConnectionSettingsOffers](#connectionsettingsoffers-message) message that
+provided the most recent settings to the agent.
+
+The Server SHOULD see if the request hash differs from the offered hash and
+populate ConnectionSettingsOffers if they do.
 
 #### ConnectionSettingsOffers Message
 

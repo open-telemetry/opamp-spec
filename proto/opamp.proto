@@ -126,6 +126,12 @@ message ConnectionSettingsRequest {
     // for the Server.
     OpAMPConnectionSettingsRequest opamp = 1;
 
+
+    // A request for the server to send a message that includes
+    // ConnectionSettingsOffers.
+    // Status: [Development]
+    SettingsRequest settings_request = 2;
+
     // In the future we can add request fields for non-OpAMP connection types
     // (own telemetry, other connections).
 }
@@ -147,6 +153,17 @@ message CertificateRequest {
     // OpAMPConnectionSettings where the certificate.cert contains the issued
     // certificate.
     bytes csr = 1;
+}
+
+// SettingsRequest is a request for the Server to populate ConnectionSettingsOffers
+// in its response.
+// Status: [Development]
+message SettingsRequest {
+  // The latest ConnectionSettingsOffers.hash the client has.
+  // An empty hash indicates that the client has not recieved any connection settings.
+  // The server SHOULD compare the hash to the currently offered settings hash and
+  // include the new settings if the hash has changed.
+  bytes hash = 1;
 }
 
 // AvailableComponents contains metadata relating to the components included
