@@ -1906,7 +1906,7 @@ Status: [Development]
 SettingsRequest is a request for the Server to produce all offered conenction
 settings.
 
-Used for [Agent-initiated CA trust Flow](#Agent-initiated-ca-trust-flow).
+Used for [Agent-initiated CA trust Flow](#agent-initiated-ca-trust-flow).
 
 ```protobuf
 message SettingsRequest {
