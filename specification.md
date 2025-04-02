@@ -560,14 +560,11 @@ in the future such that old Agents automatically report that they don't
 support the new capability.
 This field MUST be always set.
 
-This field MUST be set in the first AgentToServer sent by the Agent and MAY be
-omitted in subsequent AgentToServer messages by setting it to
-UnspecifiedAgentCapability value. An Agent MAY update its'
-AgentCapabilities.AcceptsRemoteConfig OR AgentCapabilities.ReportsRemoteConfig
-capability at ANY time after the first message. If the capability is enabled,
-the server MAY offer a new remote configuration. If the capability is disabled,
-the server MUST NOT send a remote configuration update. Currently, other
-capabilities MUST NOT be updated after the initial message is sent.
+An Agent MAY update any of its capabilities at ANY time after the first
+message. The server MUST respect the Agent's changes, ensuring that the
+subsequent messages are sent correctly. If the server sends a part of its
+messages corresponding to a capability the Agent doesn't support, the Agent
+SHOULD ignore it.
 
 ```protobuf
 enum AgentCapabilities {
