@@ -919,7 +919,7 @@ message PackageDownloadDetails {
     double download_percent = 1;
 
     // The current package download rate in bytes per second.
-    uint64 download_bytes_per_second = 2;
+    double download_bytes_per_second = 2;
 }
 
 // The status of this package.
