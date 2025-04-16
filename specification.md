@@ -2189,13 +2189,12 @@ The message carries TLS settings that the client should use for the connection.
 
 ```protobuf
 message TLSConnectionSettings {
-  bool insecure = 1;
-  string ca_pem_contents = 2;
-  bool include_system_ca_certs_pool = 3;
-  bool insecure_skip_verify = 4;
-  string min_version = 5;
-  string max_version = 6;
-  repeated string cipher_suites = 7;
+  string ca_pem_contents = 1;
+  bool include_system_ca_certs_pool = 2;
+  bool insecure_skip_verify = 3;
+  string min_version = 4;
+  string max_version = 5;
+  repeated string cipher_suites = 6;
 }
 ```
 
