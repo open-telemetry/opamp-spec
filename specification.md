@@ -1651,6 +1651,10 @@ expects connection connection settings to be offered in the response message.
 The response contains the PEM content associated with its CA certificate as part
 of the ServerToAgent response using the connection settings offering.
 
+This trust flow is used to address the distribution of a CA where self-signed
+CAs are common. This is mainly found in developer, testing, or other internal
+deployments.
+
 ```
 
                    Client                                 Server
