@@ -94,7 +94,6 @@ Status: [Beta]
     + [OpAMP Connection Setting Offer Flow](#opamp-connection-setting-offer-flow)
     + [Trust On First Use](#trust-on-first-use)
     + [Registration On First Use](#registration-on-first-use)
-    + [Agent-initiated CA trust Flow](#agent-initiated-ca-trust-flow)
     + [Agent-initiated CSR Flow](#agent-initiated-csr-flow)
       - [Using instance_uid in the CSR](#using-instance_uid-in-the-csr)
     + [Revoking Access](#revoking-access)
@@ -103,7 +102,6 @@ Status: [Beta]
     + [ConnectionSettingsRequest Message](#connectionsettingsrequest-message)
     + [OpAMPConnectionSettingsRequest Message](#opampconnectionsettingsrequest-message)
     + [CertificateRequest Message](#certificaterequest-message)
-    + [SettingsRequest Message](#settingsrequest-message)
     + [ConnectionSettingsOffers Message](#connectionsettingsoffers-message)
       - [ConnectionSettingsOffers.hash](#connectionsettingsoffershash)
       - [ConnectionSettingsOffers.opamp](#connectionsettingsoffersopamp)
@@ -1640,70 +1638,6 @@ immediately after successful connection each Agent will acquire their own unique
 connection credentials. This way individual Agent's credentials may be revoked
 without disrupting the access to all other Agents.
 
-#### Agent-initiated CA trust Flow
-
-Status: [Development]
-
-This is an Agent-initiated flow that allows an agent to connect to a Server
-without the possesion of the Server's CA initially. Initially the agent will
-connect without any form of verification. The initial AgentToServer message will
-indicate using SettingsRequest that the agent expects connection settings to be
-offered in the response message. The response contains the PEM content
-associated with its CA certificate as part of the ServerToAgent response using
-the connection settings offering.
-
-This trust flow is used to address the distribution of a CA where self-signed
-CAs are common. This is mainly found in developer, testing, or other internal
-deployments.
-
-```
-
-                   Client                                 Server
-
-                     │ (1)           Connect                 │
-                     ├──────────────────────────────────────►│
-                     │       Do not verify certificates      │
-                     │                                       │
-                     │   AgentToServer{SettingsRequest} (2)  │
-                     ├──────────────────────────────────────►│
-                     │                                       │
-                     │ServerToAgent{ConnectionSettingsOffers}│ (3)
-                     │◄──────────────────────────────────────┤
-                     │                                       │
-                     │         (4) Disconnect                │
-                     ├──────────────────────────────────────►│
-                     │                                       │
-                     │    (5) Connect, New settings          │
-                     ├──────────────────────────────────────►│
-                     │                                       │
-                     │        Connection established         │
-┌────────────┐       │◄─────────────────────────────────────►│
-│            │  (6)  │                                       │
-│    Config  │◄──────│                                       │
-│    Store   │       │                                       │
-│            │       │                                       │
-└────────────┘       │                                       │
-                     │                                       │
-```
-
-The sequence is as follows:
-
-- (1) The Client connects to the Server. The Client SHOULD use TLS and
-  SHOULD NOT validate the certificate chain that the server presents.
-- (2) The initial AgentToServerMessage will include a
-  [ConnectionSettingsRequest](#connectionsettingsrequest-message) message with
-  [SettingsRequest](#settingsrequest-message) an empty hash.
-- (3) The Server will include the CA certificate chain in the response's
-   [ConnectionSettingsOffers](#connectionsettingsoffers-message) message. The
-   [opamp](#connectionsettingsoffersopamp) field contains the new
-   [OpAMPConnectionSettings](#opampconnectionsettings) offered which includes
-   a [TLSConnectionSettings message](#tlsconnectionsettings-message).
-- (4) When new OpAMP connection settings are recieved, the agent will disconnect.
-- (5) The agent will re-connect to the OpAMP server using the new OpAMP connection
-   settings (and TLS verification).
-- (6) Once the connection has been established, the agent SHOULD persist the new
-   settings locally if it is able to.
-
 #### Agent-initiated CSR Flow
 
 Status: [Development]
@@ -1865,15 +1799,12 @@ and respond with an offer of connection settings for the Agent.
 ```protobuf
 message ConnectionSettingsRequest {
     OpAMPConnectionSettingsRequest opamp = 1;
-    SettingsRequest settings_request = 2;
 }
 ```
 
 The `opamp` field is set to indicate a request for OpAMP connection settings.
-The `settings_request` field is set to indicate a request for all offered
-connection settings.
-If both fields are unset then the ConnectionSettingsRequest message is empty
-and is not actionable for the Server.
+If this field is unset then the ConnectionSettingsRequest message is empty and is
+not actionable for the Server.
 
 #### OpAMPConnectionSettingsRequest Message
 
@@ -1909,30 +1840,6 @@ client's private key.
 The Server SHOULD validate the request and SHOULD respond with a
 OpAMPConnectionSettings where the certificate.cert contains the issued
 certificate.
-
-#### SettingsRequest Message
-
-Status: [Development]
-
-SettingsRequest is a request for the Server to produce all offered conenction
-settings.
-
-Used for [Agent-initiated CA trust Flow](#agent-initiated-ca-trust-flow).
-
-```protobuf
-message SettingsRequest {
-    bytes hash = 1;
-}
-```
-
-The `bytes` field may be empty if the agent does not have any connection
-settings from the Server. If it is not empty it MUST be set to the same
-hash as was supplied in the
-[ConnectionSettingsOffers](#connectionsettingsoffers-message) message that
-provided the most recent settings to the agent.
-
-The Server SHOULD see if the request hash differs from the offered hash and
-populate ConnectionSettingsOffers if they do.
 
 #### ConnectionSettingsOffers Message
 
@@ -2196,7 +2103,9 @@ Optional connection specific TLS settings.
 
 Status: [Development]
 
-The message carries TLS settings that the client should use for the connection.
+The message carries optional TLS settings that are used to configure a client's connection.
+If the Agent is able to validate the connection settings, the Agent SHOULD forget any previous TLS settings.
+If this message is not included, the client SHOULD use whatever TLS settings are used by the previous connection if any, or a default set.
 
 ```protobuf
 message TLSConnectionSettings {
