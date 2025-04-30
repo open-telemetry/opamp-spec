@@ -2103,9 +2103,10 @@ Optional connection specific TLS settings.
 
 Status: [Development]
 
-The message carries optional TLS settings that are used to configure a client's connection.
-If the Agent is able to validate the connection settings, the Agent SHOULD forget any previous TLS settings.
-If this message is not included, the client SHOULD use whatever TLS settings are used by the previous connection if any, or a default set.
+The message carries optional TLS settings that are used to configure a client's
+connection. If the Agent is able to validate the connection settings, the Agent
+SHOULD forget any previous TLS settings. If this message is not included, the
+client SHOULD use the agent's default TLS settings for the connection.
 
 ```protobuf
 message TLSConnectionSettings {
