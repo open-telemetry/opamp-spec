@@ -1645,11 +1645,12 @@ without disrupting the access to all other Agents.
 Status: [Development]
 
 This is an Agent-initiated flow that allows an agent to connect to a Server
-without trusting its CA. Initially the agent will connect without any form of
-verification, the initial AgentToServer message will indicate that the agent
-expects connection connection settings to be offered in the response message.
-The response contains the PEM content associated with its CA certificate as part
-of the ServerToAgent response using the connection settings offering.
+without the possesion of the Server's CA initially. Initially the agent will
+connect without any form of verification. The initial AgentToServer message will
+indicate using SettingsRequest that the agent expects connection settings to be
+offered in the response message. The response contains the PEM content
+associated with its CA certificate as part of the ServerToAgent response using
+the connection settings offering.
 
 This trust flow is used to address the distribution of a CA where self-signed
 CAs are common. This is mainly found in developer, testing, or other internal
