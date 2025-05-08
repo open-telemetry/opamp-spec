@@ -131,7 +131,7 @@ Status: [Beta]
       - [OtherConnectionSettings.proxy](#otherconnectionsettingsproxy)
     + [TLSConnectionSettings Message](#tlsconnectionsettings-message)
     + [ProxyConnectionSettings Message](#proxyconnectionsettings-message)
-      - [ProxyConnectionSettings.destination_endpoint](#proxyconnectionsettingsdestination_endpoint)
+      - [ProxyConnectionSettings.url](#proxyconnectionsettingsurl)
       - [ProxyConnectionSettings.connect_headers](#proxyconnectionsettingsconnect_headers)
     + [Headers Message](#headers-message)
     + [TLSCertificate Message](#tlscertificate-message)
@@ -2153,23 +2153,23 @@ Status: [Development]
 The message carries optional proxy settings that are used to configure a
 client's connection. If the Agent is able to validate the connection settings,
 the Agent SHOULD forget any previous proxy settings. If this message is not
-included, the client SHOULD use the agent's default proxy settings for the
-connection.
+included, client SHOULD assume the settings are unchanged and continue using
+existing settings.
 
 If the proxy requires an mTLS certificate, or any TLS settings the Client
 SHOULD use the associated connection's settings.
 
 ```protobuf
 message ProxyConnectionSettings {
-    string destination_endpoint = 1;
+    string url = 1;
     Headers connect_headers = 2;
 }
 ```
 
-##### ProxyConnectionSettings.destination_endpoint
+##### ProxyConnectionSettings.url
 
-The destination_endpoint MUST be a non-empty URL, for example:
-`https://example.com:8443` or `127.0.0.1:8443`
+The url MUST be non-empty, for example: `https://example.com:8443` or
+`127.0.0.1:8443`.
 
 ##### ProxyConnectionSettings.connect_headers
 

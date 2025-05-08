@@ -447,7 +447,7 @@ message TLSConnectionSettings {
 // Status: [Development]
 message ProxyConnectionSettings {
     // A URL, host:port or some other destination specifier.
-    string destination_endpoint = 1;
+    string url = 1;
 
     // Optional headers to send to proxies during CONNECT requests.
     // These headers can be ignored for non-HTTP based proxies.
