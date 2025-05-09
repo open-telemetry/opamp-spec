@@ -130,6 +130,12 @@ Status: [Beta]
       - [OtherConnectionSettings.tls](#otherconnectionsettingstls)
       - [OtherConnectionSettings.proxy](#otherconnectionsettingsproxy)
     + [TLSConnectionSettings Message](#tlsconnectionsettings-message)
+      - [TLSConnectionSettings.ca_pem_contents](#tlsconnectionsettingsca_pem_contents)
+      - [TLSConnectionSettings.include_system_ca_pool](#tlsconnectionsettingsinclude_system_ca_pool)
+      - [TLSConnectionSettings.insecure_skip_verify](#tlsconnectionsettingsinsecure_skip_verify)
+      - [TLSConnectionSettings.min_version](#tlsconnectionsettingsmin_version)
+      - [TLSConnectionSettings.max_version](#tlsconnectionsettingsmax_version)
+      - [TLSConnectionSettings.ciper_suites](#tlsconnectionsettingsciper_suites)
     + [ProxyConnectionSettings Message](#proxyconnectionsettings-message)
       - [ProxyConnectionSettings.url](#proxyconnectionsettingsurl)
       - [ProxyConnectionSettings.connect_headers](#proxyconnectionsettingsconnect_headers)
@@ -2133,7 +2139,8 @@ Status: [Development]
 The message carries optional TLS settings that are used to configure a client's
 connection. If the Agent is able to validate the connection settings, the Agent
 SHOULD forget any previous TLS settings. If this message is not included, the
-client SHOULD use the agent's default TLS settings for the connection.
+client SHOULD assume the settings are unchanged and continue using existing
+settings.
 
 ```protobuf
 message TLSConnectionSettings {
@@ -2145,6 +2152,35 @@ message TLSConnectionSettings {
   repeated string cipher_suites = 6;
 }
 ```
+
+##### TLSConnectionSettings.ca_pem_contents
+
+The ca_pem_contents attribute may be used to provide the CA's public
+certificate as part of the TLS configuration.
+
+##### TLSConnectionSettings.include_system_ca_pool
+
+The include_system_ca_pool asks the Agent to use the system's default CA pool
+when building TLS configuration.
+
+##### TLSConnectionSettings.insecure_skip_verify
+
+This setting disables all TLS verification for connections.
+
+##### TLSConnectionSettings.min_version
+
+This sets the minimum supported TLS version the client will use. For example:
+`1.2`, `TLSv1.2`.
+
+##### TLSConnectionSettings.max_version
+
+This sets the maximum supported TLS version the client will use. For example:
+`1.2`, `TLSv1.2`.
+
+##### TLSConnectionSettings.ciper_suites
+
+This sets the supported cipher suites that may be used by the connection. For
+example: `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`.
 
 #### ProxyConnectionSettings Message
 
