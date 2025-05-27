@@ -119,15 +119,25 @@ Status: [Beta]
       - [OpAMPConnectionSettings.headers](#opampconnectionsettingsheaders)
       - [OpAMPConnectionSettings.certificate](#opampconnectionsettingscertificate)
       - [OpAMPConnectionSettings.heartbeat_interval_seconds](#opampconnectionsettingsheartbeat_interval_seconds)
+      - [OpAMPConnectionSettings.tls](#opampconnectionsettingstls)
     + [TelemetryConnectionSettings](#telemetryconnectionsettings)
       - [TelemetryConnectionSettings.destination_endpoint](#telemetryconnectionsettingsdestination_endpoint)
       - [TelemetryConnectionSettings.headers](#telemetryconnectionsettingsheaders)
       - [TelemetryConnectionSettings.certificate](#telemetryconnectionsettingscertificate)
+      - [TelemetryConnectionSettings.tls](#telemetryconnectionsettingstls)
     + [OtherConnectionSettings](#otherconnectionsettings)
       - [OtherConnectionSettings.destination_endpoint](#otherconnectionsettingsdestination_endpoint)
       - [OtherConnectionSettings.headers](#otherconnectionsettingsheaders)
       - [OtherConnectionSettings.certificate](#otherconnectionsettingscertificate)
       - [OtherConnectionSettings.other_settings](#otherconnectionsettingsother_settings)
+      - [OtherConnectionSettings.tls](#otherconnectionsettingstls)
+    + [TLSConnectionSettings Message](#tlsconnectionsettings-message)
+      - [TLSConnectionSettings.ca_pem_contents](#tlsconnectionsettingsca_pem_contents)
+      - [TLSConnectionSettings.include_system_ca_pool](#tlsconnectionsettingsinclude_system_ca_pool)
+      - [TLSConnectionSettings.insecure_skip_verify](#tlsconnectionsettingsinsecure_skip_verify)
+      - [TLSConnectionSettings.min_version](#tlsconnectionsettingsmin_version)
+      - [TLSConnectionSettings.max_version](#tlsconnectionsettingsmax_version)
+      - [TLSConnectionSettings.ciper_suites](#tlsconnectionsettingsciper_suites)
     + [Headers Message](#headers-message)
     + [TLSCertificate Message](#tlscertificate-message)
       - [TLSCertificate.cert](#tlscertificatecert)
@@ -1978,6 +1988,7 @@ message OpAMPConnectionSettings {
     Headers headers = 2;
     TLSCertificate certificate = 3;
     uint64 heartbeat_interval_seconds = 4;
+    TLSConnectionSettings tls = 5;
 }
 ```
 
@@ -2053,6 +2064,12 @@ The flow for negotiating a heartbeat is described as so:
 
 The Agent can decide not to send heartbeats by not setting the ReportsHeartbeat capability. The Server can decide to not receive heartbeats by responding with a value of `0` seconds in the OpAMPConnectionSettings.heartbeat_interval_seconds field.
 
+##### OpAMPConnectionSettings.tls
+
+Status: [Development]
+
+Optional OpAMP specific TLS settings.
+
 #### TelemetryConnectionSettings
 
 The TelemetryConnectionSettings message is a collection of fields which comprise an
@@ -2064,6 +2081,7 @@ message TelemetryConnectionSettings {
     string destination_endpoint = 1;
     Headers headers = 2;
     TLSCertificate certificate = 3;
+    TLSConnectionSettings tls = 4;
 }
 ```
 
@@ -2089,6 +2107,12 @@ certificate the Agent SHOULD forget any previous client certificates
 for this connection.
 This field is optional: if omitted the client SHOULD NOT use a client-side certificate.
 This field can be used to perform a client certificate revocation/rotation.
+
+##### TelemetryConnectionSettings.tls
+
+Status: [Development]
+
+Optional telemetry specific TLS settings.
 
 #### OtherConnectionSettings
 
@@ -2119,6 +2143,7 @@ message OtherConnectionSettings {
     Headers headers = 2;
     TLSCertificate certificate = 3;
     map<string, string> other_settings = 4;
+    TLSConnectionSettings tls = 5;
 }
 ```
 
@@ -2148,9 +2173,65 @@ This field can be used to perform a client certificate revocation/rotation.
 Other connection settings. These are Agent-specific and are up to the Agent
 interpret.
 
+##### OtherConnectionSettings.tls
+
+Status: [Development]
+
+Optional connection specific TLS settings.
+
+#### TLSConnectionSettings Message
+
+Status: [Development]
+
+The message carries optional TLS settings that are used to configure a client's
+connection. If the Agent is able to validate the connection settings, the Agent
+SHOULD forget any previous TLS settings. If this message is not included, the
+client SHOULD assume the settings are unchanged and continue using existing
+settings.
+
+```protobuf
+message TLSConnectionSettings {
+  string ca_pem_contents = 1;
+  bool include_system_ca_certs_pool = 2;
+  bool insecure_skip_verify = 3;
+  string min_version = 4;
+  string max_version = 5;
+  repeated string cipher_suites = 6;
+}
+```
+
+##### TLSConnectionSettings.ca_pem_contents
+
+The ca_pem_contents attribute may be used to provide the CA's public
+certificate as part of the TLS configuration.
+
+##### TLSConnectionSettings.include_system_ca_pool
+
+The include_system_ca_pool asks the Agent to use the system's default CA pool
+when building TLS configuration.
+
+##### TLSConnectionSettings.insecure_skip_verify
+
+This setting disables all TLS verification for connections.
+
+##### TLSConnectionSettings.min_version
+
+This sets the minimum supported TLS version the client will use. For example:
+`1.2`, `TLSv1.2`.
+
+##### TLSConnectionSettings.max_version
+
+This sets the maximum supported TLS version the client will use. For example:
+`1.2`, `TLSv1.2`.
+
+##### TLSConnectionSettings.ciper_suites
+
+This sets the supported cipher suites that may be used by the connection. For
+example: `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`.
+
 #### Headers Message
 
-```
+```protobuf
 message Headers {
     repeated Header headers = 1;
 }
