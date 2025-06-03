@@ -100,7 +100,7 @@ message AgentToServer {
     // from the Server. This field SHOULD be unset if the offered connection
     // settings status is unchanged since the last AgentToServer message.
     // Status: [Development]
-    ConnectionSettingsStatus connection_status = 15;
+    ConnectionSettingsStatus connection_settings_status = 15;
 }
 
 enum AgentToServerFlags {

@@ -41,7 +41,7 @@ Status: [Beta]
       - [AgentToServer.custom_capabilities](#agenttoservercustom_capabilities)
       - [AgentToServer.custom_message](#agenttoservercustom_message)
       - [AgentToServer.available_components](#agenttoserveravailable_components)
-      - [AgentToServer.connection_status](#agenttoserverconnection_status)
+      - [AgentToServer.connection_settings_status](#agenttoserverconnection_settings_status)
     + [ServerToAgent Message](#servertoagent-message)
       - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
       - [ServerToAgent.error_response](#servertoagenterror_response)
@@ -532,7 +532,7 @@ message AgentToServer {
     CustomCapabilities custom_capabilities = 12; // Status: [Development]
     CustomMessage custom_message = 13; // Status: [Development]
     AvailableComponents available_components = 14; // Status: [Development]
-    ConnectionSettingsStatus connection_status = 15; // Status: [Development]
+    ConnectionSettingsStatus connection_settings_status = 15; // Status: [Development]
 }
 ```
 
@@ -733,7 +733,7 @@ reported if and only if the ReportsAvailableComponents capability is set.
 
 See [AvailableComponents](#availablecomponents-message) message for details.
 
-##### AgentToServer.connection_status
+##### AgentToServer.connection_settings_status
 
 Status: [Development]
 
