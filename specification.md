@@ -1884,13 +1884,13 @@ unchanged.
 
 ##### ConnectionSettingsOffers.own_traces
 
-Settings to connect to an OTLP metrics backend to send Agent's own traces to. If
+Settings to connect to an OTLP traces backend to send Agent's own traces to. If
 this field is not set then the Agent should assume that the settings are
 unchanged.
 
 ##### ConnectionSettingsOffers.own_logs
 
-Settings to connect to an OTLP metrics backend to send Agent's own logs to. If
+Settings to connect to an OTLP logs backend to send Agent's own logs to. If
 this field is not set then the Agent should assume that the settings are
 unchanged.
 
