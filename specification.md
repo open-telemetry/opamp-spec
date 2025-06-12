@@ -636,7 +636,7 @@ enum AgentCapabilities {
     // The agent will report AvailableComponents via the AgentToServer.available_components field.
     // Status: [Development]
     ReportsAvailableComponents      = 0x00004000;
-    // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status_field.
+    // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
     // Status: [Development]
     ReportsConnectionSettingsStatus = 0x00008000;
 
