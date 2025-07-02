@@ -816,10 +816,26 @@ message ConnectionSettingsStatus {
     // field in the response in the ServerToAgent message.
     bytes last_connection_settings_hash = 1;
 
-    RemoteConfigStatuses status = 2;
+    ConnectionSettingsStatuses status = 2;
 
     // Optional error message if status==FAILED.
     string error_message = 3;
+}
+
+// Status: [Development]
+enum ConnectionSettingsStatuses {
+    // The value of status field is not set.
+    ConnectionSettingsStatuses_UNSET = 0;
+
+    // ConnectionSettings were successfully applied by the Agent.
+    ConnectionSettingsStatuses_APPLIED = 1;
+
+    // Agent is currently applying the ConnectionSettings that it received.
+    ConnectionSettingsStatuses_APPLYING = 2;
+
+    // Agent tried to apply the ConnectionSettings it received earlier, but failed.
+    // See error_message for more details.
+    ConnectionSettingsStatuses_FAILED = 3;
 }
 
 enum RemoteConfigStatuses {
