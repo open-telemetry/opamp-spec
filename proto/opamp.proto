@@ -21,6 +21,7 @@ package opamp.proto;
 import "anyvalue.proto";
 
 option go_package = "github.com/open-telemetry/opamp-go/protobufs";
+option csharp_namespace = "OpAmp.Protocol";
 
 message AgentToServer {
     // Globally unique identifier of the running instance of the Agent. SHOULD remain
