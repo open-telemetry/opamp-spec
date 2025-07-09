@@ -45,9 +45,9 @@ Approvers ([@open-telemetry/opamp-spec-approvers](https://github.com/orgs/open-t
 
 Emeritus Approvers
 
-- [Alex Boten](https://github.com/codeboten), Lightstep
-- [Daniel Jaglowski](https://github.com/djaglowski), Bindplane
-- [Przemek Maciolek](https://github.com/pmm-sumo), Sumo Logic
+- [Alex Boten](https://github.com/codeboten)
+- [Daniel Jaglowski](https://github.com/djaglowski)
+- [Przemek Maciolek](https://github.com/pmm-sumo)
 
 Maintainers ([@open-telemetry/opamp-spec-maintainers](https://github.com/orgs/open-telemetry/teams/opamp-spec-maintainers)):
 
