@@ -53,9 +53,9 @@ For more information about the approver role, see the [community repository](htt
 
 ### Emeritus Approvers
 
-- [Alex Boten](https://github.com/codeboten), Lightstep
-- [Daniel Jaglowski](https://github.com/djaglowski), Bindplane
-- [Przemek Maciolek](https://github.com/pmm-sumo), Sumo Logic
+- [Alex Boten](https://github.com/codeboten)
+- [Daniel Jaglowski](https://github.com/djaglowski)
+- [Przemek Maciolek](https://github.com/pmm-sumo)
 
 For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
 
