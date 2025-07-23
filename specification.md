@@ -41,6 +41,7 @@ Status: [Beta]
       - [AgentToServer.custom_capabilities](#agenttoservercustom_capabilities)
       - [AgentToServer.custom_message](#agenttoservercustom_message)
       - [AgentToServer.available_components](#agenttoserveravailable_components)
+      - [AgentToServer.connection_settings_status](#agenttoserverconnection_settings_status)
     + [ServerToAgent Message](#servertoagent-message)
       - [ServerToAgent.instance_uid](#servertoagentinstance_uid)
       - [ServerToAgent.error_response](#servertoagenterror_response)
@@ -77,6 +78,10 @@ Status: [Beta]
       - [RemoteConfigStatus.last_remote_config_hash](#remoteconfigstatuslast_remote_config_hash)
       - [RemoteConfigStatus.status](#remoteconfigstatusstatus)
       - [RemoteConfigStatus.error_message](#remoteconfigstatuserror_message)
+    + [ConnectionSettingsStatus Message](#connectionsettingsstatus-message)
+      - [ConnectionSettingsStatus.last_connection_settings_hash](#connectionsettingsstatuslast_connection_settings_hash)
+      - [ConnectionSettingsStatus.status](#connectionsettingsstatusstatus)
+      - [ConnectionSettingsStatus.error_message](#connectionsettingsstatuserror_message)
     + [PackageStatuses Message](#packagestatuses-message)
       - [PackageStatuses.packages](#packagestatusespackages)
       - [PackageStatuses.server_provided_all_packages_hash](#packagestatusesserver_provided_all_packages_hash)
@@ -527,6 +532,7 @@ message AgentToServer {
     CustomCapabilities custom_capabilities = 12; // Status: [Development]
     CustomMessage custom_message = 13; // Status: [Development]
     AvailableComponents available_components = 14; // Status: [Development]
+    ConnectionSettingsStatus connection_settings_status = 15; // Status: [Development]
 }
 ```
 
@@ -582,54 +588,58 @@ enum AgentCapabilities {
     UnspecifiedAgentCapability = 0;
     // The Agent can report status. This bit MUST be set, since all Agents MUST
     // report status.
-    ReportsStatus                  = 0x00000001;
+    ReportsStatus                   = 0x00000001;
     // The Agent can accept remote configuration from the Server.
-    AcceptsRemoteConfig            = 0x00000002;
+    AcceptsRemoteConfig             = 0x00000002;
     // The Agent will report EffectiveConfig in AgentToServer.
-    ReportsEffectiveConfig         = 0x00000004;
+    ReportsEffectiveConfig          = 0x00000004;
     // The Agent can accept package offers.
     // Status: [Beta]
-    AcceptsPackages                = 0x00000008;
+    AcceptsPackages                 = 0x00000008;
     // The Agent can report package status.
     // Status: [Beta]
-    ReportsPackageStatuses         = 0x00000010;
+    ReportsPackageStatuses          = 0x00000010;
     // The Agent can report own trace to the destination specified by
     // the Server via ConnectionSettingsOffers.own_traces field.
     // Status: [Beta]
-    ReportsOwnTraces               = 0x00000020;
+    ReportsOwnTraces                = 0x00000020;
     // The Agent can report own metrics to the destination specified by
     // the Server via ConnectionSettingsOffers.own_metrics field.
     // Status: [Beta]
-    ReportsOwnMetrics              = 0x00000040;
+    ReportsOwnMetrics               = 0x00000040;
     // The Agent can report own logs to the destination specified by
     // the Server via ConnectionSettingsOffers.own_logs field.
     // Status: [Beta]
-    ReportsOwnLogs                 = 0x00000080;
+    ReportsOwnLogs                  = 0x00000080;
     // The can accept connections settings for OpAMP via
     // ConnectionSettingsOffers.opamp field.
     // Status: [Beta]
-    AcceptsOpAMPConnectionSettings = 0x00000100;
+    AcceptsOpAMPConnectionSettings  = 0x00000100;
     // The can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
     // Status: [Beta]
-    AcceptsOtherConnectionSettings = 0x00000200;
+    AcceptsOtherConnectionSettings  = 0x00000200;
     // The Agent can accept restart requests.
     // Status: [Beta]
-    AcceptsRestartCommand          = 0x00000400;
+    AcceptsRestartCommand           = 0x00000400;
     // The Agent will report Health via AgentToServer.health field.
-    ReportsHealth                  = 0x00000800;
+    ReportsHealth                   = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
-    ReportsRemoteConfig            = 0x00001000;
+    ReportsRemoteConfig             = 0x00001000;
     // The Agent can report heartbeats.
     // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
     // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
     // Agent should use its own configured interval, which by default will be 30s. The Server may not
     // know the configured interval and should not make assumptions about it.
     // Status: [Development]
-    ReportsHeartbeat               = 0x00002000;
+    ReportsHeartbeat                = 0x00002000;
     // The agent will report AvailableComponents via the AgentToServer.available_components field.
     // Status: [Development]
-    ReportsAvailableComponents     = 0x00004000;
+    ReportsAvailableComponents      = 0x00004000;
+    // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
+    // Status: [Development]
+    ReportsConnectionSettingsStatus = 0x00008000;
+
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 ```
@@ -722,6 +732,16 @@ A message listing the components available in the Agent. This field SHOULD be
 reported if and only if the ReportsAvailableComponents capability is set.
 
 See [AvailableComponents](#availablecomponents-message) message for details.
+
+##### AgentToServer.connection_settings_status
+
+Status: [Development]
+
+The status of the connection settings that was previously recieved from the
+Server. See [ConnectionSettingsStatus](#connectionsettingsstatus-message)
+message for details. This field SHOULD be unset if this information is unchanged
+since the last AgentToServer message. This field is a part of the
+[Connection Settings Management](#connection-settings-management) workflow.
 
 #### ServerToAgent Message
 
@@ -1120,8 +1140,9 @@ to such compression:
 [EffectiveConfig](#effectiveconfig-message),
 [RemoteConfigStatus](#remoteconfigstatus-message),
 [PackageStatuses](#packagestatuses-message),
-[CustomCapabilities](#customcapabilities), and
-[AvailableComponents](#availablecomponents-message).
+[CustomCapabilities](#customcapabilities),
+[AvailableComponents](#availablecomponents-message), and
+[ConnectionSettingsStatus](#connectionsettingsstatus-message).
 
 The compression is done by omitting the sub-message in the AgentToServer message.
 If any of the fields in the sub-message has changed then the compression cannot be used
@@ -1303,6 +1324,49 @@ The status of the Agent's attempt to apply a previously received remote
 configuration.
 
 ##### RemoteConfigStatus.error_message
+
+Optional error message if status==FAILED.
+
+#### ConnectionSettingsStatus Message
+
+The ConnectionSettingsStatus message has the following structure:
+
+```protobuf
+message ConnectionSettingsStatus {
+    bytes last_connection_settings_hash = 1;
+    enum Status {
+        // The value of status field is not set.
+        UNSET = 0;
+
+        // offered connection settings were successfully applied by the Agent.
+        APPLIED = 1;
+
+        // Agent is currently applying the offered connection settings that it received earlier.
+        APPLYING = 2;
+
+        // Agent tried to apply the offered connection settings recieved earlier, but it failed.
+        // See error_message for more details.
+        FAILED = 3;
+    }
+    Status status = 2;
+    string error_message = 3;
+}
+```
+
+##### ConnectionSettingsStatus.last_connection_settings_hash
+
+The hash of the offered connection settings that was last received by this Agent
+in the connection_settings.hash field. The Server SHOULD compare this hash with
+the config hash it has for the Agent and if the hashes are different the Server
+MUST include the connection_settings field in the response in the ServerToAgent
+message.
+
+##### ConnectionSettingsStatus.status
+
+The status of the Agent's attempt to apply previously received connection
+settings.
+
+##### ConnectionSettingsStatus.error_message
 
 Optional error message if status==FAILED.
 
@@ -1533,6 +1597,10 @@ AgentToServer.capabilities field:
 - If AcceptsOtherConnectionSettings capability bit is set the Server may offer
   connection settings for other destinations using other_connections field.
 
+In addition the ReportsConnectionSettingsStatus capability is used by the Agent
+to indicate that it is able to report to the server if the offered connection
+settings are applied as expected.
+
 Depending on which connection settings are offered the sequence of operations is
 slightly different. The handling of connection settings for own telemetry is
 described in [Own Telemetry Reporting](#own-telemetry-reporting). The handling
@@ -1586,16 +1654,22 @@ Here is how the server-initiated OpAMP connection settings change happens:
 3. Client receives the settings offer and saves the updated
    connection settings in the local store, marking it as "candidate" (if Client
    crashes it will retry "candidate" validation steps 5-9).
-4. Client disconnects from the Server.
+4. Client disconnects from the Server. If the client has the
+   ReportsConnectionSettingsStatus capability, the Client SHOULD indicate that
+   it is applying the new connection settings.
 5. Client connects to the Server, using the new settings.
 6. Connection is successfully established, any TLS verifications required are
    passed and the Server indicates a successful authorization.
 7. Server deletes the old connection settings for this Agent (using Agent
    instance UID) from its credentials store.
 8. Client deletes the old settings from its credentials store and marks the new
-   connection settings as "valid".
+   connection settings as "valid". If the client has the
+   ReportsConnectionSettingsStatus capability the client MUST report that the
+   connection settings have been applied.
 9. If step 6 fails the Client deletes the new settings and reverts to the old
-   settings and reconnects.
+   settings and reconnects. If the Client has the
+   ReportsConnectionSettingsStatus capability the client MUST report that the
+   connection settings have failed.
 
 Note: Clients which are unable to persist new connection settings and have access
 only to ephemeral storage SHOULD reject certificate offers otherwise they risk
@@ -2238,7 +2312,10 @@ backend that can be used. The Server SHOULD also populate the field on
 subsequent ServerToAgent if the destination has changed. If the destination is
 unchanged the connection_settings field SHOULD NOT be set. When the Agent
 receives a ServerToAgent with an unset connection_settings field the Agent SHOULD
-continue sending its telemetry to the previously offered destination.
+continue sending its telemetry to the previously offered destination. If the
+Agent has the ReportsConnectionSettingsStatus capability it SHOULD set the
+[connection_settings_status](#connectionsettingsstatus-message) accordingly
+when new settings are received.
 
 The Agent SHOULD periodically report its metrics to the destination offered in the
 [own_metrics](#connectionsettingsoffersown_metrics) field. The recommended reporting
