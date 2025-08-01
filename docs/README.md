@@ -1,6 +1,6 @@
 # OpAMP Docs
 
-The below table defines how the OpAMP docs get mounted to the Open Telemetry website.
+The below table defines how the OpAMP docs get mounted to the OpenTelemetry website.
 
 |Folder|Website Destination|
 | --- | --- |
