@@ -1,7 +1,7 @@
 # OpAMP Specification
 
 This repository contains Open Agent Management Protocol (OpAMP)
-[specification](specification.md) and Protobuf definitions in [proto](proto) directory.
+[specification](docs/spec/specification.md) and Protobuf definitions in [proto](proto) directory.
 
 See [releases here](https://github.com/open-telemetry/opamp-spec/releases) and [changelog here](CHANGELOG.md).
 
@@ -10,7 +10,7 @@ See [releases here](https://github.com/open-telemetry/opamp-spec/releases) and [
 Prerequisites:
 - [NodeJS/NPM CLI](https://nodejs.org/en/download/)
 
-The specification is a [single markdown file](specification.md). If you make changes to
+The specification is a [single markdown file](docs/spec/specification.md). If you make changes to
 the section headings make sure to update the Table of Contents by running
 `make markdown-toc` in root directory.
 
