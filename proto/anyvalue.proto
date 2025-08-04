@@ -20,7 +20,7 @@
 
 syntax = "proto3";
 
-package opamp.proto;
+package opamp.proto.v1;
 
 option go_package = "github.com/open-telemetry/opamp-go/protobufs";
 option csharp_namespace = "OpAmp.Protocol";
