@@ -95,6 +95,12 @@ message AgentToServer {
     // A message indicating the components that are available for configuration on the agent.
     // Status: [Development]
     AvailableComponents available_components = 14;
+
+    // The status of the OfferedConnectionSettings that was previously received
+    // from the Server. This field SHOULD be unset if the offered connection
+    // settings status is unchanged since the last AgentToServer message.
+    // Status: [Development]
+    ConnectionSettingsStatus connection_settings_status = 15;
 }
 
 enum AgentToServerFlags {
@@ -724,54 +730,57 @@ enum AgentCapabilities {
     AgentCapabilities_Unspecified = 0;
     // The Agent can report status. This bit MUST be set, since all Agents MUST
     // report status.
-    AgentCapabilities_ReportsStatus                  = 0x00000001;
+    AgentCapabilities_ReportsStatus                   = 0x00000001;
     // The Agent can accept remote configuration from the Server.
-    AgentCapabilities_AcceptsRemoteConfig            = 0x00000002;
+    AgentCapabilities_AcceptsRemoteConfig             = 0x00000002;
     // The Agent will report EffectiveConfig in AgentToServer.
-    AgentCapabilities_ReportsEffectiveConfig         = 0x00000004;
+    AgentCapabilities_ReportsEffectiveConfig          = 0x00000004;
     // The Agent can accept package offers.
     // Status: [Beta]
-    AgentCapabilities_AcceptsPackages                = 0x00000008;
+    AgentCapabilities_AcceptsPackages                 = 0x00000008;
     // The Agent can report package status.
     // Status: [Beta]
-    AgentCapabilities_ReportsPackageStatuses         = 0x00000010;
+    AgentCapabilities_ReportsPackageStatuses          = 0x00000010;
     // The Agent can report own trace to the destination specified by
     // the Server via ConnectionSettingsOffers.own_traces field.
     // Status: [Beta]
-    AgentCapabilities_ReportsOwnTraces               = 0x00000020;
+    AgentCapabilities_ReportsOwnTraces                = 0x00000020;
     // The Agent can report own metrics to the destination specified by
     // the Server via ConnectionSettingsOffers.own_metrics field.
     // Status: [Beta]
-    AgentCapabilities_ReportsOwnMetrics              = 0x00000040;
+    AgentCapabilities_ReportsOwnMetrics               = 0x00000040;
     // The Agent can report own logs to the destination specified by
     // the Server via ConnectionSettingsOffers.own_logs field.
     // Status: [Beta]
-    AgentCapabilities_ReportsOwnLogs                 = 0x00000080;
+    AgentCapabilities_ReportsOwnLogs                  = 0x00000080;
     // The can accept connections settings for OpAMP via
     // ConnectionSettingsOffers.opamp field.
     // Status: [Beta]
-    AgentCapabilities_AcceptsOpAMPConnectionSettings = 0x00000100;
+    AgentCapabilities_AcceptsOpAMPConnectionSettings  = 0x00000100;
     // The can accept connections settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
     // Status: [Beta]
-    AgentCapabilities_AcceptsOtherConnectionSettings = 0x00000200;
+    AgentCapabilities_AcceptsOtherConnectionSettings  = 0x00000200;
     // The Agent can accept restart requests.
     // Status: [Beta]
-    AgentCapabilities_AcceptsRestartCommand          = 0x00000400;
+    AgentCapabilities_AcceptsRestartCommand           = 0x00000400;
     // The Agent will report Health via AgentToServer.health field.
-    AgentCapabilities_ReportsHealth                  = 0x00000800;
+    AgentCapabilities_ReportsHealth                   = 0x00000800;
     // The Agent will report RemoteConfig status via AgentToServer.remote_config_status field.
-    AgentCapabilities_ReportsRemoteConfig            = 0x00001000;
+    AgentCapabilities_ReportsRemoteConfig             = 0x00001000;
     // The Agent can report heartbeats.
     // This is specified by the ServerToAgent.OpAMPConnectionSettings.heartbeat_interval_seconds field.
     // If this capability is true, but the Server does not set a heartbeat_interval_seconds field, the
     // Agent should use its own configured interval, which by default will be 30s. The Server may not
     // know the configured interval and should not make assumptions about it.
     // Status: [Development]
-    AgentCapabilities_ReportsHeartbeat               = 0x00002000;
+    AgentCapabilities_ReportsHeartbeat                = 0x00002000;
     // The agent will report AvailableComponents via the AgentToServer.available_components field.
     // Status: [Development]
-    AgentCapabilities_ReportsAvailableComponents     = 0x00004000;
+    AgentCapabilities_ReportsAvailableComponents      = 0x00004000;
+    // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
+    // Status: [Development]
+    AgentCapabilities_ReportsConnectionSettingsStatus = 0x00008000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
@@ -820,6 +829,37 @@ message RemoteConfigStatus {
 
     // Optional error message if status==FAILED.
     string error_message = 3;
+}
+
+// Status: [Development]
+message ConnectionSettingsStatus {
+    // The hash of the connection settings that was last recieved by this Agent
+    // in the connection_settings.hash field. The Server SHOULD compare this
+    // hash with the OfferedConnectionSettings hash it has for the Agent and if
+    // the hashes are different the Server MUST include the connection_settings
+    // field in the response in the ServerToAgent message.
+    bytes last_connection_settings_hash = 1;
+
+    ConnectionSettingsStatuses status = 2;
+
+    // Optional error message if status==FAILED.
+    string error_message = 3;
+}
+
+// Status: [Development]
+enum ConnectionSettingsStatuses {
+    // The value of status field is not set.
+    ConnectionSettingsStatuses_UNSET = 0;
+
+    // ConnectionSettings were successfully applied by the Agent.
+    ConnectionSettingsStatuses_APPLIED = 1;
+
+    // Agent is currently applying the ConnectionSettings that it received.
+    ConnectionSettingsStatuses_APPLYING = 2;
+
+    // Agent tried to apply the ConnectionSettings it received earlier, but failed.
+    // See error_message for more details.
+    ConnectionSettingsStatuses_FAILED = 3;
 }
 
 enum RemoteConfigStatuses {
