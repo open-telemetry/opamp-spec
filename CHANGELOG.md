@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.13.0
+
+* Add spec change for updating capabilities after initial message by @jaronoff97 in https://github.com/open-telemetry/opamp-spec/pull/217
+* Add TLS settings to all connection settings by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/205
+* Add TLSConnectionSettings message attribute descriptions by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/222
+* Fix field descriptions in ConnectionSettingsOffers by @johannaojeling in https://github.com/open-telemetry/opamp-spec/pull/237
+* Add ConnectionSettingsStatus message and capability by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/220
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.12.0...v0.13.0
+
 ## v0.12.0
 
 * Change PackageStatus.download_details.download_bytes_per_second to double by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/210
