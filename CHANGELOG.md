@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.14.0
+
+* Add ProxyConnectionSettings to all connection types by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/221
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.13.0...v0.14.0
+
 ## v0.13.0
 
 * Add spec change for updating capabilities after initial message by @jaronoff97 in https://github.com/open-telemetry/opamp-spec/pull/217
