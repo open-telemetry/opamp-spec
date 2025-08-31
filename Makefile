@@ -55,12 +55,21 @@ PROTO_FILES := $(wildcard proto/*.proto)
 
 PROTO_GEN_GO_DIR ?= $(GENDIR)/go
 
-OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.14.0
+# When checking for protobuf breaking changes, check against the latest release tag
+LAST_RELEASE_TAG := $(shell git tag --sort=committerdate | tail -1)
 
-# Docker pull image.
+# Docker images for generating Protobuf files.
+OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.14.0 # https://hub.docker.com/r/otel/build-protobuf
+BUF_DOCKER ?= bufbuild/buf:1.7.0 # https://hub.docker.com/r/bufbuild/buf
+
+BUF := docker run --rm -v "${PWD}/proto:/workspace" -w /workspace ${BUF_DOCKER}
+BUF_AGAINST ?= "https://github.com/open-telemetry/opamp-spec.git\#tag=$(LAST_RELEASE_TAG),subdir=proto"
+
+# Docker pull images.
 .PHONY: docker-pull
 docker-pull:
-	docker pull $(OTEL_DOCKER_PROTOBUF)
+	docker pull $(OTEL_DOCKER_PROTOBUF) 
+	docker pull $(BUF_DOCKER)
 
 gen-proto: gen-go
 .PHONY: gen-proto
@@ -75,3 +84,8 @@ gen-go:
 	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -v${PWD}:${PWD} \
         -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
         --go_out=./$(PROTO_GEN_GO_DIR) -I${PWD}/proto/ ${PWD}/$(file)))
+
+# Breaking change detection
+.PHONY: breaking-change
+breaking-change:
+	$(BUF) breaking --against $(BUF_AGAINST) $(BUF_FLAGS) 

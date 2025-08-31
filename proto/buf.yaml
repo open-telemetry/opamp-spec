@@ -1,0 +1,9 @@
+version: v1
+
+# See https://buf.build/docs/configuration/v1/buf-yaml/
+breaking:
+  use:
+    - WIRE
+  ignore:
+    - opentelemetry/proto/profiles
+    - opentelemetry/proto/collector/profiles
