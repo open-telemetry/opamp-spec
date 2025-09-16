@@ -55,3 +55,22 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - run: make docker-pull
       - run: make gen-proto
+
+  breaking-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      # breaking-change checks against last published release which is determined
+      # using the last published tag
+      - name: Get tags
+        run: git fetch --tags origin
+      - name: Docker pull
+        run: make docker-pull
+      - name: Run make breaking-change with json output to annotate PR
+        # Formats JSON output into Github workflow commands
+       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message
+        run: >
+          BUF_FLAGS="--error-format json" make -s breaking-change
+          | jq -rs '.[] | "::error file=\(.path),line=\(.start_line),endLine=\(.end_line),title=Buf detected breaking change \(.type)::\(.message)"'
+          ; (exit ${PIPESTATUS[0]})
