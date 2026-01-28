@@ -510,6 +510,13 @@ The Client MAY compress the request body using gzip method and MUST specify
 "Content-Encoding: gzip" in that case. Server implementations MUST honour the
 "Content-Encoding" header and MUST support gzipped or uncompressed request bodies.
 
+The Client SHOULD set "OpAMP-Instance-UID" request header to the value of the
+instance_uid field encoded in
+[canonical string representation](https://datatracker.ietf.org/doc/html/rfc4122#section-3)
+of the UUID (e.g. "OpAMP-Instance-UID: f81d4fae-7dec-11d0-a765-00a0c91e6bf6").
+The value is equal to [instance_uid](#agenttoserverinstance_uid) field in AgentToServer
+message.
+
 The Server SHOULD compress the response if the Client indicated it can accept compressed
 response via the "Accept-Encoding" header.
 
