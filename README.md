@@ -48,6 +48,8 @@ For more information about the maintainer role, see the [community repository](h
 
 ### Approvers
 
+- [Evan Bradley](https://github.com/evan-bradley), Dynatrace
+
 For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
 
 ### Emeritus Approvers
