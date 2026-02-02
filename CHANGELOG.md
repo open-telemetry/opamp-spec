@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.15.0
+
+* Add OpAMP-Instance-UID request header by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/284
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.14.0...v0.15.0
+
 ## v0.14.0
 
 * Add ProxyConnectionSettings to all connection types by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/221
