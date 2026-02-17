@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.16.0
+
+* Allow unchanged status fields to be omitted on websocket reconnect by @andykellr in https://github.com/open-telemetry/opamp-spec/pull/290
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.15.0...v0.16.0
+
 ## v0.15.0
 
 * Add OpAMP-Instance-UID request header by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/284

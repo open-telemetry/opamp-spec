@@ -1030,7 +1030,7 @@ will be ignored.
 The Client MUST send a status report:
 
 * First time immediately after connecting to the Server. The status report MUST
-  be the first message sent by the Client. If the Client is reconnecting to the
+  be the first message sent by the Client. If a WebSocket Client is reconnecting to the
   Server after a previous connection was closed then the status report MAY omit
   status fields that are unchanged since the last message was sent on the previous
   connection.
