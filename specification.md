@@ -589,8 +589,14 @@ in the future such that old Agents automatically report that they don't
 support the new capability.
 This field MUST be always set.
 
-An Agent MAY update any of its capabilities at any time after the first
-message. The server MUST respect the Agent's changes, ensuring that the
+An Agent MAY update (enabled or disable) some of its capabilities at any time after
+the first message. The following capabilities only may be updated after the first
+message:
+
+- AcceptsRemoteConfig
+- ReportsRemoteConfig
+
+The server MUST respect the Agent's capability changes, ensuring that the
 subsequent messages are sent correctly. If the server sends a part of its
 messages corresponding to a capability the Agent doesn't support, the Agent
 SHOULD ignore it.
