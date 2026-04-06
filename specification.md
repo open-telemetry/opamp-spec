@@ -1204,13 +1204,15 @@ Attributes that identify the Agent.
 Keys/values are according to OpenTelemetry [resource semantic
 conventions](https://opentelemetry.io/docs/specs/semconv/resource/).
 
-For standalone running Agents (such as OpenTelemetry Collector) the following
-attributes SHOULD be specified:
+###### Standalone Agents
 
-- service.name should be set to the same value that the Agent uses in its own telemetry.
-- service.namespace if it is used in the environment where the Agent runs.
-- service.version should be set to version number of the Agent build.
-- service.instance.id should be set. It may be set equal to the Agent's
+The OpenTelemetry Collector and other standalone Agents SHOULD use the following 
+identifying attributes:
+
+- `service.name` should be set to the same value that the Agent uses in its own telemetry.
+- `service.namespace` if it is used in the environment where the Agent runs.
+- `service.version` should be set to version number of the Agent build.
+- `service.instance.id` should be set. It may be set equal to the Agent's
   instance uid (equal to ServerToAgent.instance_uid field) or any other value
   that uniquely identifies the Agent in combination with other attributes.
 - any other attributes that are necessary for uniquely identifying the Agent's
@@ -1221,7 +1223,18 @@ telemetry. The combination of identifying attributes SHOULD be sufficient to
 uniquely identify the Agent's own telemetry in the destination system to which
 the Agent sends its own telemetry.
 
+###### Language Instrumentation Agents
+
+Instrumentation agents use an OpenTelemetry SDK instance which includes a
+Resource that identifies the source of telemetry. These agents SHOULD
+simply copy all of the Resource attributes into the `identifying_attributes`.
+
+Additional attributes MAY be included to supplement the existing
+Resource if needed.
+
 ##### AgentDescription.non_identifying_attributes
+
+###### Standalone Agents
 
 Attributes that do not necessarily identify the Agent but help describe where it
 runs.
@@ -1235,6 +1248,10 @@ The following attributes SHOULD be included:
   environment it runs in.
 - any user-defined attributes that the end user would like to associate with
   this Agent.
+
+###### Language Instrumentation Agents
+
+Instrumentation agents SHOULD leave the `non_identifying_attributes` empty.
 
 #### ComponentHealth Message
 
