@@ -16,6 +16,9 @@ fenced-code-language: false
 # MD022/blanks-around-headings/blanks-around-headers - Headings should be surrounded by blank lines
 MD022: false
 
+# MD024/no-duplicate-heading Multiple headings with the same content
+MD024: false
+
 # MD025/single-title/single-h1 - Multiple top-level headings in the same document
 MD025: false
 
@@ -24,3 +27,9 @@ MD032: false
 
 # MD034/no-bare-urls - Bare URL used
 MD034: false
+
+# MD041/first-line-heading/first-line-h1 First line in a file should be a top-level heading
+MD041: false
+
+# MD059/descriptive-link-text Link text should be descriptive [Context: "[here]"]
+MD059: false
