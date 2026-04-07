@@ -4,6 +4,8 @@ This repository contains Open Agent Management Protocol (OpAMP)
 [specification](specification.md) and Protobuf definitions in [proto](proto) directory.
 
 See [releases here](https://github.com/open-telemetry/opamp-spec/releases) and [changelog here](CHANGELOG.md).
+Additional standalone guidance for instrumentation runtimes is in
+[opentelemetry-guidelines.md](opentelemetry-guidelines.md).
 
 ## Contributing
 
