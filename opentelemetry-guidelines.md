@@ -14,20 +14,26 @@ Collector.
 
 ## Identifying Attributes
 
-Language instrumentation agents SHOULD copy all attributes from the
-OpenTelemetry SDK `Resource` into `AgentDescription.identifying_attributes`.
+Language instrumentation agents MUST copy the following OpenTelemetry SDK
+`Resource` attributes into `AgentDescription.identifying_attributes`:
 
-Additional identifying attributes MAY be included if they are needed to
-uniquely identify the agent in the deployment environment.
+- `service.name`
+- `service.instance.id`
+- `service.namespace.name`, if present
+
+These identifying attributes MUST match the values that the agent uses in the
+Resource of its own telemetry.
 
 ## Non-identifying Attributes
 
-Language instrumentation agents SHOULD leave
-`AgentDescription.non_identifying_attributes` empty.
+Language instrumentation agents SHOULD copy all other OpenTelemetry SDK
+`Resource` attributes into `AgentDescription.non_identifying_attributes`,
+excluding those added to the identifying attributes (above).
 
 ## Rationale
 
-For language instrumentation agents, the OpenTelemetry SDK `Resource` already
-defines the identity of the telemetry source. Reusing those attributes in OpAMP
-keeps the agent identity aligned with the identity used by the telemetry that
-the agent produces.
+For language instrumentation agents, the `service.*` attributes listed above
+define the identity that OpAMP uses to associate an agent with its telemetry.
+Copying the remaining Resource attributes into
+`AgentDescription.non_identifying_attributes` preserves useful descriptive
+context without expanding the agent identity beyond those service attributes.
