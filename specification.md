@@ -213,7 +213,7 @@ Status: [Beta]
     + [Plain HTTP Transport](#plain-http-transport-1)
   * [Restoring WebSocket Connection](#restoring-websocket-connection)
   * [Duplicate WebSocket Connections](#duplicate-websocket-connections)
-    + [Duplicate instance_uid Detection](#duplicate-instance_uid-detection)
+  * [Duplicate instance_uid Detection](#duplicate-instance_uid-detection)
   * [Authentication](#authentication)
   * [Bad Request](#bad-request)
   * [Retrying Messages](#retrying-messages)
@@ -3366,7 +3366,7 @@ when Agents are using bad UID generators or due to cloning of the VMs where the
 Agent runs). When a duplicate `instance_uid` is detected, Server SHOULD generate
 a new `instance_uid`, and send it as `new_instance_uid` value of AgentIdentification.
 
-#### Duplicate instance_uid Detection
+### Duplicate instance_uid Detection
 
 A server may be able to detect agents connecting with duplicate `instance_uid` values.
 Detection mechanisms are implementation specific.
