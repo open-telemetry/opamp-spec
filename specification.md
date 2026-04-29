@@ -1204,18 +1204,6 @@ Attributes that identify the Agent.
 Keys/values are according to OpenTelemetry [resource semantic
 conventions](https://opentelemetry.io/docs/specs/semconv/resource/).
 
-For standalone running Agents (such as OpenTelemetry Collector) the following
-attributes SHOULD be specified:
-
-- service.name should be set to the same value that the Agent uses in its own telemetry.
-- service.namespace if it is used in the environment where the Agent runs.
-- service.version should be set to version number of the Agent build.
-- service.instance.id should be set. It may be set equal to the Agent's
-  instance uid (equal to ServerToAgent.instance_uid field) or any other value
-  that uniquely identifies the Agent in combination with other attributes.
-- any other attributes that are necessary for uniquely identifying the Agent's
-  own telemetry.
-
 The Agent SHOULD also include these attributes in the Resource of its own
 telemetry. The combination of identifying attributes SHOULD be sufficient to
 uniquely identify the Agent's own telemetry in the destination system to which
@@ -1226,9 +1214,9 @@ the Agent sends its own telemetry.
 Attributes that do not necessarily identify the Agent but help describe where it
 runs.
 
-The following attributes SHOULD be included:
+Here are some examples of attributes that may be a good fit for non-identifying attributes:
 
-- os.type, os.version - to describe where the Agent runs.
+- os.\* to describe where the Agent runs.
 - host.\* to describe the host the Agent runs on.
 - cloud.\* to describe the cloud where the host is located.
 - any other relevant Resource attributes that describe this Agent and the
