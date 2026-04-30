@@ -84,7 +84,7 @@ Mark subset of features stable (to be decided), release 1.0
 
 ### OpAMP Go
 
-### Implement the stable features of the spec completely and release production-ready 1.0
+Implement the stable features of the spec completely and release production-ready 1.0
 
 ### Supervisor
 
