@@ -326,6 +326,9 @@ the Agent (via the Client) to the Server and from the Server to the Agent.
 The default URL path for the connection is /v1/opamp. The URL path MAY be
 configurable on the Client and on the Server.
 
+The default port for OpAMP endpoints is 4320. OpAMP Server implementations SHOULD
+listen on this port by default.
+
 One of the typical ways to implement OpAMP on the Agent side is by having a helping
 Supervisor process, which controls the Agent process. The Supervisor is also
 typically responsible for communicating with the OpAMP Server:
@@ -1999,7 +2002,7 @@ message OpAMPConnectionSettings {
 ##### OpAMPConnectionSettings.destination_endpoint
 
 OpAMP Server URL This MUST be a WebSocket or HTTP URL and MUST be non-empty, for
-example, `wss://example.com:4318/v1/opamp`.
+example, `wss://example.com:4320/v1/opamp`.
 
 ##### OpAMPConnectionSettings.headers
 
