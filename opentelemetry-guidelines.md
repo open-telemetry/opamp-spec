@@ -66,3 +66,30 @@ define the identity that OpAMP uses to associate an agent with its telemetry.
 Copying the remaining Resource attributes into
 `AgentDescription.non_identifying_attributes` preserves useful descriptive
 context without expanding the agent identity beyond those service attributes.
+
+## Routing instrumentation agents through the Collector
+
+OpenTelemetry instrumentation agents typically send telemetry data through the
+Collector. When these agents also use OpAMP, they can route HTTP OpAMP traffic
+through the Collector as well.
+
+For the plain HTTP transport, Collector distributions that include the
+`http_forwarder` extension can proxy OpAMP requests by configuring the extension
+to listen for OpAMP requests and forward them to the OpAMP backend:
+
+```yaml
+extensions:
+  http_forwarder/opamp:
+    ingress:
+      endpoint: localhost:4320
+    egress:
+      endpoint: https://opamp.example.com
+
+service:
+  extensions: [http_forwarder/opamp]
+```
+
+Port `4320` SHOULD be used for this Collector listener. The host part should
+match the deployment model; for example, use `localhost:4320` when the OpAMP
+client and Collector run on the same host, or another appropriate interface when
+remote clients connect to the Collector.
