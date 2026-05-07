@@ -1046,6 +1046,11 @@ message AgentConfigFile {
     // Optional MIME Content-Type that describes what's in the body field, for
     // example "text/yaml".
     string content_type = 2;
+
+    // Optional key/value pairs that provide additional metadata for this config
+    // file or section. Agents may use this field to report arbitrary attributes
+    // associated with the file.
+    repeated KeyValue attributes = 3;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

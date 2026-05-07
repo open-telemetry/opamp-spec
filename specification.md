@@ -2554,6 +2554,7 @@ following structure:
 message AgentConfigFile {
   bytes body = 1;
   string content_type = 2;
+  repeated KeyValue attributes = 3;
 }
 ```
 
@@ -2566,6 +2567,13 @@ what's contained in the body field, for example "text/yaml". The content_type
 reported in the Effective Configuration in the Agent's status report may be used
 for example by the Server to visualize the reported configuration nicely in a
 UI.
+
+attributes is an optional field. It contains key/value pairs that provide
+additional metadata for this configuration file or section. Agents MAY use
+attributes to report arbitrary properties associated with a configuration file,
+for example the origin of the file, the component that produced it, or other
+Agent type-specific metadata. The interpretation of these attributes is Agent
+type-specific and is outside the concerns of the OpAMP protocol.
 
 #### Security Considerations
 
