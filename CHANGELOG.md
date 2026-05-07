@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.17.0
+
+* Fix typos in TLS version comments by @Kielek in https://github.com/open-telemetry/opamp-spec/pull/316
+* Add OpenTelemetry guidelines doc by @breedx-splk in https://github.com/open-telemetry/opamp-spec/pull/312
+* Move Otel Collector guidelines from to opentelemetry-guidelines.md by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/318
+* Add Duplicate instance_uid detection section by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/314
+* Declare default OpAMP port by @dmitryax in https://github.com/open-telemetry/opamp-spec/pull/323
+* Document HTTP OpAMP routing through the Collector by @dmitryax in https://github.com/open-telemetry/opamp-spec/pull/322
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.16.0...v0.17.0
+
 ## v0.16.0
 
 * Allow unchanged status fields to be omitted on websocket reconnect by @andykellr in https://github.com/open-telemetry/opamp-spec/pull/290
