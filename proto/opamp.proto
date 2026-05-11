@@ -243,6 +243,23 @@ message ServerToAgent {
     // A custom message sent from the Server to an Agent.
     // Status: [Development]
     CustomMessage custom_message = 11;
+
+    // Sent by the Server in its first ServerToAgent message in response to an
+    // Agent that has set the RequiresPayloadTrustVerification capability.
+    // Carries the signing certificate chain the Agent will use to verify
+    // subsequent ServerToAgent messages. If the Agent set
+    // RequiresPayloadTrustVerification but the first ServerToAgent does not
+    // include trust_chain_response, the Agent MUST terminate the connection.
+    // See the Message Attestation section of the specification.
+    // Status: [Development]
+    TrustChainResponse trust_chain_response = 12;
+
+    // The signature of this ServerToAgent message. The exact bytes that are
+    // signed and the verification procedure are defined in the
+    // Message Attestation section of the specification. Set only after the
+    // payload trust verification handshake has completed successfully.
+    // Status: [Development]
+    bytes signature = 13;
 }
 
 enum ServerToAgentFlags {
@@ -289,8 +306,36 @@ enum ServerCapabilities {
     // The Server can accept ConnectionSettingsRequest and respond with an offer.
     // Status: [Development]
     ServerCapabilities_AcceptsConnectionSettingsRequest = 0x00000040;
+    // The Server can respond to the payload trust verification handshake and
+    // sign every ServerToAgent message it sends after the handshake. See the
+    // Message Attestation section of the specification.
+    // Status: [Development]
+    ServerCapabilities_OffersPayloadTrustVerification = 0x00000080;
 
     // Add new capabilities here, continuing with the least significant unused bit.
+}
+
+// TrustChainResponse carries the signing certificate chain used by the Server
+// to sign subsequent ServerToAgent messages, as part of the payload trust
+// verification handshake. See the Message Attestation section of the
+// specification.
+// Status: [Development]
+message TrustChainResponse {
+    message Certificate {
+        // The certificate in DER format.
+        bytes der_data = 1;
+    }
+
+    // The certificate chain, ordered from the first intermediate certificate
+    // down to the signing leaf certificate. The root certificate is excluded;
+    // the Agent already possesses the root as its pre-configured payload
+    // trust anchor.
+    repeated Certificate certificate_chain = 1;
+
+    // Human-readable error message indicating why the Server could not
+    // satisfy the trust chain request. If error_message is set, the Agent
+    // MUST terminate the connection.
+    string error_message = 2;
 }
 
 // The OpAMPConnectionSettings message is a collection of fields which comprise an
@@ -781,6 +826,12 @@ enum AgentCapabilities {
     // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
     // Status: [Development]
     AgentCapabilities_ReportsConnectionSettingsStatus = 0x00008000;
+    // The Agent requires the payload trust verification handshake on connection
+    // and signature verification on every subsequent ServerToAgent message.
+    // If the Server does not offer this capability, the Agent MUST terminate
+    // the connection. See the Message Attestation section of the specification.
+    // Status: [Development]
+    AgentCapabilities_RequiresPayloadTrustVerification = 0x00010000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 

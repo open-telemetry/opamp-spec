@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+* Add `Message Attestation` section to specification.md describing an
+  optional, end-to-end integrity mechanism for `ServerToAgent` messages
+  based on X.509 certificate chains and a per-connection trust handshake.
+  Strict opt-in: existing OpAMP deployments are unaffected until both
+  Server and Agent opt in.
+* Add `AgentCapabilities.RequiresPayloadTrustVerification = 0x00010000`.
+* Add `ServerCapabilities.OffersPayloadTrustVerification = 0x00000080`.
+* Add `ServerToAgent.trust_chain_response = 12` carrying the new
+  `TrustChainResponse` message.
+* Add `ServerToAgent.signature = 13` carrying the per-message signature.
+* Add new top-level `TrustChainResponse` message containing the
+  certificate chain and an optional error message.
+
 ## v0.17.0
 
 * Fix typos in TLS version comments by @Kielek in https://github.com/open-telemetry/opamp-spec/pull/316
