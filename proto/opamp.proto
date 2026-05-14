@@ -443,7 +443,7 @@ message TLSConnectionSettings {
   // Minimum accepted TLS version; default "1.2".
   string min_version = 4;
 
-  // Minimum accepted TLS version; default "".
+  // Maximum accepted TLS version; default "".
   string max_version = 5;
 
   // Explicit list of cipher suites.
