@@ -51,7 +51,7 @@ markdownlint:
 
 GENDIR := gen
 # Find all .proto files.
-PROTO_FILES := $(wildcard proto/*.proto)
+PROTO_FILES := $(wildcard proto/opamp/proto/v1/*.proto)
 
 PROTO_GEN_GO_DIR ?= $(GENDIR)/go
 

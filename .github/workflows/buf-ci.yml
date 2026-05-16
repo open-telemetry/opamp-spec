@@ -1,0 +1,31 @@
+name: Buf CI
+on:
+  push:     # Runs on pushes to ANY branch
+  pull_request: # Runs on all pull requests
+
+permissions:
+  contents: read
+
+jobs:
+  buf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so Buf can compare against other branches locally
+          fetch-depth: 0
+
+      - name: Run Buf Actions (Local Checks Only)
+        uses: bufbuild/buf-action@v1
+        with:
+          # Disables the automatic push to BSR on main branch pushes
+          push: false 
+          # Disables archiving tracking branches on branch deletions
+          archive: false
+
+          lint: true
+          breaking: false # Temporarily disables breaking checks
+          # Tells Buf to compare against a local git reference instead of BSR
+          breaking_against: '.git#branch=main'
+          input: proto
