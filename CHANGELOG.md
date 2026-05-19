@@ -5,15 +5,23 @@
 * Add `Message Attestation` section to specification.md describing an
   optional, end-to-end integrity mechanism for `ServerToAgent` messages
   based on X.509 certificate chains and a per-connection trust handshake.
-  Strict opt-in: existing OpAMP deployments are unaffected until both
-  Server and Agent opt in.
+  Strict opt-in at the wire level: existing OpAMP deployments are
+  unaffected until both Server and Agent opt in.
 * Add `AgentCapabilities.RequiresPayloadTrustVerification = 0x00010000`.
 * Add `ServerCapabilities.OffersPayloadTrustVerification = 0x00000080`.
-* Add `ServerToAgent.trust_chain_response = 12` carrying the new
-  `TrustChainResponse` message.
-* Add `ServerToAgent.signature = 13` carrying the per-message signature.
+* Add new top-level `SignedServerToAgent` envelope message containing
+  the marshalled `ServerToAgent` `payload`, a detached `signature` over
+  the payload bytes, and (on the first message of a connection) the
+  `trust_chain_response` carrying the signing certificate chain. The
+  envelope is used only when payload trust verification has been
+  negotiated; otherwise the Server keeps sending plain `ServerToAgent`
+  messages on the wire, byte-identical to upstream OpAMP.
 * Add new top-level `TrustChainResponse` message containing the
   certificate chain and an optional error message.
+* Reserve field numbers 12 and 13 on `ServerToAgent` (briefly used by
+  an earlier draft for inline trust-chain and signature fields; that
+  draft was superseded by the `SignedServerToAgent` envelope so the
+  numbers can never be reused).
 
 ## v0.17.0
 

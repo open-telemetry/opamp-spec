@@ -244,22 +244,14 @@ message ServerToAgent {
     // Status: [Development]
     CustomMessage custom_message = 11;
 
-    // Sent by the Server in its first ServerToAgent message in response to an
-    // Agent that has set the RequiresPayloadTrustVerification capability.
-    // Carries the signing certificate chain the Agent will use to verify
-    // subsequent ServerToAgent messages. If the Agent set
-    // RequiresPayloadTrustVerification but the first ServerToAgent does not
-    // include trust_chain_response, the Agent MUST terminate the connection.
-    // See the Message Attestation section of the specification.
-    // Status: [Development]
-    TrustChainResponse trust_chain_response = 12;
-
-    // The signature of this ServerToAgent message. The exact bytes that are
-    // signed and the verification procedure are defined in the
-    // Message Attestation section of the specification. Set only after the
-    // payload trust verification handshake has completed successfully.
-    // Status: [Development]
-    bytes signature = 13;
+    // Field numbers 12 and 13 were briefly assigned to inline payload
+    // trust verification metadata (trust_chain_response and signature)
+    // in an earlier draft of the Message Attestation spec. The design
+    // moved that metadata onto a separate envelope message
+    // (SignedServerToAgent) to enable detached signing. The field
+    // numbers are reserved here to prevent accidental reuse.
+    reserved 12, 13;
+    reserved "trust_chain_response", "signature";
 }
 
 enum ServerToAgentFlags {
@@ -336,6 +328,43 @@ message TrustChainResponse {
     // satisfy the trust chain request. If error_message is set, the Agent
     // MUST terminate the connection.
     string error_message = 2;
+}
+
+// SignedServerToAgent wraps a ServerToAgent message when the payload trust
+// verification handshake has been negotiated between Server and Agent. When
+// both AgentCapabilities_RequiresPayloadTrustVerification (set by the Agent)
+// and ServerCapabilities_OffersPayloadTrustVerification (set by the Server)
+// are advertised, every Server-to-Agent message on the connection is wrapped
+// in SignedServerToAgent.
+//
+// The signature is computed and verified over the bytes of the payload field
+// exactly as they appear on the wire (a "detached" signature). This avoids
+// any dependency on canonical protobuf encoding, which is not guaranteed
+// across protobuf library versions, schema changes, or build flags.
+//
+// See the Message Attestation section of the specification.
+// Status: [Development]
+message SignedServerToAgent {
+    // Serialised bytes of a ServerToAgent message. The Agent verifies the
+    // detached signature over these exact bytes, without re-marshalling,
+    // and then unmarshals them into a ServerToAgent for normal processing.
+    bytes payload = 1;
+
+    // Detached signature over the bytes of the payload field. MAY be empty
+    // on the first SignedServerToAgent of a connection: trust on the first
+    // message is established by validating the certificate chain carried in
+    // trust_chain_response against the Agent's pre-configured payload trust
+    // anchor. MUST be present and verifiable on every subsequent
+    // SignedServerToAgent.
+    bytes signature = 2;
+
+    // Sent only in the first SignedServerToAgent on a connection. Carries
+    // the signing certificate chain the Agent will use to verify signatures
+    // on subsequent messages. If the Agent set
+    // RequiresPayloadTrustVerification but the first SignedServerToAgent
+    // does not include a usable trust_chain_response, the Agent MUST
+    // terminate the connection.
+    TrustChainResponse trust_chain_response = 3;
 }
 
 // The OpAMPConnectionSettings message is a collection of fields which comprise an

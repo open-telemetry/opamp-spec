@@ -54,8 +54,6 @@ Status: [Beta]
       - [ServerToAgent.command](#servertoagentcommand)
       - [ServerToAgent.custom_capabilities](#servertoagentcustom_capabilities)
       - [ServerToAgent.custom_message](#servertoagentcustom_message)
-      - [ServerToAgent.trust_chain_response](#servertoagenttrust_chain_response)
-      - [ServerToAgent.signature](#servertoagentsignature)
     + [ServerErrorResponse Message](#servererrorresponse-message)
       - [ServerErrorResponse.type](#servererrorresponsetype)
       - [ServerErrorResponse.error_message](#servererrorresponseerror_message)
@@ -233,6 +231,10 @@ Status: [Beta]
   * [Opt-in and Backwards Compatibility](#opt-in-and-backwards-compatibility)
   * [Capability Negotiation](#capability-negotiation)
   * [Connection-Time Handshake](#connection-time-handshake)
+    + [SignedServerToAgent Message](#signedservertoagent-message)
+      - [SignedServerToAgent.payload](#signedservertoagentpayload)
+      - [SignedServerToAgent.signature](#signedservertoagentsignature)
+      - [SignedServerToAgent.trust_chain_response](#signedservertoagenttrust_chain_response)
     + [TrustChainResponse Message](#trustchainresponse-message)
       - [TrustChainResponse.certificate_chain](#trustchainresponsecertificate_chain)
       - [TrustChainResponse.error_message](#trustchainresponseerror_message)
@@ -988,32 +990,6 @@ Status: [Development]
 A custom message sent from the Server to an Agent.
 
 See [CustomMessage](#custommessage) message for details.
-
-##### ServerToAgent.trust_chain_response
-
-Status: [Development]
-
-Sent by the Server in its first `ServerToAgent` message in response to an
-Agent that has set the
-[`RequiresPayloadTrustVerification`](#agenttoservercapabilities) capability. The
-Agent uses the contained certificate chain to verify the signature on
-every subsequent `ServerToAgent` message.
-
-See the [Message Attestation](#message-attestation) section for the full
-handshake and verification procedure, and the
-[`TrustChainResponse`](#trustchainresponse-message) message for the field
-layout.
-
-##### ServerToAgent.signature
-
-Status: [Development]
-
-The signature of this `ServerToAgent` message. Set by the Server only
-after a successful payload trust verification handshake, and verified by
-the Agent against the leaf certificate established by that handshake.
-
-The exact bytes that are signed and the verification procedure are
-defined in the [Message Attestation](#message-attestation) section.
 
 #### ServerErrorResponse Message
 
@@ -3712,52 +3688,69 @@ specification until both sides opt in.**
 
 The new capability bits are additions to a 64-bit bitmask.
 Implementations that do not recognise the new bits will simply not match
-them and will behave exactly as today. The new `ServerToAgent` fields
-(`trust_chain_response` and `signature`) are proto3 scalar/message
-additions and are ignored by implementations that predate them.
+them and will behave exactly as today.
 
-A Server may advertise `OffersPayloadTrustVerification` and only sign
-`ServerToAgent` messages on connections from Agents that have set
-`RequiresPayloadTrustVerification` — there is no per-message cost for
-advertising the capability to non-opted-in Agents.
+The `SignedServerToAgent` envelope is sent **only** when the negotiation
+succeeds. For connections where Message Attestation is not negotiated,
+the wire format is byte-identical to upstream OpAMP — the Server keeps
+sending plain `ServerToAgent` messages, and the Agent keeps parsing
+them as such. Implementations that do not implement Message Attestation
+therefore see no wire-format change at all.
+
+A Server may advertise `OffersPayloadTrustVerification` and only wrap
+its outbound messages in `SignedServerToAgent` on connections from
+Agents that have set `RequiresPayloadTrustVerification` — there is no
+per-message cost for advertising the capability to non-opted-in Agents.
 
 ### Capability Negotiation
 
 | Agent `Requires` | Server `Offers` | Behaviour |
 | --- | --- | --- |
-| No | No | Plain OpAMP. Today's behaviour. |
-| No | Yes | Plain OpAMP. The Server is capable of signing but the Agent has not opted in, so no `trust_chain_response` is sent and no signatures are emitted. |
-| Yes | No | The Server's first `ServerToAgent` lacks `trust_chain_response`. The Agent MUST terminate the connection. |
-| Yes | Yes | Handshake on the first `ServerToAgent`; per-message signatures thereafter. Specified in the remainder of this section. |
+| No | No | Plain OpAMP. The Server sends `ServerToAgent` messages on the wire. Today's behaviour. |
+| No | Yes | Plain OpAMP. The Server is capable of signing but the Agent has not opted in, so the Server sends `ServerToAgent` messages on the wire (not `SignedServerToAgent`). |
+| Yes | No | The Server does not send `SignedServerToAgent`. The Agent receives a plain `ServerToAgent` where it expected a `SignedServerToAgent` envelope, and MUST terminate the connection. |
+| Yes | Yes | Every Server-to-Agent message on the connection is wrapped in `SignedServerToAgent`. Handshake on the first message (carries `trust_chain_response`); per-message detached signatures thereafter. Specified in the remainder of this section. |
 
 ### Connection-Time Handshake
 
 When the Agent has set `RequiresPayloadTrustVerification` and the Server
-has set `OffersPayloadTrustVerification`, the first `ServerToAgent`
-message exchanged on the connection MUST carry a
-[`trust_chain_response`](#servertoagenttrust_chain_response).
+has set `OffersPayloadTrustVerification`, every Server-to-Agent message
+on the connection is wrapped in a `SignedServerToAgent` envelope. The
+first such envelope carries the signing certificate chain in
+`trust_chain_response`.
 
 1. The Agent's first `AgentToServer` message sets the
    `RequiresPayloadTrustVerification` bit in `capabilities`.
 
-2. The Server's first `ServerToAgent` message:
-   * MUST set `trust_chain_response.certificate_chain` to the ordered
-     list of certificates from the first intermediate down to the
-     signing leaf certificate. The root certificate (the Agent's
-     pre-configured payload trust anchor) MUST NOT be included in this
-     chain.
+2. The Server, on receiving the Agent's first message and recognising
+   the capability:
+   * Sends its first `SignedServerToAgent` containing
+     `trust_chain_response.certificate_chain` ordered from the first
+     intermediate down to the signing leaf certificate. The root
+     certificate (the Agent's pre-configured payload trust anchor)
+     MUST NOT be included in this chain.
    * MAY set `trust_chain_response.error_message` if the Server cannot
      satisfy the trust chain request (for example, because its signing
      key is unavailable). When `error_message` is non-empty,
      `certificate_chain` SHOULD be empty.
-   * MAY omit the [`signature`](#servertoagentsignature) field on this
-     first message. Trust on the first message is established by chain
-     validation against the pre-configured trust anchor, not by a
-     self-signature. Every subsequent `ServerToAgent` MUST be signed.
+   * MAY leave `signature` empty on this first envelope. Trust on the
+     first message is established by chain validation against the
+     pre-configured trust anchor, not by a self-signature. Every
+     subsequent `SignedServerToAgent` MUST carry a valid signature.
+   * Sets `payload` to the marshalled bytes of a `ServerToAgent`
+     message containing whatever the Server would have sent had
+     signing not been negotiated (for example, an empty `ServerToAgent`
+     acknowledging the Agent's status report, or a `ServerToAgent`
+     carrying initial `remote_config`).
 
-3. The Agent receives the Server's first `ServerToAgent` and:
-   * If `trust_chain_response` is unset, the Agent MUST terminate the
-     connection.
+3. The Agent receives the Server's first envelope and:
+   * Parses the bytes on the wire as `SignedServerToAgent`. If the
+     bytes cannot be parsed as `SignedServerToAgent`, or
+     `trust_chain_response` is unset, the Agent MUST terminate the
+     connection. (This is also how the Agent detects a Server that
+     does not support Message Attestation: such a Server would send a
+     plain `ServerToAgent`, which does not parse as
+     `SignedServerToAgent`.)
    * If `trust_chain_response.error_message` is non-empty, the Agent
      MUST terminate the connection.
    * Otherwise the Agent performs standard X.509 path validation of
@@ -3767,8 +3760,48 @@ message exchanged on the connection MUST carry a
      `id-kp-codeSigning` Extended Key Usage on the leaf, or revocation
      — the Agent MUST terminate the connection.
    * On successful validation, the Agent stores the validated leaf
-     certificate (or its public key) for the duration of the connection
-     and uses it to verify every subsequent `ServerToAgent` message.
+     certificate (or its public key) for the duration of the
+     connection and uses it to verify every subsequent
+     `SignedServerToAgent`.
+   * The Agent then unmarshals the `payload` bytes into a
+     `ServerToAgent` and processes it normally.
+
+#### SignedServerToAgent Message
+
+```protobuf
+message SignedServerToAgent {
+    // Serialised bytes of a ServerToAgent message.
+    bytes payload = 1;
+
+    // Detached signature over the bytes of the payload field.
+    bytes signature = 2;
+
+    // Sent only in the first SignedServerToAgent on a connection.
+    TrustChainResponse trust_chain_response = 3;
+}
+```
+
+##### SignedServerToAgent.payload
+
+Marshalled bytes of an inner `ServerToAgent` message. The Server
+marshals the inner `ServerToAgent` once and places the resulting bytes
+here. The signature in `signature` covers these exact bytes; the Agent
+verifies the signature without re-marshalling, and then unmarshals
+these bytes into a `ServerToAgent` for normal processing.
+
+##### SignedServerToAgent.signature
+
+Detached signature over the bytes of `payload`. MAY be empty on the
+first `SignedServerToAgent` of a connection — chain validation against
+the pre-configured trust anchor establishes initial trust. MUST be
+present and verifiable on every subsequent message.
+
+##### SignedServerToAgent.trust_chain_response
+
+Sent only in the first `SignedServerToAgent` on a connection. Carries
+the signing certificate chain the Agent will use to verify signatures
+on subsequent messages. See
+[TrustChainResponse Message](#trustchainresponse-message).
 
 #### TrustChainResponse Message
 
@@ -3807,38 +3840,59 @@ SHOULD be empty and the Agent MUST terminate the connection.
 
 ### In-Session Signature Verification
 
-For every `ServerToAgent` message after the first, the Server MUST set
-the `signature` field to a signature over the message bytes, computed as
-follows:
+Signatures are computed and verified **over the bytes of the inner
+`ServerToAgent` exactly as they appear on the wire in
+`SignedServerToAgent.payload`** — a "detached" signature scheme. The
+Server marshals each inner `ServerToAgent` once, signs those bytes,
+and places them into `payload`; the Agent verifies the signature over
+the received `payload` bytes without re-marshalling.
 
-1. Construct the `ServerToAgent` message with all required fields set
-   except `signature`, which is left empty (zero-length).
-2. Serialise the message using deterministic Protocol Buffers encoding
-   (for example, Go's `proto.MarshalOptions{Deterministic: true}` or
-   the equivalent in other implementations).
-3. Sign the resulting byte string with the Server's signing private
-   key, using the signature algorithm declared by the leaf
+> **Why detached signing?** Protocol Buffers does not guarantee a
+> canonical wire-format encoding, even with deterministic-output
+> options enabled. The serializer can produce different output across
+> protobuf library versions, schema changes, and build flags (see the
+> upstream guidance at
+> <https://protobuf.dev/programming-guides/serialization-not-canonical/>).
+> Any signature scheme that requires the receiver to re-marshal a
+> parsed message and reproduce the signed bytes would therefore be
+> fragile across implementations and versions. Detached signing over
+> the wire bytes side-steps the problem entirely: the signed bytes are
+> the wire bytes, and they survive any number of round-trips through
+> different protobuf libraries.
+
+The Server produces a `SignedServerToAgent` as follows:
+
+1. Construct the inner `ServerToAgent` message normally.
+2. Marshal the inner message to bytes using any conformant Protocol
+   Buffers encoder. (No special "deterministic" option is required;
+   the only bytes that matter are the ones placed on the wire.)
+3. Compute a signature over those bytes using the Server's signing
+   private key and the signature algorithm declared by the leaf
    certificate's `signatureAlgorithm` field.
-4. Set `signature` to the resulting signature bytes.
+4. Construct the outer `SignedServerToAgent` with `payload` set to the
+   marshalled bytes from step 2 and `signature` set to the signature
+   from step 3. On the first message, also set `trust_chain_response`.
+5. Marshal and send the `SignedServerToAgent`.
 
-The Agent verifies a received `ServerToAgent` message as follows:
+The Agent verifies a received `SignedServerToAgent` (after the first)
+as follows:
 
-1. Extract the `signature` field. If `signature` is empty or absent on
-   any message after the handshake, the Agent MUST terminate the
+1. Parse the wire bytes as a `SignedServerToAgent`. Retain the
+   `payload` field's raw bytes — these are the bytes the signature
+   covers.
+2. If `signature` is empty or absent, the Agent MUST terminate the
    connection.
-2. Construct a copy of the received message with `signature` cleared
-   (set to empty bytes).
-3. Serialise the copy using deterministic Protocol Buffers encoding.
-4. Verify the extracted `signature` against the resulting byte string
-   using the public key of the leaf certificate established during the
-   handshake, and the signature algorithm declared by the leaf
-   certificate's `signatureAlgorithm`.
-5. If verification fails, the Agent MUST terminate the connection.
+3. Verify `signature` over the `payload` bytes using the public key of
+   the leaf certificate established during the handshake, and the
+   signature algorithm declared by the leaf certificate's
+   `signatureAlgorithm`.
+4. If verification fails, the Agent MUST terminate the connection.
+5. On success, unmarshal the `payload` bytes into a `ServerToAgent`
+   and process it normally.
 
-Implementations MUST use deterministic Protocol Buffers encoding for
-both signing and verification. Cross-language implementations must
-produce byte-identical canonical serialisations for the signed payload
-to interoperate.
+Because the signature is detached, the Agent never needs to re-marshal
+the inner `ServerToAgent`. This eliminates any dependency on canonical
+serialisation between implementations.
 
 ### Algorithm
 
@@ -3889,12 +3943,12 @@ connection. Recovery is by reconnection; the Server presents a
 
 | Failure | When detected |
 | --- | --- |
-| Agent set `RequiresPayloadTrustVerification` but the Server did not set `OffersPayloadTrustVerification`. | First `ServerToAgent` (capability bits visible at that time). |
-| Server's first `ServerToAgent` does not include `trust_chain_response`. | First `ServerToAgent`. |
-| `trust_chain_response.error_message` is non-empty. | First `ServerToAgent`. |
-| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First `ServerToAgent`. |
-| In-session `ServerToAgent` message lacks `signature`. | Any subsequent `ServerToAgent`. |
-| In-session `signature` does not verify against the stored leaf certificate. | Any subsequent `ServerToAgent`. |
+| Agent set `RequiresPayloadTrustVerification` but the Server did not send a `SignedServerToAgent` envelope (typically because the Server does not support the capability and sent a plain `ServerToAgent`). | First message received from the Server. |
+| First `SignedServerToAgent` does not include `trust_chain_response`. | First message. |
+| `trust_chain_response.error_message` is non-empty. | First message. |
+| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First message. |
+| In-session `SignedServerToAgent` lacks `signature`. | Any subsequent message. |
+| In-session `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Any subsequent message. |
 | Stored leaf certificate's validity window has expired since the handshake. | The next verification after expiry. |
 
 ### Out of Scope
