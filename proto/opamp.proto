@@ -169,7 +169,7 @@ message AvailableComponents {
     // Agent-calculated hash of the components.
     // This hash should be included in every AvailableComponents message.
     bytes hash = 2;
- }
+}
 
 message ComponentDetails {
     // Extra key/value pairs that may be used to describe the component.
