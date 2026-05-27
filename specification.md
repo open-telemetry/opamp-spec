@@ -140,7 +140,7 @@ Status: [Beta]
       - [TLSConnectionSettings.insecure_skip_verify](#tlsconnectionsettingsinsecure_skip_verify)
       - [TLSConnectionSettings.min_version](#tlsconnectionsettingsmin_version)
       - [TLSConnectionSettings.max_version](#tlsconnectionsettingsmax_version)
-      - [TLSConnectionSettings.ciper_suites](#tlsconnectionsettingsciper_suites)
+      - [TLSConnectionSettings.cipher_suites](#tlsconnectionsettingscipher_suites)
     + [ProxyConnectionSettings Message](#proxyconnectionsettings-message)
       - [ProxyConnectionSettings.url](#proxyconnectionsettingsurl)
       - [ProxyConnectionSettings.connect_headers](#proxyconnectionsettingsconnect_headers)
@@ -777,7 +777,7 @@ See [AvailableComponents](#availablecomponents-message) message for details.
 
 Status: [Development]
 
-The status of the connection settings that was previously recieved from the
+The status of the connection settings that was previously received from the
 Server. See [ConnectionSettingsStatus](#connectionsettingsstatus-message)
 message for details. This field SHOULD be unset if this information is unchanged
 since the last AgentToServer message. This field is a part of the
@@ -1380,7 +1380,7 @@ message ConnectionSettingsStatus {
         // Agent is currently applying the offered connection settings that it received earlier.
         APPLYING = 2;
 
-        // Agent tried to apply the offered connection settings recieved earlier, but it failed.
+        // Agent tried to apply the offered connection settings received earlier, but it failed.
         // See error_message for more details.
         FAILED = 3;
     }
@@ -1548,7 +1548,7 @@ An error message if the status is erroneous.
 
 Status: [Development]
 
-The download_details contains additional details that descibe a package download.
+The download_details contains additional details that describe a package download.
 It should only be set if the status is `DOWNLOADING`.
 
 ```protobuf
@@ -2281,7 +2281,7 @@ This sets the minimum supported TLS version the client will use. For example:
 This sets the maximum supported TLS version the client will use. For example:
 `1.2`, `TLSv1.2`.
 
-##### TLSConnectionSettings.ciper_suites
+##### TLSConnectionSettings.cipher_suites
 
 This sets the supported cipher suites that may be used by the connection. For
 example: `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`.

@@ -23,6 +23,18 @@
   draft was superseded by the `SignedServerToAgent` envelope so the
   numbers can never be reused).
 
+## v0.18.0
+
+* Fix OpAMP port in example by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/331
+* Fix max_version field comment in proto by @RassK in https://github.com/open-telemetry/opamp-spec/pull/336
+* Include version in package name by @RassK in https://github.com/open-telemetry/opamp-spec/pull/251
+* Add namespace for C# by @RassK in https://github.com/open-telemetry/opamp-spec/pull/243
+
+### New Contributors
+* @RassK made their first contribution in https://github.com/open-telemetry/opamp-spec/pull/336
+
+**Full Changelog**: https://github.com/open-telemetry/opamp-spec/compare/v0.17.0...v0.18.0
+
 ## v0.17.0
 
 * Fix typos in TLS version comments by @Kielek in https://github.com/open-telemetry/opamp-spec/pull/316
