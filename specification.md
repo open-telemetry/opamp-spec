@@ -562,8 +562,9 @@ response via the "Accept-Encoding" header.
 #### Plain HTTP Message Size Limits
 
 All plain HTTP message size limits in this section apply to the complete HTTP
-body. It is RECOMMENDED to use 64 MiB as the default limit for each limit in
-this section. Implementations SHOULD allow these limits to be configured.
+request or response body. It is RECOMMENDED to use 64 MiB as the default limit
+for each limit in this section. Implementations SHOULD allow these limits to be
+configured.
 
 The Server MUST enforce a size limit when receiving HTTP request bodies,
 including after decompression, to mitigate possible excessive memory allocation
@@ -574,8 +575,9 @@ Large`.
 The Client MUST enforce a size limit when receiving HTTP response bodies,
 including after decompression, to mitigate possible excessive memory allocation
 caused by a misconfigured or malicious Server sending an oversized response. If
-the limit is exceeded, the Server MUST respond with `HTTP 413 Content Too
-Large`.
+the limit is exceeded, the Client MUST treat the response as failed, MUST NOT
+process the oversized response body, and SHOULD record the fact that the
+response was discarded.
 
 The Server MUST limit the size of HTTP response bodies before sending them,
 including before compression, to avoid overwhelming the Client. If the limit is
