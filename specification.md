@@ -570,7 +570,7 @@ The Server MUST enforce a size limit when receiving HTTP request bodies,
 including after decompression, to mitigate possible excessive memory allocation
 caused by a misconfigured or malicious Client sending an oversized request. If
 the limit is exceeded, the Server MUST respond with `HTTP 413 Content Too
-Large`, after which the Client SHOULD NOT retry the same request.
+Large`, after which the Client MUST NOT retry the same request.
 
 The Client MUST enforce a size limit when receiving HTTP response bodies,
 including after decompression, to mitigate possible excessive memory allocation
