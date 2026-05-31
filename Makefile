@@ -51,11 +51,12 @@ markdownlint:
 
 GENDIR := gen
 # Find all .proto files.
-PROTO_FILES := $(wildcard proto/opamp/proto/v1/*.proto)
+PROTO_FILES := $(wildcard proto/opamp/v1/*.proto)
 
 PROTO_GEN_GO_DIR ?= $(GENDIR)/go
 
-OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.14.0
+# https://github.com/open-telemetry/build-tools/releases 
+OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.25.0
 
 # Docker pull image.
 .PHONY: docker-pull

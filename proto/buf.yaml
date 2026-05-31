@@ -3,7 +3,7 @@ version: v1
 name: buf.build/open-telemetry/opamp-spec
 lint:
   use:
-    - DEFAULT
+    - STANDARD
   except:
     - ENUM_ZERO_VALUE_SUFFIX
     - ENUM_VALUE_PREFIX
