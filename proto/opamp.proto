@@ -812,6 +812,7 @@ message ComponentHealth {
     map<string, ComponentHealth> component_health_map = 6;
 
     // Additional context or metadata for the observed component's status.
+    // Attributes are component specific and outside the concerns of the OpAMP protocol.
     repeated KeyValue attributes = 7;
 }
 

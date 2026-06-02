@@ -1280,6 +1280,7 @@ describe the underlying system.
 ##### ComponentHealth.attributes
 
 Additional context or metadata for the observed component's status.
+Attributes are component specific and outside the concerns of the OpAMP protocol.
 
 #### EffectiveConfig Message
 
