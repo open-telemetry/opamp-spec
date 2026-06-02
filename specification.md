@@ -23,8 +23,10 @@ Status: [Beta]
 - [Communication Model](#communication-model)
   * [WebSocket Transport](#websocket-transport)
     + [WebSocket Message Format](#websocket-message-format)
+    + [WebSocket Message Size Limits](#websocket-message-size-limits)
     + [WebSocket Message Exchange](#websocket-message-exchange)
   * [Plain HTTP Transport](#plain-http-transport)
+    + [Plain HTTP Message Size Limits](#plain-http-message-size-limits)
   * [AgentToServer and ServerToAgent Messages](#agenttoserver-and-servertoagent-messages)
     + [AgentToServer Message](#agenttoserver-message)
       - [AgentToServer.instance_uid](#agenttoserverinstance_uid)
@@ -423,6 +425,39 @@ Note that due to the way Protobuf wire format is designed the size of the `data`
 bytes can be 0 if the encoded AgentToServer or ServerToAgent message is empty (i.e. all
 fields are unset). This is a valid situation.
 
+#### WebSocket Message Size Limits
+
+All WebSocket message size limits in this section apply to the complete OpAMP
+WebSocket message, including both `header` and `data`. It is RECOMMENDED to use
+64 MiB as the default limit for each limit in this section. Implementations
+SHOULD allow these limits to be configured.
+
+The Server MUST enforce a size limit when receiving OpAMP WebSocket messages
+that contain AgentToServer messages, including after any WebSocket extension
+decompression, to mitigate possible excessive memory allocation caused by a
+misconfigured or malicious Client sending an oversized message. If the limit is
+exceeded, the Server MUST treat the message as malformed and SHOULD close the
+WebSocket connection with status code 1009 (Message Too Big).
+
+The Client MUST enforce a size limit when receiving OpAMP WebSocket messages
+that contain ServerToAgent messages, including after any WebSocket extension
+decompression, to mitigate possible excessive memory allocation caused by a
+misconfigured or malicious Server sending an oversized message. If the limit is
+exceeded, the Client MUST treat the message as malformed and SHOULD close the
+WebSocket connection with status code 1009 (Message Too Big).
+
+The Server MUST limit the size of OpAMP WebSocket messages that contain
+ServerToAgent messages before sending them, including before any WebSocket
+extension compression, to avoid overwhelming the Client. If the limit is
+exceeded, the Server MUST NOT send the message and SHOULD record the fact that
+the message was discarded.
+
+The Client SHOULD limit the size of OpAMP WebSocket messages that contain
+AgentToServer messages before sending them, including before any WebSocket
+extension compression, to avoid overwhelming the Server. If the limit is
+exceeded, the Client MUST NOT send the message and SHOULD record the fact that
+the message was discarded.
+
 #### WebSocket Message Exchange
 
 OpAMP over WebSocket is an asynchronous, full-duplex message exchange protocol. The order and
@@ -523,6 +558,36 @@ message.
 
 The Server SHOULD compress the response if the Client indicated it can accept compressed
 response via the "Accept-Encoding" header.
+
+#### Plain HTTP Message Size Limits
+
+All plain HTTP message size limits in this section apply to the complete HTTP
+request or response body. It is RECOMMENDED to use 64 MiB as the default limit
+for each limit in this section. Implementations SHOULD allow these limits to be
+configured.
+
+The Server MUST enforce a size limit when receiving HTTP request bodies,
+including after decompression, to mitigate possible excessive memory allocation
+caused by a misconfigured or malicious Client sending an oversized request. If
+the limit is exceeded, the Server MUST respond with `HTTP 413 Content Too
+Large`, after which the Client MUST NOT retry the same request.
+
+The Client MUST enforce a size limit when receiving HTTP response bodies,
+including after decompression, to mitigate possible excessive memory allocation
+caused by a misconfigured or malicious Server sending an oversized response. If
+the limit is exceeded, the Client MUST treat the response as failed, MUST NOT
+process the oversized response body, and SHOULD record the fact that the
+response was discarded.
+
+The Server MUST limit the size of HTTP response bodies before sending them,
+including before compression, to avoid overwhelming the Client. If the limit is
+exceeded, the Server MUST NOT send the oversized response body and SHOULD record
+the fact that the response was discarded.
+
+The Client SHOULD limit the size of HTTP request bodies before sending them,
+including before compression, to avoid overwhelming the Server. If the limit is
+exceeded, the Client MUST NOT make the request and SHOULD record the fact that
+the request was discarded.
 
 ### AgentToServer and ServerToAgent Messages
 
