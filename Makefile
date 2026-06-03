@@ -51,18 +51,21 @@ markdownlint:
 
 GENDIR := gen
 # Find all .proto files.
-PROTO_FILES := $(wildcard proto/*.proto)
+PROTO_FILES := $(wildcard proto/opamp/v1/*.proto)
 
 PROTO_GEN_GO_DIR ?= $(GENDIR)/go
+PROTO_GEN_PYTHON_DIR ?= $(GENDIR)/python
+PROTO_GEN_CSHARP_DIR ?= $(GENDIR)/csharp
 
-OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.14.0
+# https://github.com/open-telemetry/build-tools/releases 
+OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.25.0
 
 # Docker pull image.
 .PHONY: docker-pull
 docker-pull:
 	docker pull $(OTEL_DOCKER_PROTOBUF)
 
-gen-proto: gen-go
+gen-proto: gen-go gen-python gen-csharp
 .PHONY: gen-proto
 
 # Generate Protobuf Go files.
@@ -72,6 +75,28 @@ gen-go:
 	mkdir -p ./$(PROTO_GEN_GO_DIR)
 
 	# Verify generation of Go protos
-	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -v${PWD}:${PWD} \
+	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -u $(shell id -u):$(shell id -g) -v${PWD}:${PWD} \
         -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
         --go_out=./$(PROTO_GEN_GO_DIR) -I${PWD}/proto/ ${PWD}/$(file)))
+
+# Generate Protobuf Python files.
+.PHONY: gen-python
+gen-python:
+	rm -rf ./$(PROTO_GEN_PYTHON_DIR)
+	mkdir -p ./$(PROTO_GEN_PYTHON_DIR)
+
+	# Verify generation of Python protos
+	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -u $(shell id -u):$(shell id -g) -v${PWD}:${PWD} \
+        -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
+        --python_out=./$(PROTO_GEN_PYTHON_DIR) -I${PWD}/proto/ ${PWD}/$(file)))
+
+# Generate Protobuf C# files.
+.PHONY: gen-csharp
+gen-csharp:
+	rm -rf ./$(PROTO_GEN_CSHARP_DIR)
+	mkdir -p ./$(PROTO_GEN_CSHARP_DIR)
+
+	# Verify generation of C# protos
+	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -u $(shell id -u):$(shell id -g) -v${PWD}:${PWD} \
+        -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
+        --csharp_out=./$(PROTO_GEN_CSHARP_DIR) -I${PWD}/proto/ ${PWD}/$(file)))

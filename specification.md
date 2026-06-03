@@ -3692,8 +3692,8 @@ the new capabilities.
 
 #### Protobuf Schema Stability
 
-The specification provides the follow stability guarantees of the
-[Protobuf definitions](proto/opamp.proto) for OpAMP 1.0:
+The specification provides the following stability guarantees of the
+[Protobuf definitions](proto/opamp/v1/opamp.proto) for OpAMP 1.0:
 
 - Field types, numbers and names will not change.
 - Names of messages and enums will not change.
