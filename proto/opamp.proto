@@ -1047,6 +1047,10 @@ message AgentConfigFile {
     // Optional MIME Content-Type that describes what's in the body field, for
     // example "text/yaml".
     string content_type = 2;
+
+    // Optional role of the content in the body field. The values and their semantics are
+    // Agent-type specific.
+    string role = 3;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
