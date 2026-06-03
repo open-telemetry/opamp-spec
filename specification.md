@@ -3601,8 +3601,7 @@ This section specifies an optional, end-to-end integrity mechanism for
 `ServerToAgent` messages based on X.509 certificate chains. When both the
 Server and the Agent opt in, every `ServerToAgent` message sent after the
 initial handshake carries a signature that the Agent verifies against a
-pre-configured trust anchor (a CA certificate) that is **distinct** from
-the TLS certificate authority used to establish the transport.
+pre-configured trust anchor (a CA certificate).
 
 The mechanism allows OpAMP deployments to separate the _distribution
 server_ from the _authoritative source of OpAMP messages_. A compromised
@@ -3653,10 +3652,14 @@ The Agent is pre-configured with a single root CA certificate, referred
 to in this section as the _payload trust anchor_. This certificate is
 operator-managed and is supplied to the Agent through
 implementation-specific configuration (for example, a file path in the
-Agent's configuration). The payload trust anchor MUST NOT be the same
-certificate as the TLS root the Agent uses to validate the transport —
-using the same root would collapse two separate trust domains into one
-and eliminate the security benefit.
+Agent's configuration). The payload trust anchor MUST NOT carry the `id-kp-serverAuth`
+Extended Key Usage, ensuring it cannot double as a TLS CA certificate.
+Operators MAY root both the TLS chain and the signing chain from the
+same root CA, provided the signing intermediate and leaf certificates
+carry only `id-kp-codeSigning` and the signing private key is stored
+separately from the distribution server. The security boundary is the
+combination of private-key isolation and EKU constraints — not a
+requirement for a separate root CA.
 
 The Server is independently configured with a signing key and its
 corresponding certificate chain that validates back to the payload trust
