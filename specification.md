@@ -3672,6 +3672,14 @@ update or replace the Agent's payload trust anchor. This is a deliberate
 constraint to prevent a compromised Server from rotating the Agent onto
 an attacker-controlled trust anchor.
 
+When the payload trust anchor approaches expiry or must be replaced,
+rotation is handled by the same out-of-band mechanism used to provision
+it initially (for example, updating the certificate file in the Agent's
+configuration and restarting the Agent). Operators SHOULD plan for this
+operational burden, such as using a long-lived root CA or automating
+certificate distribution through their existing configuration-management
+tooling.
+
 ### Opt-in and Backwards Compatibility
 
 Message Attestation is a strict opt-in feature.
@@ -3941,8 +3949,12 @@ short-lived certificates as an alternative to active revocation.
 ### Failure Modes
 
 Every failure listed below MUST cause the Agent to terminate the OpAMP
-connection. Recovery is by reconnection; the Server presents a
-(potentially rotated) chain on the new handshake.
+connection. The Agent SHOULD reconnect using exponential backoff consistent
+with normal OpAMP reconnection behaviour; on reconnection the Server presents
+a (potentially rotated) chain on the new handshake. Because these failures
+are detected locally by the Agent, no dedicated error-response field is
+required — the Agent terminates the connection without waiting for a
+`ServerToAgent.error_response`.
 
 | Failure | When detected |
 | --- | --- |
