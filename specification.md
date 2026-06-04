@@ -3665,7 +3665,7 @@ The Server is independently configured with a signing key and its
 corresponding certificate chain that validates back to the payload trust
 anchor.
 
-The payload trust anchor is NEVER pushed by the Server. In particular,
+The payload trust anchor is NEVER sent from the Server to the Agent. In particular,
 no field of any `ServerToAgent` message — including
 [`OpAMPConnectionSettings`](#opampconnectionsettings) — may be used to
 update or replace the Agent's payload trust anchor. This is a deliberate
@@ -3764,12 +3764,15 @@ first such envelope carries the signing certificate chain in
      `SignedServerToAgent`.)
    * If `trust_chain_response.error_message` is non-empty, the Agent
      MUST terminate the connection.
-   * Otherwise the Agent performs standard X.509 path validation of
-     `certificate_chain` using the pre-configured payload trust anchor
-     as the trust root. If validation fails — for any reason, including
-     expired leaf, expired intermediate, unknown issuer, missing
-     `id-kp-codeSigning` Extended Key Usage on the leaf, or revocation
-     — the Agent MUST terminate the connection.
+   * Otherwise the Agent MUST perform X.509 certification path
+     validation as defined in [RFC 5280 §6](https://datatracker.ietf.org/doc/html/rfc5280#section-6),
+     using the pre-configured payload trust anchor as the sole trust
+     anchor, `certificate_chain` as the intermediate and leaf
+     certificates, and `id-kp-codeSigning` (`1.3.6.1.5.5.7.3.3`) in the
+     acceptable EKU set. If path validation fails for any reason —
+     including expired certificate, unknown issuer, missing
+     `id-kp-codeSigning` EKU, failed name/policy constraints, or
+     revocation — the Agent MUST terminate the connection.
    * On successful validation, the Agent stores the validated leaf
      certificate (or its public key) for the duration of the
      connection and uses it to verify every subsequent
