@@ -74,6 +74,7 @@ Status: [Beta]
       - [ComponentHealth.status](#componenthealthstatus)
       - [ComponentHealth.status_time_unix_nano](#componenthealthstatus_time_unix_nano)
       - [ComponentHealth.component_health_map](#componenthealthcomponent_health_map)
+      - [ComponentHealth.attributes](#componenthealthattributes)
     + [EffectiveConfig Message](#effectiveconfig-message)
       - [EffectiveConfig.config_map](#effectiveconfigconfig_map)
     + [RemoteConfigStatus Message](#remoteconfigstatus-message)
@@ -1307,6 +1308,7 @@ message ComponentHealth {
     string status = 4;
     fixed64 status_time_unix_nano = 5;
     map<string, ComponentHealth> component_health_map = 6;
+    repeated KeyValue attributes = 7;
 }
 ```
 
@@ -1339,6 +1341,11 @@ nanoseconds since 00:00:00 UTC on 1 January 1970.
 
 A map to store more granular, sub-component health. It can nest as deeply as needed to
 describe the underlying system.
+
+##### ComponentHealth.attributes
+
+Additional context or metadata for the observed component's status.
+Attributes are component specific and outside the concerns of the OpAMP protocol.
 
 #### EffectiveConfig Message
 

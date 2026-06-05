@@ -811,6 +811,11 @@ message ComponentHealth {
     // A map to store more granular, sub-component health. It can nest as deeply as needed to
     // describe the underlying system.
     map<string, ComponentHealth> component_health_map = 6;
+
+    // Additional context or metadata for the observed component's status.
+    // Attributes are component specific and outside the concerns of the OpAMP protocol.
+    // Status: [Development]
+    repeated KeyValue attributes = 7;
 }
 
 message EffectiveConfig {
