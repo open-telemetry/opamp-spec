@@ -813,6 +813,7 @@ message ComponentHealth {
 
     // Additional context or metadata for the observed component's status.
     // Attributes are component specific and outside the concerns of the OpAMP protocol.
+    // Status: [Development]
     repeated KeyValue attributes = 7;
 }
 
