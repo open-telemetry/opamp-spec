@@ -3387,13 +3387,15 @@ frame and follow the procedure defined by WebSocket standard.
 #### Plain HTTP Transport
 
 Although the Client is logically disconnected as soon as the OpAMP HTTP response
-is completed, the Client SHOULD include the `agent_disconnect` field in the last
+is completed, the Client SHOULD include the
+[agent_disconnect](#agenttoserveragent_disconnect) field in the last
 AgentToServer message when the Client is shutting down or when the Client is about
 to use new OpAMP connection settings. This allows the Server to immediately mark
 the Agent as disconnected rather than waiting for missed polling intervals, which
 is especially useful for large reporting intervals.
 
-If the Client is unable to send `agent_disconnect` (e.g. due to an abrupt
+If the Client is unable to send
+[agent_disconnect](#agenttoserveragent_disconnect) (e.g. due to an abrupt
 termination), the Server may use its own business logic to decide what it considers
 an active Agent (e.g. a Client that continuously polls) vs an inactive Agent (e.g.
 a Client that has not made an HTTP request for a specific period of time). This
