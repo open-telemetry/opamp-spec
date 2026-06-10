@@ -227,6 +227,24 @@ Status: [Beta]
   * [Configuration Restrictions](#configuration-restrictions)
   * [Opt-in Remote Configuration](#opt-in-remote-configuration)
   * [Code Signing](#code-signing)
+- [Message Attestation](#message-attestation)
+  * [Motivation and Threat Model](#motivation-and-threat-model)
+  * [Trust Model](#trust-model)
+  * [Opt-in and Backwards Compatibility](#opt-in-and-backwards-compatibility)
+  * [Capability Negotiation](#capability-negotiation)
+  * [Connection-Time Handshake](#connection-time-handshake)
+    + [SignedServerToAgent Message](#signedservertoagent-message)
+      - [SignedServerToAgent.payload](#signedservertoagentpayload)
+      - [SignedServerToAgent.signature](#signedservertoagentsignature)
+      - [SignedServerToAgent.trust_chain_response](#signedservertoagenttrust_chain_response)
+    + [TrustChainResponse Message](#trustchainresponse-message)
+      - [TrustChainResponse.certificate_chain](#trustchainresponsecertificate_chain)
+      - [TrustChainResponse.error_message](#trustchainresponseerror_message)
+  * [In-Session Signature Verification](#in-session-signature-verification)
+  * [Algorithm](#algorithm)
+  * [Certificate Requirements](#certificate-requirements)
+  * [Failure Modes](#failure-modes)
+  * [Out of Scope](#out-of-scope)
 - [Interoperability](#interoperability)
   * [Interoperability of Partial Implementations](#interoperability-of-partial-implementations)
   * [Interoperability of Future Capabilities](#interoperability-of-future-capabilities)
@@ -721,6 +739,12 @@ enum AgentCapabilities {
     // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
     // Status: [Development]
     ReportsConnectionSettingsStatus = 0x00008000;
+    // The Agent requires the payload trust verification handshake on connection
+    // and signature verification on every subsequent ServerToAgent message.
+    // If the Server does not offer this capability, the Agent MUST terminate
+    // the connection. See the [Message Attestation](#message-attestation) section.
+    // Status: [Development]
+    RequiresPayloadTrustVerification = 0x00010000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -982,6 +1006,11 @@ enum ServerCapabilities {
     // The Server can accept ConnectionSettingsRequest and respond with an offer.
     // Status: [Development]
     AcceptsConnectionSettingsRequest = 0x00000040;
+    // The Server can respond to the payload trust verification handshake and
+    // sign every ServerToAgent message it sends after the handshake.
+    // See the [Message Attestation](#message-attestation) section.
+    // Status: [Development]
+    OffersPayloadTrustVerification = 0x00000080;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -3606,8 +3635,11 @@ Agent by default. The capabilities should be opt-in by the user.
 ### Code Signing
 
 Any executable code that is part of a package should be signed
-to prevent a compromised Server from delivering malicious code to the Agent. We
-recommend the following:
+to prevent a compromised Server from delivering malicious code to the Agent.
+For end-to-end integrity of OpAMP messages themselves (including remote
+configuration offers, package offers, and Server-issued commands), see the
+[Message Attestation](#message-attestation) section.
+We recommend the following:
 
 * Any downloadable executable code (e.g. executable packages)
   need to be code-signed. The actual code-signing and verification mechanism is
@@ -3625,6 +3657,407 @@ recommend the following:
   code that it runs as external processes) at the minimum possible privilege to
   prevent the code from accessing sensitive files or perform high privilege
   operations. The Agent should not run downloaded code as root user.
+
+## Message Attestation
+
+**Status: [Development]**
+
+This section specifies an optional, end-to-end integrity mechanism for
+`ServerToAgent` messages based on X.509 certificate chains. When both the
+Server and the Agent opt in, every `ServerToAgent` message sent after the
+initial handshake carries a signature that the Agent verifies against a
+pre-configured trust anchor (a CA certificate).
+
+The mechanism allows OpAMP deployments to separate the _distribution
+server_ from the _authoritative source of OpAMP messages_. A compromised
+distribution server cannot, in this model, push arbitrary configuration
+or commands to an Agent, because every message must be signed by a key
+whose trust chain validates against the Agent's pre-configured root.
+
+### Motivation and Threat Model
+
+TLS provides transport-level security between Server and Agent. It does
+not provide end-to-end integrity from the authoritative source of OpAMP
+messages: if TLS is terminated at a third-party load balancer, or if a
+managed OpAMP server is operated by a vendor, the distribution server
+can be a single point of control over the fleet. Even when TLS is not
+terminated by a third party, a software exploit of the distribution
+server (for example, a remote code execution vulnerability) could allow
+an attacker to take over the entire fleet.
+
+Without message-level signatures, the following attack vectors are not
+mitigated by the protocol itself:
+
+* A compromised distribution server may forge or modify
+  [`ServerToAgent.remote_config`](#servertoagentremote_config),
+  [`ServerToAgent.connection_settings`](#servertoagentconnection_settings),
+  [`ServerToAgent.packages_available`](#servertoagentpackages_available),
+  [`ServerToAgent.command`](#servertoagentcommand),
+  [`ServerToAgent.agent_identification`](#servertoagentagent_identification),
+  or any other field, even though such messages did not originate from
+  the intended authoritative source.
+
+* An internal attacker who can access the distribution server's stored
+  state, but not the signing keys, can still alter OpAMP messages in
+  flight.
+
+Message Attestation does **not** address:
+
+* Encryption of `ServerToAgent` or `AgentToServer` message contents
+  (the transport-level encryption provided by TLS remains the mechanism
+  for confidentiality).
+* Authentication of `AgentToServer` messages (the Server's ability to
+  verify the authenticity of Agent messages is out of scope for this
+  section; see
+  [opamp-spec issue #20](https://github.com/open-telemetry/opamp-spec/issues/20)).
+
+### Trust Model
+
+The Agent is pre-configured with a single root CA certificate, referred
+to in this section as the _payload trust anchor_. This certificate is
+operator-managed and is supplied to the Agent through
+implementation-specific configuration (for example, a file path in the
+Agent's configuration). The payload trust anchor MUST NOT carry the `id-kp-serverAuth`
+Extended Key Usage, ensuring it cannot double as a TLS CA certificate.
+Operators MAY root both the TLS chain and the signing chain from the
+same root CA, provided the signing intermediate and leaf certificates
+carry only `id-kp-codeSigning` and the signing private key is stored
+separately from the distribution server. The security boundary is the
+combination of private-key isolation and EKU constraints — not a
+requirement for a separate root CA.
+
+The Server is independently configured with a signing key and its
+corresponding certificate chain that validates back to the payload trust
+anchor.
+
+The payload trust anchor is NEVER sent from the Server to the Agent. In particular,
+no field of any `ServerToAgent` message — including
+[`OpAMPConnectionSettings`](#opampconnectionsettings) — may be used to
+update or replace the Agent's payload trust anchor. This is a deliberate
+constraint to prevent a compromised Server from rotating the Agent onto
+an attacker-controlled trust anchor.
+
+When the payload trust anchor approaches expiry or must be replaced,
+rotation is handled by the same out-of-band mechanism used to provision
+it initially (for example, updating the certificate file in the Agent's
+configuration and restarting the Agent). Operators SHOULD plan for this
+operational burden, such as using a long-lived root CA or automating
+certificate distribution through their existing configuration-management
+tooling.
+
+### Opt-in and Backwards Compatibility
+
+Message Attestation is a strict opt-in feature.
+
+**Implementations that do not implement Message Attestation are not
+required to change. Existing OpAMP deployments are unaffected by this
+specification until both sides opt in.**
+
+* Agents opt in by configuring a payload trust anchor at startup.
+  Opting in causes the Agent to set the
+  [`RequiresPayloadTrustVerification`](#agenttoservercapabilities) capability
+  bit in its first `AgentToServer.capabilities`.
+* Servers opt in by configuring a signing key and certificate chain.
+  Opting in causes the Server to set the
+  [`OffersPayloadTrustVerification`](#servertoagentcapabilities) capability
+  bit in its `ServerToAgent.capabilities`.
+
+The new capability bits are additions to a 64-bit bitmask.
+Implementations that do not recognise the new bits will simply not match
+them and will behave exactly as today.
+
+The `SignedServerToAgent` envelope is sent **only** when the negotiation
+succeeds. For connections where Message Attestation is not negotiated,
+the wire format is byte-identical to upstream OpAMP — the Server keeps
+sending plain `ServerToAgent` messages, and the Agent keeps parsing
+them as such. Implementations that do not implement Message Attestation
+therefore see no wire-format change at all.
+
+A Server may advertise `OffersPayloadTrustVerification` and only wrap
+its outbound messages in `SignedServerToAgent` on connections from
+Agents that have set `RequiresPayloadTrustVerification` — there is no
+per-message cost for advertising the capability to non-opted-in Agents.
+
+### Capability Negotiation
+
+| Agent `Requires` | Server `Offers` | Behaviour |
+| --- | --- | --- |
+| No | No | Plain OpAMP. The Server sends `ServerToAgent` messages on the wire. Today's behaviour. |
+| No | Yes | Plain OpAMP. The Server is capable of signing but the Agent has not opted in, so the Server sends `ServerToAgent` messages on the wire (not `SignedServerToAgent`). |
+| Yes | No | The Server does not send `SignedServerToAgent`. The Agent receives a plain `ServerToAgent` where it expected a `SignedServerToAgent` envelope, and MUST terminate the connection. |
+| Yes | Yes | Every Server-to-Agent message on the connection is wrapped in `SignedServerToAgent`. Handshake on the first message (carries `trust_chain_response`); per-message detached signatures thereafter. Specified in the remainder of this section. |
+
+### Connection-Time Handshake
+
+When the Agent has set `RequiresPayloadTrustVerification` and the Server
+has set `OffersPayloadTrustVerification`, every Server-to-Agent message
+on the connection is wrapped in a `SignedServerToAgent` envelope. The
+first such envelope carries the signing certificate chain in
+`trust_chain_response`.
+
+1. The Agent's first `AgentToServer` message sets the
+   `RequiresPayloadTrustVerification` bit in `capabilities`.
+
+2. The Server, on receiving the Agent's first message and recognising
+   the capability:
+   * Sends its first `SignedServerToAgent` containing
+     `trust_chain_response.certificate_chain` ordered from the first
+     intermediate down to the signing leaf certificate. The root
+     certificate (the Agent's pre-configured payload trust anchor)
+     MUST NOT be included in this chain.
+   * MAY set `trust_chain_response.error_message` if the Server cannot
+     satisfy the trust chain request (for example, because its signing
+     key is unavailable). When `error_message` is non-empty,
+     `certificate_chain` SHOULD be empty.
+   * MAY leave `signature` empty on this first envelope. Trust on the
+     first message is established by chain validation against the
+     pre-configured trust anchor, not by a self-signature. Every
+     subsequent `SignedServerToAgent` MUST carry a valid signature.
+   * Sets `payload` to the marshalled bytes of a `ServerToAgent`
+     message containing whatever the Server would have sent had
+     signing not been negotiated (for example, an empty `ServerToAgent`
+     acknowledging the Agent's status report, or a `ServerToAgent`
+     carrying initial `remote_config`).
+
+3. The Agent receives the Server's first envelope and:
+   * Parses the bytes on the wire as `SignedServerToAgent`. If the
+     bytes cannot be parsed as `SignedServerToAgent`, or
+     `trust_chain_response` is unset, the Agent MUST terminate the
+     connection. (This is also how the Agent detects a Server that
+     does not support Message Attestation: such a Server would send a
+     plain `ServerToAgent`, which does not parse as
+     `SignedServerToAgent`.)
+   * If `trust_chain_response.error_message` is non-empty, the Agent
+     MUST terminate the connection.
+   * Otherwise the Agent MUST perform X.509 certification path
+     validation as defined in [RFC 5280 §6](https://datatracker.ietf.org/doc/html/rfc5280#section-6),
+     using the pre-configured payload trust anchor as the sole trust
+     anchor, `certificate_chain` as the intermediate and leaf
+     certificates, and `id-kp-codeSigning` (`1.3.6.1.5.5.7.3.3`) in the
+     acceptable EKU set. If path validation fails for any reason —
+     including expired certificate, unknown issuer, missing
+     `id-kp-codeSigning` EKU, failed name/policy constraints, or
+     revocation — the Agent MUST terminate the connection.
+   * On successful validation, the Agent stores the validated leaf
+     certificate (or its public key) for the duration of the
+     connection and uses it to verify every subsequent
+     `SignedServerToAgent`.
+   * The Agent then unmarshals the `payload` bytes into a
+     `ServerToAgent` and processes it normally.
+
+#### SignedServerToAgent Message
+
+```protobuf
+message SignedServerToAgent {
+    // Serialised bytes of a ServerToAgent message.
+    bytes payload = 1;
+
+    // Detached signature over the bytes of the payload field.
+    bytes signature = 2;
+
+    // Sent only in the first SignedServerToAgent on a connection.
+    TrustChainResponse trust_chain_response = 3;
+}
+```
+
+##### SignedServerToAgent.payload
+
+Marshalled bytes of an inner `ServerToAgent` message. The Server
+marshals the inner `ServerToAgent` once and places the resulting bytes
+here. The signature in `signature` covers these exact bytes; the Agent
+verifies the signature without re-marshalling, and then unmarshals
+these bytes into a `ServerToAgent` for normal processing.
+
+##### SignedServerToAgent.signature
+
+Detached signature over the bytes of `payload`. MAY be empty on the
+first `SignedServerToAgent` of a connection — chain validation against
+the pre-configured trust anchor establishes initial trust. MUST be
+present and verifiable on every subsequent message.
+
+##### SignedServerToAgent.trust_chain_response
+
+Sent only in the first `SignedServerToAgent` on a connection. Carries
+the signing certificate chain the Agent will use to verify signatures
+on subsequent messages. See
+[TrustChainResponse Message](#trustchainresponse-message).
+
+#### TrustChainResponse Message
+
+```protobuf
+message TrustChainResponse {
+    message Certificate {
+        // The certificate in DER format.
+        bytes der_data = 1;
+    }
+
+    // The certificate chain, ordered from the first intermediate
+    // certificate down to the signing leaf certificate. The root
+    // certificate is excluded; the Agent already possesses the root as
+    // its pre-configured payload trust anchor.
+    repeated Certificate certificate_chain = 1;
+
+    // Human-readable error message indicating why the Server could not
+    // satisfy the trust chain request. If error_message is non-empty,
+    // the Agent MUST terminate the connection.
+    string error_message = 2;
+}
+```
+
+##### TrustChainResponse.certificate_chain
+
+Ordered list of certificates from the first intermediate down to the
+signing leaf certificate. The root certificate is excluded. Each entry
+is a `Certificate` message whose `der_data` field holds the DER-encoded
+certificate.
+
+##### TrustChainResponse.error_message
+
+Human-readable error description set by the Server when it cannot
+satisfy the trust chain request. When non-empty, `certificate_chain`
+SHOULD be empty and the Agent MUST terminate the connection.
+
+### In-Session Signature Verification
+
+Signatures are computed and verified **over the bytes of the inner
+`ServerToAgent` exactly as they appear on the wire in
+`SignedServerToAgent.payload`** — a "detached" signature scheme. The
+Server marshals each inner `ServerToAgent` once, signs those bytes,
+and places them into `payload`; the Agent verifies the signature over
+the received `payload` bytes without re-marshalling.
+
+> **Why detached signing?** Protocol Buffers does not guarantee a
+> canonical wire-format encoding, even with deterministic-output
+> options enabled. The serializer can produce different output across
+> protobuf library versions, schema changes, and build flags (see the
+> upstream guidance at
+> <https://protobuf.dev/programming-guides/serialization-not-canonical/>).
+> Any signature scheme that requires the receiver to re-marshal a
+> parsed message and reproduce the signed bytes would therefore be
+> fragile across implementations and versions. Detached signing over
+> the wire bytes side-steps the problem entirely: the signed bytes are
+> the wire bytes, and they survive any number of round-trips through
+> different protobuf libraries.
+
+The Server produces a `SignedServerToAgent` as follows:
+
+1. Construct the inner `ServerToAgent` message normally.
+2. Marshal the inner message to bytes using any conformant Protocol
+   Buffers encoder. (No special "deterministic" option is required;
+   the only bytes that matter are the ones placed on the wire.)
+3. Compute a signature over those bytes using the Server's signing
+   private key and the signature algorithm declared by the leaf
+   certificate's `signatureAlgorithm` field.
+4. Construct the outer `SignedServerToAgent` with `payload` set to the
+   marshalled bytes from step 2 and `signature` set to the signature
+   from step 3. On the first message, also set `trust_chain_response`.
+5. Marshal and send the `SignedServerToAgent`.
+
+The Agent verifies a received `SignedServerToAgent` (after the first)
+as follows:
+
+1. Parse the wire bytes as a `SignedServerToAgent`. Retain the
+   `payload` field's raw bytes — these are the bytes the signature
+   covers.
+2. If `signature` is empty or absent, the Agent MUST terminate the
+   connection.
+3. Verify `signature` over the `payload` bytes using the public key of
+   the leaf certificate established during the handshake, and the
+   signature algorithm declared by the leaf certificate's
+   `signatureAlgorithm`.
+4. If verification fails, the Agent MUST terminate the connection.
+5. On success, unmarshal the `payload` bytes into a `ServerToAgent`
+   and process it normally.
+
+Because the signature is detached, the Agent never needs to re-marshal
+the inner `ServerToAgent`. This eliminates any dependency on canonical
+serialisation between implementations.
+
+### Algorithm
+
+The signing algorithm is determined by the leaf certificate's
+`signatureAlgorithm` field. The OpAMP protocol does not negotiate
+algorithms.
+
+Implementations SHOULD support, at minimum, the following algorithms:
+
+* ECDSA P-256 with SHA-256
+* ECDSA P-384 with SHA-384
+* RSA-2048 or larger with PKCS#1 v1.5 and SHA-256
+* Ed25519
+
+These algorithms are covered by the default X.509 stacks of Go
+(`crypto/x509`), Java (`java.security`), and Python (`cryptography`).
+
+Future algorithm additions require no change to the OpAMP protocol; new
+algorithms are signalled by the certificate and supported by stacks as
+they evolve.
+
+### Certificate Requirements
+
+The signing leaf certificate MUST:
+
+* Include the Extended Key Usage extension with `id-kp-codeSigning`
+  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages. This prevents a
+  certificate intended for TLS server authentication from being used
+  to sign OpAMP messages.
+* Be within its validity window
+  (`notBefore <= currentTime < notAfter`) at every verification.
+
+The certificate chain (intermediates plus leaf) MUST chain to the
+pre-configured payload trust anchor. The trust anchor itself is
+supplied out-of-band and MUST NOT be included in the
+`certificate_chain` field of `trust_chain_response`.
+
+Revocation checking is RECOMMENDED. Implementations SHOULD use the
+revocation-checking facilities of their X.509 library (CRL distribution
+points, OCSP) during chain validation. Operators MAY rely on
+short-lived certificates as an alternative to active revocation.
+
+### Failure Modes
+
+Every failure listed below MUST cause the Agent to terminate the OpAMP
+connection. The Agent SHOULD reconnect using exponential backoff consistent
+with normal OpAMP reconnection behaviour; on reconnection the Server presents
+a (potentially rotated) chain on the new handshake. Because these failures
+are detected locally by the Agent, no dedicated error-response field is
+required — the Agent terminates the connection without waiting for a
+`ServerToAgent.error_response`.
+
+| Failure | When detected |
+| --- | --- |
+| Agent set `RequiresPayloadTrustVerification` but the Server did not send a `SignedServerToAgent` envelope (typically because the Server does not support the capability and sent a plain `ServerToAgent`). | First message received from the Server. |
+| First `SignedServerToAgent` does not include `trust_chain_response`. | First message. |
+| `trust_chain_response.error_message` is non-empty. | First message. |
+| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First message. |
+| In-session `SignedServerToAgent` lacks `signature`. | Any subsequent message. |
+| In-session `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Any subsequent message. |
+| Stored leaf certificate's validity window has expired since the handshake. | The next verification after expiry. |
+
+### Out of Scope
+
+The following are explicitly out of scope for this version of Message
+Attestation. They MAY be revisited in future versions of the
+specification.
+
+* **Encryption of message contents.** TLS continues to provide
+  transport-level confidentiality. Message Attestation adds integrity,
+  not confidentiality.
+* **Authentication of `AgentToServer` messages.** Verifying the
+  authenticity of Agent-originated messages is tracked separately in
+  [opamp-spec issue #20](https://github.com/open-telemetry/opamp-spec/issues/20).
+* **Trust anchor distribution by the Server.** The payload trust anchor
+  is operator-managed and MUST NOT be modified by any field of any
+  `ServerToAgent` message.
+* **Algorithm negotiation.** The certificate's `signatureAlgorithm` is
+  authoritative. Future algorithm support is added by certificate
+  issuers and X.509 stacks, not by changes to OpAMP.
+* **Per-message-type opt-out (signing allowlist).** Mechanisms by which
+  an Agent might accept some `ServerToAgent` message types unsigned —
+  for example, to allow a third-party fleet manager to push low-risk
+  read-only telemetry settings while still requiring authoritative
+  signatures for configuration or command messages — are deferred to a
+  follow-up specification.
 
 ## Interoperability
 
