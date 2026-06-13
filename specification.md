@@ -3743,10 +3743,9 @@ first such envelope carries the signing certificate chain in
      satisfy the trust chain request (for example, because its signing
      key is unavailable). When `error_message` is non-empty,
      `certificate_chain` SHOULD be empty.
-   * MAY leave `signature` empty on this first envelope. Trust on the
-     first message is established by chain validation against the
-     pre-configured trust anchor, not by a self-signature. Every
-     subsequent `SignedServerToAgent` MUST carry a valid signature.
+   * MUST set `signature` to a valid detached signature over the
+     `payload` bytes on this first envelope and on every subsequent
+     envelope. There is no exception for the first message.
    * Sets `payload` to the marshalled bytes of a `ServerToAgent`
      message containing whatever the Server would have sent had
      signing not been negotiated (for example, an empty `ServerToAgent`
@@ -3774,8 +3773,11 @@ first such envelope carries the signing certificate chain in
      revocation — the Agent MUST terminate the connection.
    * On successful validation, the Agent stores the validated leaf
      certificate (or its public key) for the duration of the
-     connection and uses it to verify every subsequent
-     `SignedServerToAgent`.
+     connection.
+   * The Agent MUST verify `signature` over the `payload` bytes using
+     the public key of the validated leaf certificate. If `signature`
+     is absent or verification fails, the Agent MUST terminate the
+     connection.
    * The Agent then unmarshals the `payload` bytes into a
      `ServerToAgent` and processes it normally.
 
@@ -3804,17 +3806,18 @@ these bytes into a `ServerToAgent` for normal processing.
 
 ##### SignedServerToAgent.signature
 
-Detached signature over the bytes of `payload`. MAY be empty on the
-first `SignedServerToAgent` of a connection — chain validation against
-the pre-configured trust anchor establishes initial trust. MUST be
-present and verifiable on every subsequent message.
+Detached signature over the bytes of `payload`. MUST be present and
+verifiable on every `SignedServerToAgent`, including the first. There
+is no exception for the first message — the Server signs the payload
+immediately using the signing key whose certificate chain is carried in
+`trust_chain_response`.
 
 ##### SignedServerToAgent.trust_chain_response
 
 Sent only in the first `SignedServerToAgent` on a connection. Carries
-the signing certificate chain the Agent will use to verify signatures
-on subsequent messages. See
-[TrustChainResponse Message](#trustchainresponse-message).
+the signing certificate chain the Agent uses to validate the leaf
+certificate and verify signatures on all messages including this one.
+See [TrustChainResponse Message](#trustchainresponse-message).
 
 #### TrustChainResponse Message
 
@@ -3887,8 +3890,7 @@ The Server produces a `SignedServerToAgent` as follows:
    from step 3. On the first message, also set `trust_chain_response`.
 5. Marshal and send the `SignedServerToAgent`.
 
-The Agent verifies a received `SignedServerToAgent` (after the first)
-as follows:
+The Agent verifies a received `SignedServerToAgent` as follows:
 
 1. Parse the wire bytes as a `SignedServerToAgent`. Retain the
    `payload` field's raw bytes — these are the bytes the signature
@@ -3964,8 +3966,8 @@ required — the Agent terminates the connection without waiting for a
 | First `SignedServerToAgent` does not include `trust_chain_response`. | First message. |
 | `trust_chain_response.error_message` is non-empty. | First message. |
 | Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First message. |
-| In-session `SignedServerToAgent` lacks `signature`. | Any subsequent message. |
-| In-session `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Any subsequent message. |
+| `SignedServerToAgent` lacks `signature`. | Every message. |
+| `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Every message. |
 | Stored leaf certificate's validity window has expired since the handshake. | The next verification after expiry. |
 
 ### Out of Scope
