@@ -3662,8 +3662,7 @@ combination of private-key isolation and EKU constraints — not a
 requirement for a separate root CA.
 
 The Server is independently configured with a signing key and its
-corresponding certificate chain that validates back to the payload trust
-anchor.
+corresponding certificate chain rooted in the payload trust anchor.
 
 The payload trust anchor is NEVER sent from the Server to the Agent. In particular,
 no field of any `ServerToAgent` message — including
