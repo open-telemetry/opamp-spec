@@ -17,7 +17,7 @@ Status: [Beta]
 <details>
 <summary>Table of Contents</summary>
 
-<!-- toc -->
+<!-- START doctoc -->
 
 - [Introduction](#introduction)
 - [Communication Model](#communication-model)
@@ -239,7 +239,7 @@ Status: [Beta]
   * [Cloud Provider Support](#cloud-provider-support)
   * [Other](#other)
 
-<!-- tocstop -->
+<!-- END doctoc -->
 
 </details>
 
