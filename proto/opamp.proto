@@ -249,10 +249,14 @@ message ServerToAgent {
     // trust verification metadata (trust_chain_response and signature)
     // in an earlier draft of the Message Attestation spec. The design
     // moved that metadata onto a separate envelope message
-    // (SignedServerToAgent) to enable detached signing. The field
-    // numbers are reserved here to prevent accidental reuse.
-    reserved 12, 13;
-    reserved "trust_chain_response", "signature";
+    // (SignedServerToAgent) to enable detached signing. Field numbers
+    // 14–16 are assigned to SignedServerToAgent.payload, .signature,
+    // and .trust_chain_response respectively, so that the two messages
+    // have non-overlapping field numbers and cannot be accidentally
+    // misinterpreted by a parser expecting the other type. All six
+    // field numbers are reserved here to prevent reuse on ServerToAgent.
+    reserved 12, 13, 14, 15, 16;
+    reserved "trust_chain_response", "signature", "payload";
 }
 
 enum ServerToAgentFlags {
@@ -349,12 +353,12 @@ message SignedServerToAgent {
     // Serialised bytes of a ServerToAgent message. The Agent verifies the
     // detached signature over these exact bytes, without re-marshalling,
     // and then unmarshals them into a ServerToAgent for normal processing.
-    bytes payload = 1;
+    bytes payload = 14;
 
     // Detached signature over the bytes of the payload field. MUST be
     // present and verifiable on every SignedServerToAgent, including the
     // first. There is no exception for the first message.
-    bytes signature = 2;
+    bytes signature = 15;
 
     // Sent only in the first SignedServerToAgent on a connection. Carries
     // the signing certificate chain the Agent uses to validate the leaf
@@ -363,7 +367,7 @@ message SignedServerToAgent {
     // RequiresPayloadTrustVerification but the first SignedServerToAgent
     // does not include a usable trust_chain_response, the Agent MUST
     // terminate the connection.
-    TrustChainResponse trust_chain_response = 3;
+    TrustChainResponse trust_chain_response = 16;
 }
 
 // The OpAMPConnectionSettings message is a collection of fields which comprise an

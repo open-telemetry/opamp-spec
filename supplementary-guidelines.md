@@ -21,7 +21,23 @@ from the attack surface.
 The following describes one example deployment. Actual deployments may be
 simpler or more complex depending on organisational requirements.
 
-![Example deployment architecture](https://github.com/user-attachments/assets/20fb3567-ff84-47f3-9e42-367953881232)
+```
+  Agent             OpAMP Server       Policy Engine        Signer
+                   (network edge)        (internal)          (HSM)
+     │                   │                   │                 │
+     │ (1) AgentToServer │                   │                 │
+     ├──────────────────►│                   │                 │
+     │                   │  (3) payload      │                 │
+     │                   ├──────────────────►│                 │
+     │                   │                   │ (5) sign req    │
+     │                   │                   ├────────────────►│
+     │                   │                   │ (6) signature   │
+     │                   │                   │◄────────────────┤
+     │                   │◄── signature ─────┤                 │
+     │ (7) Signed        │                   │                 │
+     │ ServerToAgent     │                   │                 │
+     │◄──────────────────┤                   │                 │
+```
 
 1. The Agent connects to the OpAMP server at the network edge.
 2. The OpAMP server constructs a `ServerToAgent` payload to send to the Agent.
@@ -61,6 +77,39 @@ Attestation, the protocol defines a lightweight stamp ("this message was
 authorized") and the Agent knows how to verify it; all bespoke policy logic
 is maintained in the backend by the organization itself.
 
+## Certificate Hierarchy and Extended Key Usage
+
+X.509 certificates carry an *Extended Key Usage* (EKU) field that declares
+what a certificate is permitted to do. Two EKU values are relevant to Message
+Attestation:
+
+- **`id-kp-serverAuth`** — the certificate may authenticate a TLS server. TLS
+  clients check for this when establishing a secure connection.
+- **`id-kp-codeSigning`** — the certificate may sign arbitrary data. Message
+  Attestation uses this EKU to mark signing certificates.
+
+The spec requires the signing leaf certificate to carry `id-kp-codeSigning` and
+prohibits `id-kp-serverAuth` on it. This means a TLS certificate cannot be
+repurposed to sign OpAMP messages, and a signing certificate cannot be used as
+a TLS server certificate.
+
+### Do I need a separate root CA for signing?
+
+No. The same root CA may issue both TLS and signing certificates, provided:
+
+1. Each intermediate and leaf certificate carries only the appropriate EKU.
+2. The signing private key is stored separately from the distribution server —
+   for example, in an HSM or secrets manager the distribution server process
+   cannot reach.
+
+The security boundary is *key isolation*, not *CA isolation*. An attacker who
+compromises the distribution server but cannot access the signing private key
+cannot forge valid signed messages, regardless of whether TLS and signing
+certificates share a root.
+
+Operators who prefer strict CA separation may use separate roots, but it is not
+required.
+
 ## Operational Considerations
 
 ### Trust Anchor Lifecycle
@@ -73,6 +122,13 @@ Operators should plan for trust anchor rotation using their existing
 configuration-management tooling (e.g. Ansible, Chef, Puppet, or a secrets
 manager). Using a long-lived root CA and shorter-lived signing intermediates
 reduces rotation frequency for the trust anchor itself.
+
+An alternative approach is to compile the trust anchor directly into the Agent
+binary. In this model, trust anchor rotation is handled by distributing a new
+Agent version — the same mechanism used for any other Agent update. This can be
+simpler to operate in environments where Agent binary updates are already
+automated, and it avoids the need for a separate certificate-management
+pipeline.
 
 ### Certificate Revocation
 

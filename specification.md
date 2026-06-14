@@ -3571,9 +3571,6 @@ Agent by default. The capabilities should be opt-in by the user.
 
 Any executable code that is part of a package should be signed
 to prevent a compromised Server from delivering malicious code to the Agent.
-For end-to-end integrity of OpAMP messages themselves (including remote
-configuration offers, package offers, and Server-issued commands), see the
-[Message Attestation](#message-attestation) section.
 We recommend the following:
 
 * Any downloadable executable code (e.g. executable packages)
@@ -3592,6 +3589,10 @@ We recommend the following:
   code that it runs as external processes) at the minimum possible privilege to
   prevent the code from accessing sensitive files or perform high privilege
   operations. The Agent should not run downloaded code as root user.
+
+For end-to-end integrity of OpAMP messages themselves (including remote
+configuration offers, package offers, and Server-issued commands), see the
+[Message Attestation](#message-attestation) section.
 
 ## Message Attestation
 
@@ -3707,10 +3708,11 @@ sending plain `ServerToAgent` messages, and the Agent keeps parsing
 them as such. Implementations that do not implement Message Attestation
 therefore see no wire-format change at all.
 
-A Server may advertise `OffersPayloadTrustVerification` and only wrap
-its outbound messages in `SignedServerToAgent` on connections from
-Agents that have set `RequiresPayloadTrustVerification` — there is no
-per-message cost for advertising the capability to non-opted-in Agents.
+A Server SHOULD only advertise `OffersPayloadTrustVerification` to
+Agents that have set `RequiresPayloadTrustVerification`, as advertising
+to non-opted-in Agents adds unnecessary bits to the capabilities field.
+A Server MUST only wrap its outbound messages in `SignedServerToAgent`
+on connections from Agents that have set `RequiresPayloadTrustVerification`.
 
 ### Capability Negotiation
 
@@ -3718,7 +3720,7 @@ per-message cost for advertising the capability to non-opted-in Agents.
 | --- | --- | --- |
 | No | No | Plain OpAMP. The Server sends `ServerToAgent` messages on the wire. Today's behaviour. |
 | No | Yes | Plain OpAMP. The Server is capable of signing but the Agent has not opted in, so the Server sends `ServerToAgent` messages on the wire (not `SignedServerToAgent`). |
-| Yes | No | The Server does not send `SignedServerToAgent`. The Agent receives a plain `ServerToAgent` where it expected a `SignedServerToAgent` envelope, and MUST terminate the connection. |
+| Yes | No | The Server does not send `SignedServerToAgent`. The Agent receives a plain `ServerToAgent` where it expected a `SignedServerToAgent` envelope. The Agent MUST treat this as a failure as described in [Failure Modes](#failure-modes). |
 | Yes | Yes | Every Server-to-Agent message on the connection is wrapped in `SignedServerToAgent`. Handshake on the first message (carries `trust_chain_response`); per-message detached signatures thereafter. Specified in the remainder of this section. |
 
 ### Connection-Time Handshake
@@ -3772,8 +3774,12 @@ first such envelope carries the signing certificate chain in
      `id-kp-codeSigning` EKU, failed name/policy constraints, or
      revocation — the Agent MUST terminate the connection.
    * On successful validation, the Agent stores the validated leaf
-     certificate (or its public key) for the duration of the
-     connection.
+     certificate (or its public key) for the duration of the session.
+     For WebSocket transport the session ends when the connection closes.
+     For HTTP transport the session persists across polling requests and
+     ends when the Agent restarts or explicitly reconnects. On
+     reconnection, the handshake is repeated and the Server presents a
+     fresh certificate chain.
    * The Agent MUST verify `signature` over the `payload` bytes using
      the public key of the validated leaf certificate. If `signature`
      is absent or verification fails, the Agent MUST terminate the
@@ -3786,13 +3792,13 @@ first such envelope carries the signing certificate chain in
 ```protobuf
 message SignedServerToAgent {
     // Serialised bytes of a ServerToAgent message.
-    bytes payload = 1;
+    bytes payload = 14;
 
     // Detached signature over the bytes of the payload field.
-    bytes signature = 2;
+    bytes signature = 15;
 
     // Sent only in the first SignedServerToAgent on a connection.
-    TrustChainResponse trust_chain_response = 3;
+    TrustChainResponse trust_chain_response = 16;
 }
 ```
 
@@ -3934,9 +3940,11 @@ they evolve.
 The signing leaf certificate MUST:
 
 * Include the Extended Key Usage extension with `id-kp-codeSigning`
-  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages. This prevents a
-  certificate intended for TLS server authentication from being used
-  to sign OpAMP messages.
+  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages. TLS server
+  certificates carry `id-kp-serverAuth` instead; because the Agent
+  requires `id-kp-codeSigning` during chain validation, a TLS
+  certificate will fail the EKU check and cannot be repurposed as a
+  signing certificate.
 * Be within its validity window
   (`notBefore <= currentTime < notAfter`) at every verification.
 
@@ -3952,13 +3960,14 @@ short-lived certificates as an alternative to active revocation.
 
 ### Failure Modes
 
-Every failure listed below MUST cause the Agent to terminate the OpAMP
-connection. The Agent SHOULD reconnect using exponential backoff consistent
-with normal OpAMP reconnection behaviour; on reconnection the Server presents
-a (potentially rotated) chain on the new handshake. Because these failures
-are detected locally by the Agent, no dedicated error-response field is
-required — the Agent terminates the connection without waiting for a
-`ServerToAgent.error_response`.
+Every failure listed below MUST cause the Agent to terminate the current
+exchange without processing the received payload. For WebSocket transport,
+the Agent closes the WebSocket connection. For HTTP transport, the Agent
+discards the response body. In both cases, the Agent SHOULD reconnect using
+exponential backoff consistent with normal OpAMP reconnection behaviour; on
+reconnection the Server presents a (potentially rotated) chain on the new
+handshake. Because these failures are detected locally by the Agent, no
+dedicated error-response field is required.
 
 | Failure | When detected |
 | --- | --- |
