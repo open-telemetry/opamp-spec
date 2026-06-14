@@ -3750,7 +3750,7 @@ first such envelope carries the signing certificate chain in
      envelope. There is no exception for the first message.
    * Sets `payload` to the marshalled bytes of a `ServerToAgent`
      message containing whatever the Server would have sent had
-     signing not been negotiated (for example, an empty `ServerToAgent`
+     signing not been negotiated (for example, a `ServerToAgent`
      acknowledging the Agent's status report, or a `ServerToAgent`
      carrying initial `remote_config`).
 
