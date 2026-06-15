@@ -10,26 +10,15 @@ ALL_DOCS := $(shell find . -type f -name '*.md' -not -path './.github/*' -not -p
 .PHONY: all
 all: markdown-toc markdown-link-check markdownlint gen-proto
 
-
-# This target runs markdown-toc on all files that contain
-# a comment <!-- tocstop -->.
-#
-# The recommended way to prepate a .md file for markdown-toc is
-# to add these comments:
-#
-#   <!-- toc -->
-#   <!-- tocstop -->
 .PHONY: markdown-toc
 markdown-toc:
-	@if ! npm ls markdown-toc; then npm ci; fi
-	@for f in $(ALL_DOCS); do \
-		if grep -q '<!-- tocstop -->' $$f; then \
-			echo markdown-toc: processing $$f; \
-			npx --no -- markdown-toc --no-first-h1 --no-stripHeadingTags -i $$f || exit 1; \
-		else \
-			echo markdown-toc: no TOC markers, skipping $$f; \
-		fi; \
-	done
+	@if ! npm ls doctoc; then npm ci; fi
+	npx --no -- doctoc . --update-only --mintocitems 1 --toc-pragma-style compact --notitle --entryprefix='-,*,+' || exit 1;
+
+.PHONY: markdown-toc-check
+markdown-toc-check:
+	@if ! npm ls doctoc; then npm ci; fi
+	npx --no -- doctoc . --update-only --mintocitems 1 --toc-pragma-style compact --notitle --entryprefix='-,*,+' --dryrun || exit 1;
 
 .PHONY: markdown-link-check
 markdown-link-check:
@@ -51,18 +40,20 @@ markdownlint:
 
 GENDIR := gen
 # Find all .proto files.
-PROTO_FILES := $(wildcard proto/*.proto)
+PROTO_FILES := $(wildcard proto/opamp/v1/*.proto)
 
 PROTO_GEN_GO_DIR ?= $(GENDIR)/go
+PROTO_GEN_CSHARP_DIR ?= $(GENDIR)/csharp
 
-OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.14.0
+# https://github.com/open-telemetry/build-tools/releases
+OTEL_DOCKER_PROTOBUF ?= otel/build-protobuf:0.25.0
 
 # Docker pull image.
 .PHONY: docker-pull
 docker-pull:
 	docker pull $(OTEL_DOCKER_PROTOBUF)
 
-gen-proto: gen-go
+gen-proto: gen-go gen-csharp
 .PHONY: gen-proto
 
 # Generate Protobuf Go files.
@@ -72,6 +63,17 @@ gen-go:
 	mkdir -p ./$(PROTO_GEN_GO_DIR)
 
 	# Verify generation of Go protos
-	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -v${PWD}:${PWD} \
+	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -u $(shell id -u):$(shell id -g) -v${PWD}:${PWD} \
         -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
         --go_out=./$(PROTO_GEN_GO_DIR) -I${PWD}/proto/ ${PWD}/$(file)))
+
+# Generate Protobuf C# files.
+.PHONY: gen-csharp
+gen-csharp:
+	rm -rf ./$(PROTO_GEN_CSHARP_DIR)
+	mkdir -p ./$(PROTO_GEN_CSHARP_DIR)
+
+	# Verify generation of C# protos
+	$(foreach file,$(PROTO_FILES),$(call exec-command,docker run --rm -u $(shell id -u):$(shell id -g) -v${PWD}:${PWD} \
+        -w${PWD} $(OTEL_DOCKER_PROTOBUF) --proto_path=${PWD}/proto/ \
+        --csharp_out=./$(PROTO_GEN_CSHARP_DIR) -I${PWD}/proto/ ${PWD}/$(file)))
