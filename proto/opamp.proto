@@ -318,16 +318,12 @@ enum ServerCapabilities {
 // specification.
 // Status: [Development]
 message TrustChainResponse {
-    message Certificate {
-        // The certificate in DER format.
-        bytes der_data = 1;
-    }
-
-    // The certificate chain, ordered from the first intermediate certificate
-    // down to the signing leaf certificate. The root certificate is excluded;
-    // the Agent already possesses the root as its pre-configured payload
-    // trust anchor.
-    repeated Certificate certificate_chain = 1;
+    // PEM-encoded certificate chain, ordered from the first intermediate
+    // certificate down to the signing leaf certificate. The root certificate
+    // is excluded; the Agent already possesses the root as its pre-configured
+    // payload trust anchor. Multiple certificates are concatenated in a single
+    // PEM blob, consistent with the encoding used by TLSCertificate.
+    bytes certificate_chain = 1;
 
     // Human-readable error message indicating why the Server could not
     // satisfy the trust chain request. If error_message is set, the Agent

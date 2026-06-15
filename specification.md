@@ -3737,10 +3737,10 @@ first such envelope carries the signing certificate chain in
 2. The Server, on receiving the Agent's first message and recognising
    the capability:
    * Sends its first `SignedServerToAgent` containing
-     `trust_chain_response.certificate_chain` ordered from the first
-     intermediate down to the signing leaf certificate. The root
-     certificate (the Agent's pre-configured payload trust anchor)
-     MUST NOT be included in this chain.
+     `trust_chain_response.certificate_chain` as a PEM blob ordered
+     from the first intermediate down to the signing leaf certificate.
+     The root certificate (the Agent's pre-configured payload trust
+     anchor) MUST NOT be included in this chain.
    * MAY set `trust_chain_response.error_message` if the Server cannot
      satisfy the trust chain request (for example, because its signing
      key is unavailable). When `error_message` is non-empty,
@@ -3764,10 +3764,11 @@ first such envelope carries the signing certificate chain in
      `SignedServerToAgent`.)
    * If `trust_chain_response.error_message` is non-empty, the Agent
      MUST terminate the connection.
-   * Otherwise the Agent MUST perform X.509 certification path
+   * Otherwise the Agent MUST decode the `certificate_chain` PEM blob
+     into individual certificates and perform X.509 certification path
      validation as defined in [RFC 5280 §6](https://datatracker.ietf.org/doc/html/rfc5280#section-6),
      using the pre-configured payload trust anchor as the sole trust
-     anchor, `certificate_chain` as the intermediate and leaf
+     anchor, the decoded certificates as the intermediate and leaf
      certificates, and `id-kp-codeSigning` (`1.3.6.1.5.5.7.3.3`) in the
      acceptable EKU set. If path validation fails for any reason —
      including expired certificate, unknown issuer, missing
@@ -3829,16 +3830,13 @@ See [TrustChainResponse Message](#trustchainresponse-message).
 
 ```protobuf
 message TrustChainResponse {
-    message Certificate {
-        // The certificate in DER format.
-        bytes der_data = 1;
-    }
-
-    // The certificate chain, ordered from the first intermediate
+    // PEM-encoded certificate chain, ordered from the first intermediate
     // certificate down to the signing leaf certificate. The root
     // certificate is excluded; the Agent already possesses the root as
-    // its pre-configured payload trust anchor.
-    repeated Certificate certificate_chain = 1;
+    // its pre-configured payload trust anchor. Multiple certificates are
+    // concatenated in a single PEM blob, consistent with the encoding
+    // used by TLSCertificate.
+    bytes certificate_chain = 1;
 
     // Human-readable error message indicating why the Server could not
     // satisfy the trust chain request. If error_message is non-empty,
@@ -3849,10 +3847,10 @@ message TrustChainResponse {
 
 ##### TrustChainResponse.certificate_chain
 
-Ordered list of certificates from the first intermediate down to the
-signing leaf certificate. The root certificate is excluded. Each entry
-is a `Certificate` message whose `der_data` field holds the DER-encoded
-certificate.
+PEM-encoded certificate chain, ordered from the first intermediate down
+to the signing leaf certificate. The root certificate is excluded.
+Multiple certificates are concatenated as a single PEM blob, consistent
+with the encoding used by `TLSCertificate.cert`.
 
 ##### TrustChainResponse.error_message
 
