@@ -66,8 +66,10 @@ For more information about the emeritus role, see the [community repository](htt
 
 ### Libraries
 
-- [OpAMP Go](https://github.com/open-telemetry/opamp-go)
+- [OpAMP Go Client and Server](https://github.com/open-telemetry/opamp-go)
 - [OpAMP .NET Client](https://github.com/open-telemetry/opentelemetry-dotnet-contrib/tree/main/src/OpenTelemetry.OpAmp.Client)
+- [OpAMP Java Client](https://github.com/open-telemetry/opentelemetry-java-contrib/tree/main/opamp-client)
+- [OpAMP Python Client](https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/opamp/opentelemetry-opamp-client)
 
 ### Agent Management Platforms
 
