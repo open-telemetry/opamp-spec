@@ -3652,8 +3652,8 @@ Message Attestation does **not** address:
 The Agent is pre-configured with a single root CA certificate, referred
 to in this section as the _payload trust anchor_. This certificate is
 operator-managed and is supplied to the Agent through
-implementation-specific configuration (for example, a file path in the
-Agent's configuration). The payload trust anchor MUST NOT carry the `id-kp-serverAuth`
+implementation-specific configuration (for example, a file path or an
+inline PEM value in the Agent's configuration). The payload trust anchor MUST NOT carry the `id-kp-serverAuth`
 Extended Key Usage, ensuring it cannot double as a TLS CA certificate.
 Operators MAY root both the TLS chain and the signing chain from the
 same root CA, provided the signing intermediate and leaf certificates
@@ -3665,12 +3665,15 @@ requirement for a separate root CA.
 The Server is independently configured with a signing key and its
 corresponding certificate chain rooted in the payload trust anchor.
 
-The payload trust anchor is NEVER sent from the Server to the Agent. In particular,
-no field of any `ServerToAgent` message — including
+The payload trust anchor is NEVER sent from the Server to the Agent, with one
+exception: Agents that have not yet enrolled a trust anchor MAY opt in to Trust
+On First Use (TOFU) enrollment, described in
+[Trust On First Use (TOFU)](#trust-on-first-use-tofu).
+In all other cases — including when a TOFU anchor has already been persisted — no
+field of any `ServerToAgent` message — including
 [`OpAMPConnectionSettings`](#opampconnectionsettings) — may be used to
-update or replace the Agent's payload trust anchor. This is a deliberate
-constraint to prevent a compromised Server from rotating the Agent onto
-an attacker-controlled trust anchor.
+update or replace the Agent's payload trust anchor. This constraint prevents a
+compromised Server from rotating the Agent onto an attacker-controlled trust anchor.
 
 When the payload trust anchor approaches expiry or must be replaced,
 rotation is handled by the same out-of-band mechanism used to provision
@@ -3678,7 +3681,82 @@ it initially (for example, updating the certificate file in the Agent's
 configuration and restarting the Agent). Operators SHOULD plan for this
 operational burden, such as using a long-lived root CA or automating
 certificate distribution through their existing configuration-management
-tooling.
+tooling. The same out-of-band rotation applies to TOFU-enrolled anchors:
+to rotate, delete the persisted anchor file and restart the Agent.
+
+### Trust On First Use (TOFU)
+
+Agents that do not have a pre-configured payload trust anchor may opt in to
+Trust On First Use (TOFU) enrollment. On the first connection the Server
+delivers the root CA certificate in `TrustChainResponse.tofu_trust_anchor`;
+the Agent persists it as its payload trust anchor and uses it for all
+subsequent connections. TOFU is **disabled by default** and requires explicit
+operator configuration.
+
+#### Security implications
+
+TOFU provides **no security on the first connection**: if the first connection
+is intercepted or the Server is compromised at enrollment time, the Agent will
+pin to an attacker-controlled anchor. Operators SHOULD prefer pre-configuring the
+trust anchor through existing configuration-management tooling (Ansible, Chef,
+Puppet, a secrets manager, or a compiled-in certificate). Use TOFU only when
+out-of-band provisioning is impractical.
+
+TOFU is also unsuitable for **stateless or short-lived Agents** (for example,
+Agents running in ephemeral containers) that cannot persist state across restarts.
+Such Agents would re-enroll on every startup, effectively providing no
+protection.
+
+#### TOFU capability advertisement
+
+An Agent opts in to TOFU enrollment by setting both
+`AgentCapabilities_RequiresPayloadTrustVerification` and
+`AgentCapabilities_AcceptsPayloadTrustAnchorTOFU` in its `AgentToServer.capabilities`.
+An Agent MUST NOT set `AcceptsPayloadTrustAnchorTOFU` if it already has a
+persisted or pre-configured trust anchor — it MUST advertise only
+`RequiresPayloadTrustVerification` in that case.
+
+#### TOFU enrollment flow
+
+1. The Agent, having no trust anchor, sets both capability bits.
+2. The Server recognises `AcceptsPayloadTrustAnchorTOFU` and includes the root CA
+   PEM in `TrustChainResponse.tofu_trust_anchor` of the first `SignedServerToAgent`.
+3. The Agent receives the envelope, validates the certificate chain against the
+   delivered root CA, verifies the signature, and — if all checks pass — persists
+   `tofu_trust_anchor` as its payload trust anchor.
+4. On all subsequent connections the Agent advertises only
+   `RequiresPayloadTrustVerification` (not `AcceptsPayloadTrustAnchorTOFU`) and
+   uses the persisted anchor as if it were a pre-configured trust anchor.
+
+The Server MUST include `tofu_trust_anchor` when the Agent has set
+`AcceptsPayloadTrustAnchorTOFU` and the Server holds the root CA. If the Server
+cannot provide the root CA it MUST set `error_message` and omit
+`tofu_trust_anchor`, causing the Agent to terminate the connection.
+
+#### TOFU anchor immutability
+
+The Agent MUST NOT update a previously persisted or operator-configured trust
+anchor. If `tofu_trust_anchor` is delivered on a connection where the Agent
+already has a trust anchor, the Agent MUST ignore it. This constraint applies
+equally to TOFU-enrolled anchors and statically-configured anchors.
+
+**Rationale:** allowing a server-side anchor update would recreate the same attack
+vector that Message Attestation is designed to prevent. If the Server is
+compromised after TOFU enrollment, it must not be able to re-enroll the Agent
+onto an attacker-controlled anchor.
+
+#### TOFU anchor rotation
+
+To replace a TOFU-enrolled trust anchor (for example, when the enrolled CA is
+approaching expiry or has been compromised), the operator deletes the persisted
+anchor file and restarts the Agent. On restart the Agent has no anchor and will
+re-enroll using the new CA configured on the Server. This is deliberately
+out-of-band — the same mechanism used to rotate a statically-configured anchor.
+
+Operators SHOULD monitor the expiry of the enrolled CA and schedule rotation
+before the certificate expires. An expired enrolled CA will cause attestation
+failures on the next connection, rendering the Agent unable to receive any
+`ServerToAgent` messages until the anchor is rotated.
 
 ### Opt-in and Backwards Compatibility
 
@@ -3774,6 +3852,11 @@ first such envelope carries the signing certificate chain in
      including expired certificate, unknown issuer, missing
      `id-kp-codeSigning` EKU, failed name/policy constraints, or
      revocation — the Agent MUST terminate the connection.
+   * The Agent MUST verify that the leaf certificate's Subject
+     Alternative Name (SAN) extension contains a `dNSName` or
+     `iPAddress` entry matching the OpAMP server the Agent is connected
+     to (using the same hostname matching rules as TLS). If the SAN
+     check fails the Agent MUST terminate the connection.
    * On successful validation, the Agent stores the validated leaf
      certificate (or its public key) for the duration of the session.
      For WebSocket transport the session ends when the connection closes.
@@ -3945,6 +4028,14 @@ The signing leaf certificate MUST:
   signing certificate.
 * Be within its validity window
   (`notBefore <= currentTime < notAfter`) at every verification.
+* Contain a Subject Alternative Name (SAN) extension with a `dNSName`
+  entry that matches the hostname of the OpAMP distribution server the
+  Agent is connected to, or an `iPAddress` entry that matches the
+  server's IP address when the Agent connects by IP. During the
+  connection-time handshake the Agent MUST verify this match in
+  addition to standard X.509 path validation. This binds the signing
+  certificate to a specific deployment and prevents a key valid for one
+  server from being accepted by Agents of a different server.
 
 The certificate chain (intermediates plus leaf) MUST chain to the
 pre-configured payload trust anchor. The trust anchor itself is

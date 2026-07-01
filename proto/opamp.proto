@@ -329,6 +329,19 @@ message TrustChainResponse {
     // satisfy the trust chain request. If error_message is set, the Agent
     // MUST terminate the connection.
     string error_message = 2;
+
+    // PEM-encoded root CA certificate used as the payload trust anchor.
+    // Set only during Trust On First Use (TOFU) enrollment: the Server
+    // includes this when the Agent has advertised
+    // AgentCapabilities_AcceptsPayloadTrustAnchorTOFU and the Agent has no
+    // pre-configured trust anchor. The Agent MUST persist this certificate
+    // and use it as the payload trust anchor for all subsequent connections.
+    // The Agent MUST NOT update a previously persisted or operator-configured
+    // trust anchor — if the Agent already has a trust anchor this field MUST
+    // be ignored. To rotate a TOFU-enrolled anchor the operator deletes the
+    // persisted anchor file and restarts the Agent (out-of-band rotation).
+    // See the Trust On First Use (TOFU) section of the specification.
+    bytes tofu_trust_anchor = 3;
 }
 
 // SignedServerToAgent wraps a ServerToAgent message when the payload trust
@@ -860,6 +873,15 @@ enum AgentCapabilities {
     // the connection. See the Message Attestation section of the specification.
     // Status: [Development]
     AgentCapabilities_RequiresPayloadTrustVerification = 0x00010000;
+    // The Agent supports Trust On First Use (TOFU) enrollment for the payload
+    // trust anchor. When set alongside
+    // AgentCapabilities_RequiresPayloadTrustVerification it signals that the
+    // Agent has no pre-configured trust anchor and asks the Server to include
+    // the root CA in trust_chain_response.tofu_trust_anchor so the Agent can
+    // bootstrap and persist it. MUST NOT be set if the Agent already has a
+    // persisted or operator-configured trust anchor.
+    // Status: [Development]
+    AgentCapabilities_AcceptsPayloadTrustAnchorTOFU = 0x00020000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
