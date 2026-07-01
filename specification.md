@@ -3998,9 +3998,7 @@ serialisation between implementations.
 
 ### Algorithm
 
-The signing algorithm is determined by the leaf certificate's
-`signatureAlgorithm` field. The OpAMP protocol does not negotiate
-algorithms.
+The signing algorithm is determined by the leaf certificate's public key (subjectPublicKeyInfo), paired with the hash function specified for that key type in the list below. The OpAMP protocol does not negotiate algorithms.
 
 Implementations SHOULD support, at minimum, the following algorithms:
 
