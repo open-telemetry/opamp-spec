@@ -239,6 +239,7 @@ Status: [Beta]
       - [TrustChainResponse.certificate_chain](#trustchainresponsecertificate_chain)
       - [TrustChainResponse.error_message](#trustchainresponseerror_message)
   * [In-Session Signature Verification](#in-session-signature-verification)
+  * [Signing Certificate Rotation](#signing-certificate-rotation)
   * [Algorithm](#algorithm)
   * [Certificate Requirements](#certificate-requirements)
   * [Failure Modes](#failure-modes)
@@ -3881,7 +3882,8 @@ message SignedServerToAgent {
     // Detached signature over the bytes of the payload field.
     bytes signature = 15;
 
-    // Sent only in the first SignedServerToAgent on a connection.
+    // Sent on the first SignedServerToAgent and whenever the signing
+    // certificate chain rotates.
     TrustChainResponse trust_chain_response = 16;
 }
 ```
@@ -3904,10 +3906,16 @@ immediately using the signing key whose certificate chain is carried in
 
 ##### SignedServerToAgent.trust_chain_response
 
-Sent only in the first `SignedServerToAgent` on a connection. Carries
+Sent in the first `SignedServerToAgent` on a connection, and again
+whenever the signing certificate chain changes (see
+[Signing Certificate Rotation](#signing-certificate-rotation)). Carries
 the signing certificate chain the Agent uses to validate the leaf
-certificate and verify signatures on all messages including this one.
-See [TrustChainResponse Message](#trustchainresponse-message).
+certificate and verify signatures. When `trust_chain_response` carries a
+chain that differs from the one the Agent currently has pinned, the Agent
+MUST validate the new chain against its pre-configured payload trust
+anchor and re-pin the resulting leaf; a chain identical to the pinned one
+requires no action, as it has already been validated. See
+[TrustChainResponse Message](#trustchainresponse-message).
 
 #### TrustChainResponse Message
 
@@ -3970,11 +3978,13 @@ The Server produces a `SignedServerToAgent` as follows:
    Buffers encoder. (No special "deterministic" option is required;
    the only bytes that matter are the ones placed on the wire.)
 3. Compute a signature over those bytes using the Server's signing
-   private key and the signature algorithm declared by the leaf
-   certificate's `signatureAlgorithm` field.
+   private key and the algorithm indicated by the leaf certificate's
+   `subjectPublicKeyInfo`.
 4. Construct the outer `SignedServerToAgent` with `payload` set to the
    marshalled bytes from step 2 and `signature` set to the signature
-   from step 3. On the first message, also set `trust_chain_response`.
+   from step 3. On the first message, and again whenever the signing
+   chain has changed since it was last sent, also set
+   `trust_chain_response`.
 5. Marshal and send the `SignedServerToAgent`.
 
 The Agent verifies a received `SignedServerToAgent` as follows:
@@ -3982,19 +3992,63 @@ The Agent verifies a received `SignedServerToAgent` as follows:
 1. Parse the wire bytes as a `SignedServerToAgent`. Retain the
    `payload` field's raw bytes — these are the bytes the signature
    covers.
-2. If `signature` is empty or absent, the Agent MUST terminate the
+2. If `trust_chain_response` carries a chain that differs from the one
+   currently pinned (including the first message, when none is pinned
+   yet), validate it against the pre-configured payload trust anchor and
+   pin the resulting leaf certificate — the initial handshake, or a
+   rotation on a later message (see
+   [Signing Certificate Rotation](#signing-certificate-rotation)). If
+   validation fails, the Agent MUST terminate the connection. A chain
+   identical to the pinned one requires no re-validation. If
+   `trust_chain_response` is absent and no leaf has been pinned yet, the
+   Agent MUST terminate the connection.
+3. If `signature` is empty or absent, the Agent MUST terminate the
    connection.
-3. Verify `signature` over the `payload` bytes using the public key of
-   the leaf certificate established during the handshake, and the
-   signature algorithm declared by the leaf certificate's
-   `signatureAlgorithm`.
-4. If verification fails, the Agent MUST terminate the connection.
-5. On success, unmarshal the `payload` bytes into a `ServerToAgent`
+4. Verify `signature` over the `payload` bytes using the public key and
+   algorithm from the currently pinned leaf certificate
+   (`subjectPublicKeyInfo`).
+5. If verification fails, the Agent MUST terminate the connection.
+6. On success, unmarshal the `payload` bytes into a `ServerToAgent`
    and process it normally.
 
 Because the signature is detached, the Agent never needs to re-marshal
 the inner `ServerToAgent`. This eliminates any dependency on canonical
 serialisation between implementations.
+
+### Signing Certificate Rotation
+
+The Server's signing key, and therefore its certificate chain, is
+expected to rotate over the lifetime of a long-lived connection.
+Operators commonly rotate signing keys frequently (for example, hourly).
+Only the chain between the leaf and the root changes; the payload trust
+anchor (root) MUST NOT change (see [Trust Model](#trust-model)).
+
+To support rotation without dropping the connection:
+
+* The Server MUST send an updated `trust_chain_response` whenever the
+  signing certificate chain changes, carried by the same
+  `SignedServerToAgent` whose `signature` was produced with the new
+  leaf. The Server SHOULD deliver the new chain before the current leaf
+  certificate expires, so the Agent is never left unable to verify
+  messages.
+* On receiving a `trust_chain_response` whose chain differs from the one
+  it has pinned, the Agent MUST validate the new chain against its
+  (unchanged) pre-configured payload trust anchor, re-pin the resulting
+  leaf, and use it to verify the current and subsequent messages. A chain
+  identical to the pinned one is a no-op.
+
+A Server that never rotates its signing chain simply does not send a
+changed `trust_chain_response` after the first message. Because the
+payload trust anchor is fixed, rotation of the signing chain never
+requires re-provisioning the Agent.
+
+Note that the transports differ in how often the chain is delivered. Over
+WebSocket the Server holds one connection and sends `trust_chain_response`
+only on the first message and on each rotation. The plain HTTP transport
+is request/response with no persistent connection, so a Server MAY include
+`trust_chain_response` in every response; the Agent MUST treat re-delivery
+of an unchanged chain as a no-op rather than an error, comparing it against
+the currently pinned chain and re-validating only on a change.
 
 ### Algorithm
 
