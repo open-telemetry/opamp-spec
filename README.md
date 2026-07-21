@@ -74,6 +74,7 @@ For more information about the emeritus role, see the [community repository](htt
 ### Agent Management Platforms
 
 - [Bindplane](https://bindplane.com)
+- [Grafana Fleet Management](https://grafana.com/docs/grafana-cloud/send-data/fleet-management/get-started/opentelemetry-collector/)
 
 ### Agents
 
