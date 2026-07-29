@@ -245,18 +245,13 @@ message ServerToAgent {
     // Status: [Development]
     CustomMessage custom_message = 11;
 
-    // Field numbers 12 and 13 were briefly assigned to inline payload
-    // trust verification metadata (trust_chain_response and signature)
-    // in an earlier draft of the Message Attestation spec. The design
-    // moved that metadata onto a separate envelope message
-    // (SignedServerToAgent) to enable detached signing. Field numbers
-    // 14–16 are assigned to SignedServerToAgent.payload, .signature,
-    // and .trust_chain_response respectively, so that the two messages
-    // have non-overlapping field numbers and cannot be accidentally
-    // misinterpreted by a parser expecting the other type. All six
-    // field numbers are reserved here to prevent reuse on ServerToAgent.
-    reserved 12, 13, 14, 15, 16;
-    reserved "trust_chain_response", "signature", "payload";
+    // Field numbers 14, 15, and 16 are reserved on ServerToAgent because
+    // they are used by SignedServerToAgent, the envelope message that
+    // carries a serialised ServerToAgent in its payload field. Keeping the
+    // field numbers of the two messages non-overlapping ensures that if the
+    // bytes of one are ever decoded as the other, the mismatched fields are
+    // seen as unknown fields and ignored rather than silently misinterpreted.
+    reserved 14, 15, 16;
 }
 
 enum ServerToAgentFlags {

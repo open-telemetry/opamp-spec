@@ -15,13 +15,13 @@
   `trust_chain_response` carrying the signing certificate chain. The
   envelope is used only when payload trust verification has been
   negotiated; otherwise the Server keeps sending plain `ServerToAgent`
-  messages on the wire, byte-identical to upstream OpAMP.
+  messages on the wire, unchanged from the current protocol.
 * Add new top-level `TrustChainResponse` message containing the
   certificate chain and an optional error message.
-* Reserve field numbers 12 and 13 on `ServerToAgent` (briefly used by
-  an earlier draft for inline trust-chain and signature fields; that
-  draft was superseded by the `SignedServerToAgent` envelope so the
-  numbers can never be reused).
+* Reserve field numbers 14, 15, and 16 on `ServerToAgent` to keep them
+  non-overlapping with the field numbers used by `SignedServerToAgent`,
+  so the two messages cannot be accidentally misinterpreted for one
+  another by a decoder.
 
 ## v0.18.0
 

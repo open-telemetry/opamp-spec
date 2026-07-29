@@ -3782,7 +3782,7 @@ them and will behave exactly as today.
 
 The `SignedServerToAgent` envelope is sent **only** when the negotiation
 succeeds. For connections where Message Attestation is not negotiated,
-the wire format is byte-identical to upstream OpAMP — the Server keeps
+the wire format is unchanged — the Server keeps
 sending plain `ServerToAgent` messages, and the Agent keeps parsing
 them as such. Implementations that do not implement Message Attestation
 therefore see no wire-format change at all.
