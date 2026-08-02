@@ -48,7 +48,7 @@ Language instrumentation agents MUST copy the following OpenTelemetry SDK
 
 - `service.name`
 - `service.instance.id`
-- `service.namespace.name`, if present
+- `service.namespace`, if present
 
 These identifying attributes MUST match the values that the agent uses in the
 Resource of its own telemetry.
