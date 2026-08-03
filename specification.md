@@ -2626,6 +2626,7 @@ following structure:
 message AgentConfigFile {
   bytes body = 1;
   string content_type = 2;
+  string role = 3;
 }
 ```
 
@@ -2638,6 +2639,11 @@ what's contained in the body field, for example "text/yaml". The content_type
 reported in the Effective Configuration in the Agent's status report may be used
 for example by the Server to visualize the reported configuration nicely in a
 UI.
+
+role is an optional field that describes the role of the content. The values and
+their semantics are Agent type-specific. For example, an Agent type may use this
+field to distinguish top-level configuration from supplementary content such as
+certificates or other artifacts referenced by configuration.
 
 #### Security Considerations
 

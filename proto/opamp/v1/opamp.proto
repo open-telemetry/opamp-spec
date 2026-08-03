@@ -1045,13 +1045,18 @@ message AgentConfigMap {
 }
 
 message AgentConfigFile {
-    // Config file or section body. The content, format and encoding depends on the Agent
-    // type. The content_type field may optionally describe the MIME type of the body.
+    // Config file, section, or supplementary content body. The content, format and
+    // encoding depends on the Agent type. The content_type field may optionally
+    // describe the MIME type of the body.
     bytes body = 1;
 
     // Optional MIME Content-Type that describes what's in the body field, for
     // example "text/yaml".
     string content_type = 2;
+
+    // Optional role of the content in the body field. The values and their semantics
+    // are Agent type-specific.
+    string role = 3;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
