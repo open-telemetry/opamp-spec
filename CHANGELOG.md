@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.20.0
+
+* Rename `AgentConfigFile` to `AgentConfigObject` by @assafad1 in https://github.com/open-telemetry/opamp-spec/pull/385
+
 ## v0.19.0
 
 * Add transport message size limits by @pellared in https://github.com/open-telemetry/opamp-spec/pull/346
