@@ -2612,7 +2612,7 @@ message:
 
 ```protobuf
 message AgentConfigMap {
-  map<string, AgentConfigFile> config_map = 1;
+  map<string, AgentConfigObject> config_map = 1;
 }
 ```
 
@@ -2622,11 +2622,11 @@ agent-implementation-defined names for each configuration object.
 For Agents that use a single configuration object the config_map field SHOULD
 contain a single entry.
 
-The AgentConfigFile message represents one configuration object and has the
+The AgentConfigObject message represents one configuration object and has the
 following structure:
 
 ```protobuf
-message AgentConfigFile {
+message AgentConfigObject {
   bytes body = 1;
   string content_type = 2;
   string role = 3;

@@ -1040,10 +1040,10 @@ message AgentConfigMap {
     // for each object. An Agent type MAY assign special meaning to specific keys,
     // including the empty string (""). For agents that use a single configuration
     // object the map SHOULD contain a single entry and the key MAY be an empty string.
-    map<string, AgentConfigFile> config_map = 1;
+    map<string, AgentConfigObject> config_map = 1;
 }
 
-message AgentConfigFile {
+message AgentConfigObject {
     // Config file, section, or supplementary content body. The content, format and
     // encoding depends on the Agent type. The content_type field may optionally
     // describe the MIME type of the body.
