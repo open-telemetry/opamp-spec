@@ -2634,8 +2634,8 @@ message AgentConfigObject {
 ```
 
 The body field contains the bytes of the configuration object. The content,
-format and encoding of the body bytes is Agent type-specific and is outside the
-concerns of OpAMP protocol.
+format and encoding of the body bytes are Agent type-specific and are outside the
+concerns of the OpAMP protocol.
 
 content_type is an optional field. It is a MIME Content-Type that describes
 what's contained in the body field, for example "text/yaml". The content_type

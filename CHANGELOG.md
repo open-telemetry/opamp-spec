@@ -2,7 +2,7 @@
 
 ## v0.20.0
 
-* Rename `AgentConfigFile` to `AgentConfigObject` by @assafad1 in https://github.com/open-telemetry/opamp-spec/pull/385
+* **Breaking change**: Rename `AgentConfigFile` to `AgentConfigObject` by @assafad1 in https://github.com/open-telemetry/opamp-spec/pull/385
 
 ## v0.19.0
 
