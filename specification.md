@@ -21,6 +21,7 @@ Status: [Beta]
 
 - [Introduction](#introduction)
 - [Communication Model](#communication-model)
+  * [Message Sequences](#message-sequences)
   * [WebSocket Transport](#websocket-transport)
     + [WebSocket Message Format](#websocket-message-format)
     + [WebSocket Message Size Limits](#websocket-message-size-limits)
@@ -363,6 +364,19 @@ In the rest of the OpAMP specification the term _Agent_ is used to refer to the 
 which implements the client portion of the OpAMP, regardless of whether or not a
 Supervisor is part of that entity.
 
+### Message Sequences
+
+The message sequences described in this specification are logical sequences.
+Multiple logical sequences MAY be in progress at the same time and their
+messages MAY be interleaved. Unless a particular operation explicitly says
+otherwise, a message that is sent as part of one logical sequence is not required
+to be the next message sent after the message that triggered it.
+
+The sequence is normally started by an initiating message triggered by some
+external event. For example after the connection is established the Client sends
+an AgentToServer message. In this case the "connection established" is the
+triggering event and the AgentToServer is the initiating message.
+
 ### WebSocket Transport
 
 One of the supported transports for OpAMP protocol is
@@ -464,17 +478,6 @@ the message was discarded.
 OpAMP over WebSocket is an asynchronous, full-duplex message exchange protocol. The order and
 sequence of messages exchanged by the OpAMP Client and the Server is defined for each
 particular capability in the corresponding section of this specification.
-
-The message sequences described in this specification are logical sequences.
-Multiple logical sequences MAY be in progress at the same time and their
-messages MAY be interleaved. Unless a particular operation explicitly says
-otherwise, a message that is sent as part of one logical sequence is not required
-to be the next message sent after the message that triggered it.
-
-The sequence is normally started by an initiating message triggered by some
-external event. For example after the connection is established the Client sends
-an AgentToServer message. In this case the "connection established" is the
-triggering event and the AgentToServer is the initiating message.
 
 Both the Client and the Server may begin a sequence by sending an initiating
 message.
