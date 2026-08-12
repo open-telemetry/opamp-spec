@@ -1036,15 +1036,15 @@ message AgentRemoteConfig {
 }
 
 message AgentConfigMap {
-    // Map of configs. Keys are config file names or config section names.
-    // The configuration is assumed to be a collection of one or more named config files
-    // or sections.
-    // For agents that use a single config file or section the map SHOULD contain a single
-    // entry and the key may be an empty string.
-    map<string, AgentConfigFile> config_map = 1;
+    // Map of configuration objects. Keys are agent-implementation-defined names
+    // for each object. An Agent type MAY assign special meaning to specific keys,
+    // including the empty string (""). The empty string is a valid key and MAY be
+    // used regardless of how many entries are in the map. For agents that use a
+    // single configuration object the map SHOULD contain a single entry.
+    map<string, AgentConfigObject> config_map = 1;
 }
 
-message AgentConfigFile {
+message AgentConfigObject {
     // Config file, section, or supplementary content body. The content, format and
     // encoding depends on the Agent type. The content_type field may optionally
     // describe the MIME type of the body.

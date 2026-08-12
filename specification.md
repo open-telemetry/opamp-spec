@@ -154,7 +154,7 @@ Status: [Beta]
       - [TLSCertificate.ca_cert](#tlscertificateca_cert)
   * [Own Telemetry Reporting](#own-telemetry-reporting)
   * [Configuration](#configuration)
-    + [Configuration Files](#configuration-files)
+    + [Configuration Objects](#configuration-objects)
     + [Security Considerations](#security-considerations)
     + [AgentRemoteConfig Message](#agentremoteconfig-message)
   * [Packages](#packages)
@@ -2590,49 +2590,52 @@ Config │    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
 The Agent may ignore the Remote Configuration offer if it does not want its
 configuration to be remotely controlled by the Server.
 
-#### Configuration Files
+#### Configuration Objects
 
-The configuration of the Agent is a collection of named configuration files
+The configuration of the Agent is a collection of named configuration objects
 (this applies both to the Remote Configuration and to the Effective
 Configuration).
 
-The file names MUST be unique within the collection. It is possible that the
-Remote and Local Configuration MAY contain a file with the same name but with a
-different content. How these files are merged to form an Effective Configuration
-is Agent type-specific and is not part of the OpAMP protocol.
+Key names MUST be unique within the collection. Key names are
+agent-implementation-defined. An Agent type MAY assign special meaning to
+specific keys, including the empty string. It is possible that the Remote and
+Local Configuration MAY contain an object with the same key but with different
+content. How these objects are merged to form an Effective Configuration is Agent
+type-specific and is not part of the OpAMP protocol.
 
-If there is only one configuration file in the collection then the file name MAY
-be empty.
+The empty string ("") is a valid key and MAY be used. An object need not
+correspond to a distinct part of the configuration; an Agent type MAY use
+separate keys to expose alternative representations of the same configuration.
 
-The collection of configuration files is represented using a AgentConfigMap
+The collection of configuration objects is represented using an AgentConfigMap
 message:
 
 ```protobuf
 message AgentConfigMap {
-  map<string, AgentConfigFile> config_map = 1;
+  map<string, AgentConfigObject> config_map = 1;
 }
 ```
 
-The config_map field of the AgentConfigSet message is a map of configuration
-files, where keys are file names.
+The config_map field of the AgentConfigMap message is a map where keys are
+agent-implementation-defined names for each configuration object.
 
-For Agents that use a single config file the config_map field SHOULD contain a
-single entry and the key MAY be an empty string.
+For Agents that use a single configuration object the config_map field SHOULD
+contain a single entry.
 
-The AgentConfigFile message represents one configuration file and has the
+The AgentConfigObject message represents one configuration object and has the
 following structure:
 
 ```protobuf
-message AgentConfigFile {
+message AgentConfigObject {
   bytes body = 1;
   string content_type = 2;
   string role = 3;
 }
 ```
 
-The body field contains the raw bytes of the configuration file. The content,
-format and encoding of the raw bytes is Agent type-specific and is outside the
-concerns of OpAMP protocol.
+The body field contains the bytes of the configuration object. The content,
+format and encoding of the body bytes are Agent type-specific and are outside the
+concerns of the OpAMP protocol.
 
 content_type is an optional field. It is a MIME Content-Type that describes
 what's contained in the body field, for example "text/yaml". The content_type
