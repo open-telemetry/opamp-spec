@@ -21,6 +21,7 @@ Status: [Beta]
 
 - [Introduction](#introduction)
 - [Communication Model](#communication-model)
+  * [Message Sequences](#message-sequences)
   * [WebSocket Transport](#websocket-transport)
     + [WebSocket Message Format](#websocket-message-format)
     + [WebSocket Message Size Limits](#websocket-message-size-limits)
@@ -363,6 +364,19 @@ In the rest of the OpAMP specification the term _Agent_ is used to refer to the 
 which implements the client portion of the OpAMP, regardless of whether or not a
 Supervisor is part of that entity.
 
+### Message Sequences
+
+The message sequences described in this specification are logical sequences.
+Multiple logical sequences MAY be in progress at the same time and their
+messages MAY be interleaved. Unless a particular operation explicitly says
+otherwise, a message that is sent as part of one logical sequence is not required
+to be the next message sent after the message that triggered it.
+
+The sequence is normally started by an initiating message triggered by some
+external event. For example after the connection is established the Client sends
+an AgentToServer message. In this case the "connection established" is the
+triggering event and the AgentToServer is the initiating message.
+
 ### WebSocket Transport
 
 One of the supported transports for OpAMP protocol is
@@ -465,11 +479,6 @@ OpAMP over WebSocket is an asynchronous, full-duplex message exchange protocol. 
 sequence of messages exchanged by the OpAMP Client and the Server is defined for each
 particular capability in the corresponding section of this specification.
 
-The sequence is normally started by an initiating message triggered by some
-external event. For example after the connection is established the Client sends
-an AgentToServer message. In this case the "connection established" is the
-triggering event and the AgentToServer is the initiating message.
-
 Both the Client and the Server may begin a sequence by sending an initiating
 message.
 
@@ -540,6 +549,12 @@ when using the WebSocket transport. The only difference is in the timing:
   response is received before a new request can be made. Note that the new request in
   this case can be made immediately after the previous response is received, the Client
   does not need to wait for the polling period between requests.
+
+While an HTTP request is in progress the Client MAY accumulate changes that need
+to be sent to the Server. After the HTTP response is received the Client MAY send
+an accumulated AgentToServer message immediately, even if processing the
+ServerToAgent message received in the response later produces additional data to
+report.
 
 The Client MUST set "Content-Type: application/x-protobuf" request header when
 using plain HTTP transport. When the Server receives an HTTP request with this
@@ -850,6 +865,12 @@ status reports as it processes the portions of ServerToAgent message to indicate
 the progress (see e.g. [Downloading Packages](#downloading-packages)). Multiple status
 reports may be desirable when processing takes a long time, in which case the
 status reports allow the Server to stay informed.
+
+The Server MUST process each valid AgentToServer message according to the fields
+that are present in that message. Unless a particular operation explicitly says
+otherwise, the Server MUST NOT reject or discard an AgentToServer message solely
+because it does not contain data requested or expected by an earlier
+ServerToAgent message. Such data may arrive in a later AgentToServer message.
 
 Note that the Server will reply to each status report with a ServerToAgent
 message (or with an ServerErrorResponse if something goes wrong). These
@@ -3500,6 +3521,7 @@ Note that the Client is not required to keep a growing queue of messages that it
 wants to send to the Server if the connection is unavailable. The Client
 typically only needs to keep one up-to-date message of each kind that it wants
 to send to the Server and send it as soon as the connection is available.
+Such messages MAY contain data accumulated from multiple logical sequences.
 
 For example, the Client should keep track of the Agent's status and compose a
 AgentToServer message that is ready to be sent at the first opportunity. If the
