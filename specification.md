@@ -239,6 +239,7 @@ Status: [Beta]
       - [TrustChainResponse.certificate_chain](#trustchainresponsecertificate_chain)
       - [TrustChainResponse.error_message](#trustchainresponseerror_message)
   * [In-Session Signature Verification](#in-session-signature-verification)
+  * [Heartbeat Response Exemption](#heartbeat-response-exemption)
   * [Signing Certificate Rotation](#signing-certificate-rotation)
   * [Algorithm](#algorithm)
   * [Certificate Requirements](#certificate-requirements)
@@ -3800,7 +3801,7 @@ on connections from Agents that have set `RequiresPayloadTrustVerification`.
 | No | No | Plain OpAMP. The Server sends `ServerToAgent` messages on the wire. Today's behaviour. |
 | No | Yes | Plain OpAMP. The Server is capable of signing but the Agent has not opted in, so the Server sends `ServerToAgent` messages on the wire (not `SignedServerToAgent`). |
 | Yes | No | The Server does not send `SignedServerToAgent`. The Agent receives a plain `ServerToAgent` where it expected a `SignedServerToAgent` envelope. The Agent MUST treat this as a failure as described in [Failure Modes](#failure-modes). |
-| Yes | Yes | Every Server-to-Agent message on the connection is wrapped in `SignedServerToAgent`. Handshake on the first message (carries `trust_chain_response`); per-message detached signatures thereafter. Specified in the remainder of this section. |
+| Yes | Yes | Server-to-Agent messages on the connection are wrapped in `SignedServerToAgent`. Handshake on the first signed message (carries `trust_chain_response`); per-message detached signatures thereafter. As a narrow exemption, a Server MAY send heartbeat responses unsigned (see [Heartbeat Response Exemption](#heartbeat-response-exemption)). Specified in the remainder of this section. |
 
 ### Connection-Time Handshake
 
@@ -3871,6 +3872,16 @@ first such envelope carries the signing certificate chain in
      connection.
    * The Agent then unmarshals the `payload` bytes into a
      `ServerToAgent` and processes it normally.
+
+> **Note.** On a negotiated connection the Server MAY answer with an
+> unsigned heartbeat response before it has any substantive content to
+> send (see [Heartbeat Response Exemption](#heartbeat-response-exemption)).
+> Such a message is a plain `ServerToAgent`, not a `SignedServerToAgent`,
+> and carries no `trust_chain_response`; the Agent accepts it as a
+> heartbeat, and the handshake completes on the first **signed**
+> `SignedServerToAgent`, which MUST carry `trust_chain_response`. The
+> termination rules in this section apply to messages that are not valid
+> heartbeat responses.
 
 #### SignedServerToAgent Message
 
@@ -4015,6 +4026,82 @@ Because the signature is detached, the Agent never needs to re-marshal
 the inner `ServerToAgent`. This eliminates any dependency on canonical
 serialisation between implementations.
 
+### Heartbeat Response Exemption
+
+The base protocol already defines a distinguished, content-free
+Server-to-Agent message: when the Server receives an `AgentToServer` and
+has no data to send back, it still sends a `ServerToAgent` with **all
+fields except `instance_uid` unset**, serving "simply as an
+acknowledgement of receipt" (see [ServerToAgent Message](#servertoagent-message)).
+This is the keepalive response the Agent receives on every HTTP poll, and
+whenever a WebSocket exchange needs only an acknowledgement.
+
+This section refers to that exact shape — a `ServerToAgent` in which only
+`instance_uid` is set and every other field is unset/default — as a
+**heartbeat response**. It is not a new message type; it is the existing
+acknowledgement-of-receipt response, named here so the signing exemption
+can reference it precisely.
+
+Requiring a signature on *every* message means that on the HTTP polling
+transport — where the Server MUST answer every poll — this
+acknowledgement-of-receipt response is signed on every polling interval,
+for every Agent. At fleet scale, per-message signing of these
+content-free responses can dominate the Server's signing cost. Message
+Attestation therefore permits, and narrowly bounds, an exemption for
+exactly this shape.
+
+On a connection where Message Attestation is negotiated:
+
+* A Server MAY send a heartbeat response as a plain (unsigned)
+  `ServerToAgent` — that is, **not** wrapped in a `SignedServerToAgent`
+  envelope. A Server MUST NOT send any other `ServerToAgent` unsigned;
+  every message that sets any field other than `instance_uid` MUST be
+  wrapped and signed as described above.
+* An Agent MUST accept a plain (unsigned) `ServerToAgent` **only if** it
+  is a heartbeat response as defined above (only `instance_uid` set, all
+  other fields unset/default). The Agent MUST reject any other plain
+  `ServerToAgent` and treat it as a failure per
+  [Failure Modes](#failure-modes).
+
+This check is **structural and default-deny**, and MUST be enforced by
+the Agent independently of the Server: the Agent inspects each unsigned
+`ServerToAgent` it receives and admits it only when it matches the exempt
+shape exactly. The Server's cooperation in sending only `instance_uid` is
+never trusted. The consequence for futureproofing is deliberate: any
+field added to `ServerToAgent` in a future version of this specification
+is, by default, outside the exempt shape, so a message that sets it can
+no longer be sent unsigned. New fields therefore never silently widen the
+unsigned surface; admitting a new field into the exemption would require
+an explicit change to this definition.
+
+The exemption does not alter the connection-time handshake or trust-chain
+delivery. `trust_chain_response` is carried on the first **signed**
+`SignedServerToAgent` (and again on rotation) as described in
+[Connection-Time Handshake](#connection-time-handshake) and
+[Signing Certificate Rotation](#signing-certificate-rotation). An
+unsigned heartbeat carries no chain and does not advance handshake state;
+an Agent that has not yet completed the handshake still requires the first
+signed message to carry a valid `trust_chain_response`.
+
+> **Why this is safe.** The exempt shape carries no field the Agent acts
+> on beyond `instance_uid`. An attacker who strips the signature from a
+> substantive message (configuration, command, capabilities, connection
+> settings, or any trust-anchor-affecting field) produces a message that
+> is not the exempt shape, so the Agent rejects it fail-closed. An
+> attacker who forges an unsigned heartbeat conveys nothing the Agent
+> acts upon. The exemption therefore does not open a signature-stripping
+> downgrade: it admits only messages that are inert by construction.
+>
+> Message Attestation does not currently define a replay-protection
+> primitive (such as a nonce or sequence number); signed messages are
+> themselves replayable, and an inert unsigned heartbeat does not worsen
+> this. If a future version adds a freshness field to every
+> `ServerToAgent`, the exempt-shape definition above MUST be updated to
+> account for it — either by permitting exactly that field on heartbeats
+> or by excluding heartbeats from the requirement — otherwise the
+> structural check will (correctly, by default-deny) begin requiring
+> heartbeats to be signed again.
+
 ### Signing Certificate Rotation
 
 The Server's signing key, and therefore its certificate chain, is
@@ -4112,10 +4199,10 @@ dedicated error-response field is required.
 
 | Failure | When detected |
 | --- | --- |
-| Agent set `RequiresPayloadTrustVerification` but the Server did not send a `SignedServerToAgent` envelope (typically because the Server does not support the capability and sent a plain `ServerToAgent`). | First message received from the Server. |
-| First `SignedServerToAgent` does not include `trust_chain_response`. | First message. |
-| `trust_chain_response.error_message` is non-empty. | First message. |
-| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First message. |
+| Agent set `RequiresPayloadTrustVerification` but the Server sent a plain `ServerToAgent` that is **not** a heartbeat response (typically because the Server does not support the capability, or attempted to deliver actionable content unsigned). A plain `ServerToAgent` that is a heartbeat response — only `instance_uid` set — is permitted and is **not** a failure (see [Heartbeat Response Exemption](#heartbeat-response-exemption)). | Any message received from the Server. |
+| First signed `SignedServerToAgent` does not include `trust_chain_response`. | First signed message. |
+| `trust_chain_response.error_message` is non-empty. | First signed message. |
+| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First signed message. |
 | `SignedServerToAgent` lacks `signature`. | Every message. |
 | `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Every message. |
 | Stored leaf certificate's validity window has expired since the handshake. | The next verification after expiry. |
@@ -4138,12 +4225,16 @@ specification.
 * **Algorithm negotiation.** The certificate's `signatureAlgorithm` is
   authoritative. Future algorithm support is added by certificate
   issuers and X.509 stacks, not by changes to OpAMP.
-* **Per-message-type opt-out (signing allowlist).** Mechanisms by which
-  an Agent might accept some `ServerToAgent` message types unsigned —
-  for example, to allow a third-party fleet manager to push low-risk
-  read-only telemetry settings while still requiring authoritative
-  signatures for configuration or command messages — are deferred to a
-  follow-up specification.
+* **General per-message-type opt-out (signing allowlist).** Mechanisms by
+  which an Agent might accept arbitrary `ServerToAgent` message types
+  unsigned — for example, to allow a third-party fleet manager to push
+  low-risk read-only telemetry settings while still requiring
+  authoritative signatures for configuration or command messages — are
+  deferred to a follow-up specification. The sole exemption defined by
+  this version is the content-free
+  [Heartbeat Response Exemption](#heartbeat-response-exemption); a
+  general allowlist covering content-bearing messages remains out of
+  scope.
 
 ## Interoperability
 
