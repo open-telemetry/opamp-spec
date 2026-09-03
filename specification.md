@@ -3858,7 +3858,13 @@ first such envelope carries the signing certificate chain in
      Alternative Name (SAN) extension contains a `dNSName` or
      `iPAddress` entry matching the OpAMP server the Agent is connected
      to (using the same hostname matching rules as TLS). If the SAN
-     check fails the Agent MUST terminate the connection.
+     check fails the Agent MUST terminate the connection. The leaf MAY
+     carry more than one SAN entry; the Agent matches against the single
+     host it actually connected to. This lets one signing certificate
+     serve a deployment reachable through more than one hostname — for
+     example, an OpAMP proxy in front of the origin server — without
+     weakening the match: the Agent still requires the connected host to
+     be present in the SAN set.
    * On successful validation, the Agent stores the validated leaf
      certificate (or its public key) for the duration of the session.
      For WebSocket transport the session ends when the connection closes.
@@ -4175,6 +4181,21 @@ The signing leaf certificate MUST:
   addition to standard X.509 path validation. This binds the signing
   certificate to a specific deployment and prevents a key valid for one
   server from being accepted by Agents of a different server.
+
+  The SAN extension MAY contain multiple `dNSName`/`iPAddress` entries,
+  one for each host through which Agents legitimately reach this
+  deployment. This is the supported way to place a proxy in front of the
+  origin server (for example, an OpAMP gateway): the proxy's hostname
+  and the origin server's hostname are both listed as SAN entries, so a
+  single signing key produces signatures accepted by Agents connecting
+  to either host. Each Agent verifies only the host it connected to.
+
+  Operators MUST enumerate the permitted hosts as SAN entries rather
+  than relaxing the Agent's hostname check. Configuring an Agent to
+  connect to one host while "expecting" a different name in the
+  certificate breaks the deployment-binding property — it is effectively
+  the same as disabling hostname verification in TLS — and a connection
+  to a host not present in the SAN set MUST still fail.
 
 The certificate chain (intermediates plus leaf) MUST chain to the
 pre-configured payload trust anchor. The trust anchor itself is
