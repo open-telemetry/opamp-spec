@@ -2981,7 +2981,7 @@ was downloaded correctly.
 
 Optional signature of the file content. Can be used by the Agent to verify the
 authenticity of the downloaded file, for example can be the
-[detached GPG signature](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
+[detached GPG signature](https://www.gnupg.org/gph/en/manual.html#AEN161).
 The exact signing and verification method is Agent specific. See
 [Code Signing](#code-signing) for recommendations.
 
@@ -3638,7 +3638,7 @@ recommend the following:
 * The downloadable code can be signed with the signature included in the file content or
   have a detached signature recorded in the DownloadableFile
   message's [signature](#downloadablefilesignature) field. Detached signatures may be used
-  for example with [GPG signing](https://www.gnupg.org/gph/en/manual/x135.html#AEN160).
+  for example with [GPG signing](https://www.gnupg.org/gph/en/manual.html#AEN161).
 * If Certificate Authority is used for code signing it is recommended that the
   Certificate Authority and its private key is not co-located with the OpAMP
   Server, so that a compromised Server cannot sign malicious code.
