@@ -8,7 +8,13 @@
   Strict opt-in at the wire level: existing OpAMP deployments are
   unaffected until both Server and Agent opt in.
 * Add `AgentCapabilities.RequiresPayloadTrustVerification = 0x00010000`.
+* Add `AgentCapabilities.AcceptsPayloadTrustAnchorTOFU = 0x00020000`,
+  letting an Agent with no pre-configured trust anchor opt in to Trust On
+  First Use (TOFU) enrollment of the payload trust anchor.
 * Add `ServerCapabilities.OffersPayloadTrustVerification = 0x00000080`.
+* Add `TrustChainResponse.tofu_trust_anchor` (field 3), the PEM-encoded
+  root CA the Server delivers during TOFU enrollment; it bootstraps an
+  anchor only on an Agent that has none and never replaces an existing one.
 * Add new top-level `SignedServerToAgent` envelope message containing
   the marshalled `ServerToAgent` `payload`, a detached `signature` over
   the payload bytes, and (on the first message of a connection) the

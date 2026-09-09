@@ -228,6 +228,12 @@ Status: [Beta]
 - [Message Attestation](#message-attestation)
   * [Motivation and Threat Model](#motivation-and-threat-model)
   * [Trust Model](#trust-model)
+  * [Trust On First Use (TOFU)](#trust-on-first-use-tofu)
+    + [Security implications](#security-implications)
+    + [TOFU capability advertisement](#tofu-capability-advertisement)
+    + [TOFU enrollment flow](#tofu-enrollment-flow)
+    + [TOFU anchor immutability](#tofu-anchor-immutability)
+    + [TOFU anchor rotation](#tofu-anchor-rotation)
   * [Opt-in and Backwards Compatibility](#opt-in-and-backwards-compatibility)
   * [Capability Negotiation](#capability-negotiation)
   * [Connection-Time Handshake](#connection-time-handshake)
@@ -238,6 +244,7 @@ Status: [Beta]
     + [TrustChainResponse Message](#trustchainresponse-message)
       - [TrustChainResponse.certificate_chain](#trustchainresponsecertificate_chain)
       - [TrustChainResponse.error_message](#trustchainresponseerror_message)
+      - [TrustChainResponse.tofu_trust_anchor](#trustchainresponsetofu_trust_anchor)
   * [In-Session Signature Verification](#in-session-signature-verification)
   * [Heartbeat Response Exemption](#heartbeat-response-exemption)
   * [Signing Certificate Rotation](#signing-certificate-rotation)
@@ -682,6 +689,15 @@ enum AgentCapabilities {
     // the connection. See the [Message Attestation](#message-attestation) section.
     // Status: [Development]
     RequiresPayloadTrustVerification = 0x00010000;
+    // The Agent supports Trust On First Use (TOFU) enrollment for the payload
+    // trust anchor. When set alongside RequiresPayloadTrustVerification it
+    // signals that the Agent has no pre-configured trust anchor and asks the
+    // Server to include the root CA in trust_chain_response.tofu_trust_anchor
+    // so the Agent can bootstrap and persist it. MUST NOT be set if the Agent
+    // already has a persisted or operator-configured trust anchor. See the
+    // [Message Attestation](#message-attestation) section.
+    // Status: [Development]
+    AcceptsPayloadTrustAnchorTOFU = 0x00020000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -3950,6 +3966,17 @@ message TrustChainResponse {
     // satisfy the trust chain request. If error_message is non-empty,
     // the Agent MUST terminate the connection.
     string error_message = 2;
+
+    // PEM-encoded root CA certificate used as the payload trust anchor.
+    // Set only during Trust On First Use (TOFU) enrollment: the Server
+    // includes this when the Agent has advertised
+    // AcceptsPayloadTrustAnchorTOFU and the Agent has no pre-configured
+    // trust anchor. The Agent MUST persist this certificate and use it as
+    // the payload trust anchor for all subsequent connections. The Agent
+    // MUST NOT update a previously persisted or operator-configured trust
+    // anchor — if the Agent already has one this field MUST be ignored.
+    // See the Trust On First Use (TOFU) section.
+    bytes tofu_trust_anchor = 3;
 }
 ```
 
@@ -3965,6 +3992,16 @@ with the encoding used by `TLSCertificate.cert`.
 Human-readable error description set by the Server when it cannot
 satisfy the trust chain request. When non-empty, `certificate_chain`
 SHOULD be empty and the Agent MUST terminate the connection.
+
+##### TrustChainResponse.tofu_trust_anchor
+
+PEM-encoded root CA certificate the Server offers as the Agent's payload
+trust anchor during Trust On First Use enrollment. The Server sets this
+field only when the Agent has advertised `AcceptsPayloadTrustAnchorTOFU`
+and holds no pre-configured trust anchor. An Agent that already has a
+persisted or operator-configured trust anchor MUST ignore this field and
+MUST NOT use it to update or replace that anchor. See
+[Trust On First Use (TOFU)](#trust-on-first-use-tofu).
 
 ### In-Session Signature Verification
 
@@ -4157,6 +4194,21 @@ Implementations SHOULD support, at minimum, the following algorithms:
 These algorithms are covered by the default X.509 stacks of Go
 (`crypto/x509`), Java (`java.security`), and Python (`cryptography`).
 
+Because the protocol does not negotiate algorithms, the signature
+encoding for each key type is fixed by this specification so that any
+two conforming implementations interoperate:
+
+* **ECDSA** signatures MUST be encoded as an ASN.1 DER `SEQUENCE` of the
+  two INTEGERs `r` and `s` (as produced by Go's `ecdsa.SignASN1` and by
+  OpenSSL's default ECDSA output). The fixed-width `r || s`
+  concatenation used by JWS, COSE, and WebCrypto MUST NOT be used.
+* **RSA** signatures MUST use RSASSA-PKCS1-v1_5 with SHA-256. RSASSA-PSS
+  MUST NOT be used; because algorithms are not negotiated, there is no
+  way to signal the scheme for a given RSA key, so a single scheme is
+  mandated.
+* **Ed25519** signatures follow RFC 8032 (PureEdDSA); the encoding is
+  fixed by that specification and no variation applies.
+
 Future algorithm additions require no change to the OpAMP protocol; new
 algorithms are signalled by the certificate and supported by stacks as
 they evolve.
@@ -4202,10 +4254,21 @@ pre-configured payload trust anchor. The trust anchor itself is
 supplied out-of-band and MUST NOT be included in the
 `certificate_chain` field of `trust_chain_response`.
 
-Revocation checking is RECOMMENDED. Implementations SHOULD use the
-revocation-checking facilities of their X.509 library (CRL distribution
-points, OCSP) during chain validation. Operators MAY rely on
-short-lived certificates as an alternative to active revocation.
+Short-lived signing certificates are a primary mitigation for a
+compromised signing key: an Agent rejects any leaf outside its validity
+window during path validation, so a key confined to a short window
+becomes unusable shortly after compromise without any separate
+revocation infrastructure. Operators are RECOMMENDED to keep signing
+certificate lifetimes short and to rotate them regularly.
+
+Active revocation, when required (for example to invalidate a key before
+its natural expiry), is handled out of band rather than during in-session
+chain validation. Common X.509 revocation transports (CRL distribution
+points, OCSP) are not assumed to be reachable or checked by Agents at
+message-verification time, and conforming implementations are not
+required to consult them during chain validation. Deployments that need
+revocation faster than certificate expiry provide it through an
+out-of-band mechanism appropriate to their environment.
 
 ### Failure Modes
 
@@ -4241,10 +4304,19 @@ specification.
   authenticity of Agent-originated messages is tracked separately in
   [opamp-spec issue #20](https://github.com/open-telemetry/opamp-spec/issues/20).
 * **Trust anchor distribution by the Server.** The payload trust anchor
-  is operator-managed and MUST NOT be modified by any field of any
-  `ServerToAgent` message.
-* **Algorithm negotiation.** The certificate's `signatureAlgorithm` is
-  authoritative. Future algorithm support is added by certificate
+  is operator-managed and, once an Agent holds one, MUST NOT be modified
+  or replaced by any field of any `ServerToAgent` message. The sole
+  exception is [Trust On First Use (TOFU)](#trust-on-first-use-tofu)
+  enrollment, which bootstraps an anchor on an Agent that has none via
+  `TrustChainResponse.tofu_trust_anchor`; it never updates an existing
+  anchor. Server-driven rotation of an already-enrolled anchor remains
+  out of scope.
+* **Algorithm negotiation.** The signing algorithm is determined by the
+  leaf certificate's public key (`subjectPublicKeyInfo`), as specified in
+  [Algorithm](#algorithm), and is not negotiated in-protocol. The
+  certificate's `signatureAlgorithm` field describes only the issuer's
+  signature over the certificate and does **not** determine the payload
+  signing algorithm. Future algorithm support is added by certificate
   issuers and X.509 stacks, not by changes to OpAMP.
 * **General per-message-type opt-out (signing allowlist).** Mechanisms by
   which an Agent might accept arbitrary `ServerToAgent` message types
