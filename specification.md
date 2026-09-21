@@ -17,14 +17,16 @@ Status: [Beta]
 <details>
 <summary>Table of Contents</summary>
 
-<!-- toc -->
+<!-- START doctoc -->
 
 - [Introduction](#introduction)
 - [Communication Model](#communication-model)
   * [WebSocket Transport](#websocket-transport)
     + [WebSocket Message Format](#websocket-message-format)
+    + [WebSocket Message Size Limits](#websocket-message-size-limits)
     + [WebSocket Message Exchange](#websocket-message-exchange)
   * [Plain HTTP Transport](#plain-http-transport)
+    + [Plain HTTP Message Size Limits](#plain-http-message-size-limits)
   * [AgentToServer and ServerToAgent Messages](#agenttoserver-and-servertoagent-messages)
     + [AgentToServer Message](#agenttoserver-message)
       - [AgentToServer.instance_uid](#agenttoserverinstance_uid)
@@ -72,6 +74,7 @@ Status: [Beta]
       - [ComponentHealth.status](#componenthealthstatus)
       - [ComponentHealth.status_time_unix_nano](#componenthealthstatus_time_unix_nano)
       - [ComponentHealth.component_health_map](#componenthealthcomponent_health_map)
+      - [ComponentHealth.attributes](#componenthealthattributes)
     + [EffectiveConfig Message](#effectiveconfig-message)
       - [EffectiveConfig.config_map](#effectiveconfigconfig_map)
     + [RemoteConfigStatus Message](#remoteconfigstatus-message)
@@ -151,7 +154,7 @@ Status: [Beta]
       - [TLSCertificate.ca_cert](#tlscertificateca_cert)
   * [Own Telemetry Reporting](#own-telemetry-reporting)
   * [Configuration](#configuration)
-    + [Configuration Files](#configuration-files)
+    + [Configuration Objects](#configuration-objects)
     + [Security Considerations](#security-considerations)
     + [AgentRemoteConfig Message](#agentremoteconfig-message)
   * [Packages](#packages)
@@ -266,7 +269,7 @@ Status: [Beta]
   * [Cloud Provider Support](#cloud-provider-support)
   * [Other](#other)
 
-<!-- tocstop -->
+<!-- END doctoc -->
 
 </details>
 
@@ -450,6 +453,39 @@ Note that due to the way Protobuf wire format is designed the size of the `data`
 bytes can be 0 if the encoded AgentToServer or ServerToAgent message is empty (i.e. all
 fields are unset). This is a valid situation.
 
+#### WebSocket Message Size Limits
+
+All WebSocket message size limits in this section apply to the complete OpAMP
+WebSocket message, including both `header` and `data`. It is RECOMMENDED to use
+64 MiB as the default limit for each limit in this section. Implementations
+SHOULD allow these limits to be configured.
+
+The Server MUST enforce a size limit when receiving OpAMP WebSocket messages
+that contain AgentToServer messages, including after any WebSocket extension
+decompression, to mitigate possible excessive memory allocation caused by a
+misconfigured or malicious Client sending an oversized message. If the limit is
+exceeded, the Server MUST treat the message as malformed and SHOULD close the
+WebSocket connection with status code 1009 (Message Too Big).
+
+The Client MUST enforce a size limit when receiving OpAMP WebSocket messages
+that contain ServerToAgent messages, including after any WebSocket extension
+decompression, to mitigate possible excessive memory allocation caused by a
+misconfigured or malicious Server sending an oversized message. If the limit is
+exceeded, the Client MUST treat the message as malformed and SHOULD close the
+WebSocket connection with status code 1009 (Message Too Big).
+
+The Server MUST limit the size of OpAMP WebSocket messages that contain
+ServerToAgent messages before sending them, including before any WebSocket
+extension compression, to avoid overwhelming the Client. If the limit is
+exceeded, the Server MUST NOT send the message and SHOULD record the fact that
+the message was discarded.
+
+The Client SHOULD limit the size of OpAMP WebSocket messages that contain
+AgentToServer messages before sending them, including before any WebSocket
+extension compression, to avoid overwhelming the Server. If the limit is
+exceeded, the Client MUST NOT send the message and SHOULD record the fact that
+the message was discarded.
+
 #### WebSocket Message Exchange
 
 OpAMP over WebSocket is an asynchronous, full-duplex message exchange protocol. The order and
@@ -550,6 +586,36 @@ message.
 
 The Server SHOULD compress the response if the Client indicated it can accept compressed
 response via the "Accept-Encoding" header.
+
+#### Plain HTTP Message Size Limits
+
+All plain HTTP message size limits in this section apply to the complete HTTP
+request or response body. It is RECOMMENDED to use 64 MiB as the default limit
+for each limit in this section. Implementations SHOULD allow these limits to be
+configured.
+
+The Server MUST enforce a size limit when receiving HTTP request bodies,
+including after decompression, to mitigate possible excessive memory allocation
+caused by a misconfigured or malicious Client sending an oversized request. If
+the limit is exceeded, the Server MUST respond with `HTTP 413 Content Too
+Large`, after which the Client MUST NOT retry the same request.
+
+The Client MUST enforce a size limit when receiving HTTP response bodies,
+including after decompression, to mitigate possible excessive memory allocation
+caused by a misconfigured or malicious Server sending an oversized response. If
+the limit is exceeded, the Client MUST treat the response as failed, MUST NOT
+process the oversized response body, and SHOULD record the fact that the
+response was discarded.
+
+The Server MUST limit the size of HTTP response bodies before sending them,
+including before compression, to avoid overwhelming the Client. If the limit is
+exceeded, the Server MUST NOT send the oversized response body and SHOULD record
+the fact that the response was discarded.
+
+The Client SHOULD limit the size of HTTP request bodies before sending them,
+including before compression, to avoid overwhelming the Server. If the limit is
+exceeded, the Client MUST NOT make the request and SHOULD record the fact that
+the request was discarded.
 
 ### AgentToServer and ServerToAgent Messages
 
@@ -1289,6 +1355,7 @@ message ComponentHealth {
     string status = 4;
     fixed64 status_time_unix_nano = 5;
     map<string, ComponentHealth> component_health_map = 6;
+    repeated KeyValue attributes = 7;
 }
 ```
 
@@ -1321,6 +1388,11 @@ nanoseconds since 00:00:00 UTC on 1 January 1970.
 
 A map to store more granular, sub-component health. It can nest as deeply as needed to
 describe the underlying system.
+
+##### ComponentHealth.attributes
+
+Additional context or metadata for the observed component's status.
+Attributes are component specific and outside the concerns of the OpAMP protocol.
 
 #### EffectiveConfig Message
 
@@ -2565,54 +2637,63 @@ Config │    Config │  ServerToAgent{AgentRemoteConfig} │   │and     │
 The Agent may ignore the Remote Configuration offer if it does not want its
 configuration to be remotely controlled by the Server.
 
-#### Configuration Files
+#### Configuration Objects
 
-The configuration of the Agent is a collection of named configuration files
+The configuration of the Agent is a collection of named configuration objects
 (this applies both to the Remote Configuration and to the Effective
 Configuration).
 
-The file names MUST be unique within the collection. It is possible that the
-Remote and Local Configuration MAY contain a file with the same name but with a
-different content. How these files are merged to form an Effective Configuration
-is Agent type-specific and is not part of the OpAMP protocol.
+Key names MUST be unique within the collection. Key names are
+agent-implementation-defined. An Agent type MAY assign special meaning to
+specific keys, including the empty string. It is possible that the Remote and
+Local Configuration MAY contain an object with the same key but with different
+content. How these objects are merged to form an Effective Configuration is Agent
+type-specific and is not part of the OpAMP protocol.
 
-If there is only one configuration file in the collection then the file name MAY
-be empty.
+The empty string ("") is a valid key and MAY be used. An object need not
+correspond to a distinct part of the configuration; an Agent type MAY use
+separate keys to expose alternative representations of the same configuration.
 
-The collection of configuration files is represented using a AgentConfigMap
+The collection of configuration objects is represented using an AgentConfigMap
 message:
 
 ```protobuf
 message AgentConfigMap {
-  map<string, AgentConfigFile> config_map = 1;
+  map<string, AgentConfigObject> config_map = 1;
 }
 ```
 
-The config_map field of the AgentConfigSet message is a map of configuration
-files, where keys are file names.
+The config_map field of the AgentConfigMap message is a map where keys are
+agent-implementation-defined names for each configuration object.
 
-For Agents that use a single config file the config_map field SHOULD contain a
-single entry and the key MAY be an empty string.
+For Agents that use a single configuration object the config_map field SHOULD
+contain a single entry.
 
-The AgentConfigFile message represents one configuration file and has the
+The AgentConfigObject message represents one configuration object and has the
 following structure:
 
 ```protobuf
-message AgentConfigFile {
+message AgentConfigObject {
   bytes body = 1;
   string content_type = 2;
+  string role = 3;
 }
 ```
 
-The body field contains the raw bytes of the configuration file. The content,
-format and encoding of the raw bytes is Agent type-specific and is outside the
-concerns of OpAMP protocol.
+The body field contains the bytes of the configuration object. The content,
+format and encoding of the body bytes are Agent type-specific and are outside the
+concerns of the OpAMP protocol.
 
 content_type is an optional field. It is a MIME Content-Type that describes
 what's contained in the body field, for example "text/yaml". The content_type
 reported in the Effective Configuration in the Agent's status report may be used
 for example by the Server to visualize the reported configuration nicely in a
 UI.
+
+role is an optional field that describes the role of the content. The values and
+their semantics are Agent type-specific. For example, an Agent type may use this
+field to distinguish top-level configuration from supplementary content such as
+certificates or other artifacts referenced by configuration.
 
 #### Security Considerations
 
@@ -3368,18 +3449,23 @@ frame and follow the procedure defined by WebSocket standard.
 
 #### Plain HTTP Transport
 
-The Client is considered logically disconnected as soon as the OpAMP HTTP
-response is completed. It is not necessary for the Client to send AgentToServer
-message with agent_disconnect field set since it is always implied anyway that
-the Client connection is gone after the HTTP response is completed.
+Although the Client is logically disconnected as soon as the OpAMP HTTP response
+is completed, the Client SHOULD include the
+[agent_disconnect](#agenttoserveragent_disconnect) field in the last
+AgentToServer message when the Client is shutting down or when the Client is about
+to use new OpAMP connection settings. This allows the Server to immediately mark
+the Agent as disconnected rather than waiting for missed polling intervals, which
+is especially useful for large reporting intervals.
+
+If the Client is unable to send
+[agent_disconnect](#agenttoserveragent_disconnect) (e.g. due to an abrupt
+termination), the Server may use its own business logic to decide what it considers
+an active Agent (e.g. a Client that continuously polls) vs an inactive Agent (e.g.
+a Client that has not made an HTTP request for a specific period of time). This
+business logic is outside the scope of OpAMP specification.
 
 HTTP keep-alive may be used by the Client and the Server but it has no effect on
 the logical operation of the OpAMP protocol.
-
-The Server may use its own business logic to decide what it considers an active
-Agent (e.g. an Client that continuously polls) vs an inactive Agent (e.g. a
-Client that has not made an HTTP request for a specific period of time). This business
-logic is outside the scope of OpAMP specification.
 
 ### Restoring WebSocket Connection
 
@@ -4085,7 +4171,7 @@ This section refers to that exact shape — a `ServerToAgent` in which only
 acknowledgement-of-receipt response, named here so the signing exemption
 can reference it precisely.
 
-Requiring a signature on *every* message means that on the HTTP polling
+Requiring a signature on _every_ message means that on the HTTP polling
 transport — where the Server MUST answer every poll — this
 acknowledgement-of-receipt response is signed on every polling interval,
 for every Agent. At fleet scale, per-message signing of these
@@ -4395,8 +4481,8 @@ the new capabilities.
 
 #### Protobuf Schema Stability
 
-The specification provides the follow stability guarantees of the
-[Protobuf definitions](proto/opamp.proto) for OpAMP 1.0:
+The specification provides the following stability guarantees of the
+[Protobuf definitions](proto/opamp/v1/opamp.proto) for OpAMP 1.0:
 
 - Field types, numbers and names will not change.
 - Names of messages and enums will not change.

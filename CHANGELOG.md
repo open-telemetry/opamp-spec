@@ -29,6 +29,19 @@
   so the two messages cannot be accidentally misinterpreted for one
   another by a decoder.
 
+## v0.20.0
+
+* **Breaking change**: Rename `AgentConfigFile` to `AgentConfigObject` by @assafad1 in https://github.com/open-telemetry/opamp-spec/pull/385
+
+## v0.19.0
+
+* Add transport message size limits by @pellared in https://github.com/open-telemetry/opamp-spec/pull/346
+* Restructure proto folders: move from proto to proto/opamp/v1 by @juandemanjon in https://github.com/open-telemetry/opamp-spec/pull/352
+* Add ComponentHealth.attributes by @michel-laterman in https://github.com/open-telemetry/opamp-spec/pull/334
+* Recommend agent_disconnect for plain HTTP transport by @Krishnachaitanyakc in https://github.com/open-telemetry/opamp-spec/pull/353
+* Fix SDK service namespace identifying attribute by @cijothomas in https://github.com/open-telemetry/opamp-spec/pull/381
+* Add role to AgentConfigFile by @dmitryax in https://github.com/open-telemetry/opamp-spec/pull/350
+
 ## v0.18.0
 
 * Fix OpAMP port in example by @tigrannajaryan in https://github.com/open-telemetry/opamp-spec/pull/331
