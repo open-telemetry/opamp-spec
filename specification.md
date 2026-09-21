@@ -4287,7 +4287,8 @@ two conforming implementations interoperate:
 * **ECDSA** signatures MUST be encoded as an ASN.1 DER `SEQUENCE` of the
   two INTEGERs `r` and `s` (as produced by Go's `ecdsa.SignASN1` and by
   OpenSSL's default ECDSA output). The fixed-width `r || s`
-  concatenation used by JWS, COSE, and WebCrypto MUST NOT be used.
+  concatenation used by JWS, CBOR Object Signing and Encryption, and
+  WebCrypto MUST NOT be used.
 * **RSA** signatures MUST use RSASSA-PKCS1-v1_5 with SHA-256. RSASSA-PSS
   MUST NOT be used; because algorithms are not negotiated, there is no
   way to signal the scheme for a given RSA key, so a single scheme is
