@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+* Add `Message Attestation` section to specification.md describing an
+  optional, end-to-end integrity mechanism for `ServerToAgent` messages
+  based on X.509 certificate chains and a per-connection trust handshake.
+  Strict opt-in at the wire level: existing OpAMP deployments are
+  unaffected until both Server and Agent opt in.
+* Add `AgentCapabilities.RequiresPayloadTrustVerification = 0x00010000`.
+* Add `AgentCapabilities.AcceptsPayloadTrustAnchorTOFU = 0x00020000`,
+  letting an Agent with no pre-configured trust anchor opt in to Trust On
+  First Use (TOFU) enrollment of the payload trust anchor.
+* Add `ServerCapabilities.OffersPayloadTrustVerification = 0x00000080`.
+* Add `TrustChainResponse.tofu_trust_anchor` (field 3), the PEM-encoded
+  root CA the Server delivers during TOFU enrollment; it bootstraps an
+  anchor only on an Agent that has none and never replaces an existing one.
+* Add new top-level `SignedServerToAgent` envelope message containing
+  the marshalled `ServerToAgent` `payload`, a detached `signature` over
+  the payload bytes, and (on the first message of a connection) the
+  `trust_chain_response` carrying the signing certificate chain. The
+  envelope is used only when payload trust verification has been
+  negotiated; otherwise the Server keeps sending plain `ServerToAgent`
+  messages on the wire, unchanged from the current protocol.
+* Add new top-level `TrustChainResponse` message containing the
+  certificate chain and an optional error message.
+* Reserve field numbers 14, 15, and 16 on `ServerToAgent` to keep them
+  non-overlapping with the field numbers used by `SignedServerToAgent`,
+  so the two messages cannot be accidentally misinterpreted for one
+  another by a decoder.
+
 ## v0.20.0
 
 * **Breaking change**: Rename `AgentConfigFile` to `AgentConfigObject` by @assafad1 in https://github.com/open-telemetry/opamp-spec/pull/385
