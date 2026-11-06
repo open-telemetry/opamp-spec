@@ -62,6 +62,9 @@ Status: [Beta]
       - [ServerErrorResponse.error_message](#servererrorresponseerror_message)
       - [ServerErrorResponse.retry_info](#servererrorresponseretry_info)
   * [ServerToAgentCommand Message](#servertoagentcommand-message)
+    + [ServerToAgentCommand.command_id](#servertoagentcommandcommand_id)
+    + [Command Status Reporting](#command-status-reporting)
+    + [CommandStatus Message](#commandstatus-message)
 - [Operation](#operation)
   * [Status Reporting](#status-reporting)
     + [Agent Status Compression](#agent-status-compression)
@@ -631,6 +634,7 @@ message AgentToServer {
     CustomMessage custom_message = 13; // Status: [Development]
     AvailableComponents available_components = 14; // Status: [Development]
     ConnectionSettingsStatus connection_settings_status = 15; // Status: [Development]
+    CommandStatus command_status = 16; // Status: [Development]
 }
 ```
 
@@ -737,6 +741,10 @@ enum AgentCapabilities {
     // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
     // Status: [Development]
     ReportsConnectionSettingsStatus = 0x00008000;
+    // The agent will report the status of commands received in ServerToAgent.command
+    // via AgentToServer.command_status field.
+    // Status: [Development]
+    ReportsCommandStatus            = 0x00010000;
 
     // Add new capabilities here, continuing with the least significant unused bit.
 }
@@ -1107,12 +1115,77 @@ message ServerToAgentCommand {
         Restart = 0;
     }
     CommandType type = 1;
+    bytes command_id = 2; // Status: [Development]
 }
 ```
 
 The ServerToAgentCommand message is sent when the Server wants the Agent to restart.
 This message must only contain the command, instance_uid, and capabilities fields. All other fields
 will be ignored.
+
+#### ServerToAgentCommand.command_id
+
+Status: [Development]
+
+An optional identifier of the command, assigned by the Server. The Server SHOULD
+use a value that is unique per Agent, for example a UUID. If the Agent has the
+ReportsCommandStatus capability it MUST copy this value to
+[CommandStatus.command_id](#commandstatuscommand_id) when reporting the status
+of the command.
+
+#### Command Status Reporting
+
+Status: [Development]
+
+An Agent that has the ReportsCommandStatus capability MUST report the progress
+of each command it receives via the AgentToServer.command_status field:
+
+1. When the Agent starts executing the command it SHOULD report the
+   EXECUTING status.
+2. When the command finishes the Agent MUST report either COMPLETED or FAILED.
+   For the Restart command COMPLETED means that the Agent is running again
+   after the restart. If the Agent cannot verify this, it MUST NOT report
+   COMPLETED.
+
+Commands can cause the OpAMP connection to be re-established (for example when
+the Agent process restarts and it is not managed by a Supervisor). In that case
+the Agent SHOULD report the final status after reconnecting.
+
+#### CommandStatus Message
+
+Status: [Development]
+
+```protobuf
+message CommandStatus {
+    bytes command_id = 1;
+    CommandType type = 2;
+    enum CommandStatuses {
+        UNSET = 0;
+        COMPLETED = 1;
+        EXECUTING = 2;
+        FAILED = 3;
+    }
+    CommandStatuses status = 3;
+    string error_message = 4;
+}
+```
+
+##### CommandStatus.command_id
+
+The [ServerToAgentCommand.command_id](#servertoagentcommandcommand_id) of the
+command this status refers to. Empty if the Server did not set one.
+
+##### CommandStatus.type
+
+The type of the command this status refers to.
+
+##### CommandStatus.status
+
+The current status of the command.
+
+##### CommandStatus.error_message
+
+Optional error message if status==FAILED.
 
 ## Operation
 

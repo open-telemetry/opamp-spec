@@ -102,6 +102,12 @@ message AgentToServer {
     // settings status is unchanged since the last AgentToServer message.
     // Status: [Development]
     ConnectionSettingsStatus connection_settings_status = 15;
+
+    // The status of a command that was previously received from the Server in
+    // ServerToAgent.command. This field SHOULD be unset if the command status
+    // is unchanged since the last AgentToServer message.
+    // Status: [Development]
+    CommandStatus command_status = 16;
 }
 
 enum AgentToServerFlags {
@@ -675,6 +681,13 @@ message RetryInfo {
 // Status: [Beta]
 message ServerToAgentCommand {
     CommandType type = 1;
+
+    // An optional identifier of this command, assigned by the Server. If set, the
+    // Agent that has the ReportsCommandStatus capability MUST copy it to
+    // CommandStatus.command_id when reporting the status of this command.
+    // The Server SHOULD use a value that is unique per Agent, for example a UUID.
+    // Status: [Development]
+    bytes command_id = 2;
 }
 
 // Status: [Beta]
@@ -782,6 +795,10 @@ enum AgentCapabilities {
     // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
     // Status: [Development]
     AgentCapabilities_ReportsConnectionSettingsStatus = 0x00008000;
+    // The agent will report the status of commands received in ServerToAgent.command
+    // via AgentToServer.command_status field.
+    // Status: [Development]
+    AgentCapabilities_ReportsCommandStatus            = 0x00010000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
@@ -866,6 +883,38 @@ enum ConnectionSettingsStatuses {
     // Agent tried to apply the ConnectionSettings it received earlier, but failed.
     // See error_message for more details.
     ConnectionSettingsStatuses_FAILED = 3;
+}
+
+// Status: [Development]
+message CommandStatus {
+    // The command_id of the ServerToAgentCommand this status refers to. Empty if
+    // the Server did not set ServerToAgentCommand.command_id.
+    bytes command_id = 1;
+
+    // The type of the command this status refers to.
+    CommandType type = 2;
+
+    CommandStatuses status = 3;
+
+    // Optional error message if status==FAILED.
+    string error_message = 4;
+}
+
+// Status: [Development]
+enum CommandStatuses {
+    // The value of status field is not set.
+    CommandStatuses_UNSET = 0;
+
+    // The Agent finished executing the command successfully. For the Restart
+    // command this means the Agent is running again after the restart.
+    CommandStatuses_COMPLETED = 1;
+
+    // The Agent is currently executing the command.
+    CommandStatuses_EXECUTING = 2;
+
+    // The Agent tried to execute the command but failed.
+    // See error_message for more details.
+    CommandStatuses_FAILED = 3;
 }
 
 enum RemoteConfigStatuses {
