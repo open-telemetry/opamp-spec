@@ -697,23 +697,23 @@ enum AgentCapabilities {
     // The Agent can report package status.
     // Status: [Beta]
     ReportsPackageStatuses          = 0x00000010;
-    // The Agent can report own trace to the destination specified by
+    // The Agent can report its own traces to the destination specified by
     // the Server via ConnectionSettingsOffers.own_traces field.
     // Status: [Beta]
     ReportsOwnTraces                = 0x00000020;
-    // The Agent can report own metrics to the destination specified by
+    // The Agent can report its own metrics to the destination specified by
     // the Server via ConnectionSettingsOffers.own_metrics field.
     // Status: [Beta]
     ReportsOwnMetrics               = 0x00000040;
-    // The Agent can report own logs to the destination specified by
+    // The Agent can report its own logs to the destination specified by
     // the Server via ConnectionSettingsOffers.own_logs field.
     // Status: [Beta]
     ReportsOwnLogs                  = 0x00000080;
-    // The can accept connections settings for OpAMP via
+    // The Agent can accept connection settings for OpAMP via
     // ConnectionSettingsOffers.opamp field.
     // Status: [Beta]
     AcceptsOpAMPConnectionSettings  = 0x00000100;
-    // The can accept connections settings for other destinations via
+    // The Agent can accept connection settings for other destinations via
     // ConnectionSettingsOffers.other_connections field.
     // Status: [Beta]
     AcceptsOtherConnectionSettings  = 0x00000200;
@@ -731,10 +731,10 @@ enum AgentCapabilities {
     // know the configured interval and should not make assumptions about it.
     // Status: [Development]
     ReportsHeartbeat                = 0x00002000;
-    // The agent will report AvailableComponents via the AgentToServer.available_components field.
+    // The Agent will report AvailableComponents via the AgentToServer.available_components field.
     // Status: [Development]
     ReportsAvailableComponents      = 0x00004000;
-    // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
+    // The Agent will report ConnectionSettingsStatus via AgentToServer.connection_settings_status field.
     // Status: [Development]
     ReportsConnectionSettingsStatus = 0x00008000;
 
