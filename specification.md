@@ -3826,8 +3826,8 @@ persisted or pre-configured trust anchor — it MUST advertise only
 2. The Server recognises `AcceptsPayloadTrustAnchorTOFU` and includes the root CA
    PEM in `TrustChainResponse.tofu_trust_anchor` of the first `SignedServerToAgent`.
 3. The Agent receives the envelope, validates the certificate chain against the
-   delivered root CA, verifies the signature, and — if all checks pass — persists
-   `tofu_trust_anchor` as its payload trust anchor.
+   delivered root CA, verifies the signature and `instance_uid`, and — if all
+   checks pass — persists `tofu_trust_anchor` as its payload trust anchor.
 4. On all subsequent connections the Agent advertises only
    `RequiresPayloadTrustVerification` (not `AcceptsPayloadTrustAnchorTOFU`) and
    uses the persisted anchor as if it were a pre-configured trust anchor.
@@ -4148,8 +4148,13 @@ The Agent verifies a received `SignedServerToAgent` as follows:
    algorithm from the currently pinned leaf certificate
    (`subjectPublicKeyInfo`).
 5. If verification fails, the Agent MUST terminate the connection.
-6. On success, unmarshal the `payload` bytes into a `ServerToAgent`
-   and process it normally.
+6. On success, unmarshal the `payload` bytes into a `ServerToAgent`.
+   If its `instance_uid` is not the Agent's, the Agent must terminate the
+   connection, so that a message signed for one Agent cannot be replayed
+   to another. After adopting a
+   [`new_instance_uid`](#servertoagentagent_identification), the Agent may
+   also accept its previous one until a message carries the new one.
+   Otherwise, process it normally.
 
 Because the signature is detached, the Agent never needs to re-marshal
 the inner `ServerToAgent`. This eliminates any dependency on canonical
@@ -4305,11 +4310,12 @@ they evolve.
 The signing leaf certificate MUST:
 
 * Include the Extended Key Usage extension with `id-kp-codeSigning`
-  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages. TLS server
-  certificates carry `id-kp-serverAuth` instead; because the Agent
-  requires `id-kp-codeSigning` during chain validation, a TLS
-  certificate will fail the EKU check and cannot be repurposed as a
-  signing certificate.
+  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages, and neither
+  `id-kp-serverAuth` nor `anyExtendedKeyUsage`, so that a TLS
+  certificate cannot be repurposed as a signing certificate. The Agent
+  must check this itself: X.509 libraries commonly treat a certificate
+  without the extension, or with `anyExtendedKeyUsage`, as valid for any
+  purpose.
 * Be within its validity window
   (`notBefore <= currentTime < notAfter`) at every verification.
 * Contain a Subject Alternative Name (SAN) extension with a `dNSName`
@@ -4373,9 +4379,10 @@ dedicated error-response field is required.
 | Agent set `RequiresPayloadTrustVerification` but the Server sent a plain `ServerToAgent` that is **not** a heartbeat response (typically because the Server does not support the capability, or attempted to deliver actionable content unsigned). A plain `ServerToAgent` that is a heartbeat response — only `instance_uid` set — is permitted and is **not** a failure (see [Heartbeat Response Exemption](#heartbeat-response-exemption)). | Any message received from the Server. |
 | First signed `SignedServerToAgent` does not include `trust_chain_response`. | First signed message. |
 | `trust_chain_response.error_message` is non-empty. | First signed message. |
-| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First signed message. |
+| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, leaf EKU not meeting the [Certificate Requirements](#certificate-requirements), revoked certificate, etc.). | First signed message. |
 | `SignedServerToAgent` lacks `signature`. | Every message. |
 | `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Every message. |
+| The verified `payload`'s `instance_uid` is not the Agent's. | Every message. |
 | Stored leaf certificate's validity window has expired since the handshake. | The next verification after expiry. |
 
 ### Out of Scope

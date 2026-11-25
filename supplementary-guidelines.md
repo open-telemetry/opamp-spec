@@ -132,10 +132,10 @@ pipeline.
 
 ### Certificate Revocation
 
-If a signing intermediate is compromised, standard X.509 revocation (CRL
-distribution points or OCSP) handles it. The spec recommends enabling
-revocation checking in the Agent's X.509 library. Operators may alternatively
-use short-lived signing certificates as a substitute for active revocation.
+Agents are not required to check revocation (CRL distribution points or OCSP),
+so short-lived signing certificates are the primary mitigation for a
+compromised signing key. Deployments that need faster revocation provide it
+out of band.
 
 If the root payload trust anchor itself is compromised, it must be replaced via
 the same out-of-band mechanism used to provision it. This is an intentional
