@@ -244,6 +244,14 @@ message ServerToAgent {
     // A custom message sent from the Server to an Agent.
     // Status: [Development]
     CustomMessage custom_message = 11;
+
+    // Field numbers 14, 15, and 16 are reserved on ServerToAgent because
+    // they are used by SignedServerToAgent, the envelope message that
+    // carries a serialised ServerToAgent in its payload field. Keeping the
+    // field numbers of the two messages non-overlapping ensures that if the
+    // bytes of one are ever decoded as the other, the mismatched fields are
+    // seen as unknown fields and ignored rather than silently misinterpreted.
+    reserved 14, 15, 16;
 }
 
 enum ServerToAgentFlags {
@@ -290,8 +298,88 @@ enum ServerCapabilities {
     // The Server can accept ConnectionSettingsRequest and respond with an offer.
     // Status: [Development]
     ServerCapabilities_AcceptsConnectionSettingsRequest = 0x00000040;
+    // The Server can respond to the payload trust verification handshake and
+    // sign every ServerToAgent message it sends after the handshake. See the
+    // Message Attestation section of the specification.
+    // Status: [Development]
+    ServerCapabilities_OffersPayloadTrustVerification = 0x00000080;
 
     // Add new capabilities here, continuing with the least significant unused bit.
+}
+
+// TrustChainResponse carries the signing certificate chain used by the Server
+// to sign subsequent ServerToAgent messages, as part of the payload trust
+// verification handshake. See the Message Attestation section of the
+// specification.
+// Status: [Development]
+message TrustChainResponse {
+    // PEM-encoded certificate chain, ordered from the first intermediate
+    // certificate down to the signing leaf certificate. The root certificate
+    // is excluded; the Agent already possesses the root as its pre-configured
+    // payload trust anchor. Multiple certificates are concatenated in a single
+    // PEM blob, consistent with the encoding used by TLSCertificate.
+    bytes certificate_chain = 1;
+
+    // Human-readable error message indicating why the Server could not
+    // satisfy the trust chain request. If error_message is set, the Agent
+    // MUST terminate the connection.
+    string error_message = 2;
+
+    // PEM-encoded root CA certificate used as the payload trust anchor.
+    // Set only during Trust On First Use (TOFU) enrollment: the Server
+    // includes this when the Agent has advertised
+    // AgentCapabilities_AcceptsPayloadTrustAnchorTOFU and the Agent has no
+    // pre-configured trust anchor. The Agent MUST persist this certificate
+    // and use it as the payload trust anchor for all subsequent connections.
+    // The Agent MUST NOT update a previously persisted or operator-configured
+    // trust anchor — if the Agent already has a trust anchor this field MUST
+    // be ignored. To rotate a TOFU-enrolled anchor the operator deletes the
+    // persisted anchor file and restarts the Agent (out-of-band rotation).
+    // See the Trust On First Use (TOFU) section of the specification.
+    bytes tofu_trust_anchor = 3;
+}
+
+// SignedServerToAgent wraps a ServerToAgent message when the payload trust
+// verification handshake has been negotiated between Server and Agent. When
+// both AgentCapabilities_RequiresPayloadTrustVerification (set by the Agent)
+// and ServerCapabilities_OffersPayloadTrustVerification (set by the Server)
+// are advertised, every Server-to-Agent message on the connection is wrapped
+// in SignedServerToAgent.
+//
+// The signature is computed and verified over the bytes of the payload field
+// exactly as they appear on the wire (a "detached" signature). This avoids
+// any dependency on canonical protobuf encoding, which is not guaranteed
+// across protobuf library versions, schema changes, or build flags.
+//
+// See the Message Attestation section of the specification.
+// Status: [Development]
+message SignedServerToAgent {
+    // Serialised bytes of a ServerToAgent message. The Agent verifies the
+    // detached signature over these exact bytes, without re-marshalling,
+    // and then unmarshals them into a ServerToAgent for normal processing.
+    bytes payload = 14;
+
+    // Detached signature over the bytes of the payload field. MUST be
+    // present and verifiable on every SignedServerToAgent, including the
+    // first. There is no exception for the first message.
+    bytes signature = 15;
+
+    // Sent in the first SignedServerToAgent on a connection, and again
+    // whenever the signing certificate chain changes (signing certificate
+    // rotation). Carries the signing certificate chain the Agent uses to
+    // validate the leaf certificate and verify signatures. The root
+    // (payload trust anchor) never changes; only the chain to it does.
+    // When trust_chain_response carries a chain that differs from the one
+    // the Agent currently has pinned, the Agent MUST validate it against
+    // its pre-configured trust anchor and re-pin the resulting leaf; a
+    // chain identical to the pinned one is a no-op. This lets a
+    // mid-connection rotation avoid dropping the connection. The HTTP
+    // transport MAY re-send the chain on every response, so the Agent MUST
+    // treat an unchanged chain as a no-op. If the Agent set
+    // RequiresPayloadTrustVerification but the first SignedServerToAgent
+    // does not include a usable trust_chain_response, the Agent MUST
+    // terminate the connection.
+    TrustChainResponse trust_chain_response = 16;
 }
 
 // The OpAMPConnectionSettings message is a collection of fields which comprise an
@@ -782,6 +870,21 @@ enum AgentCapabilities {
     // The agent will report ConnectionSettingsOffers status via AgentToServer.connection_settings_status field.
     // Status: [Development]
     AgentCapabilities_ReportsConnectionSettingsStatus = 0x00008000;
+    // The Agent requires the payload trust verification handshake on connection
+    // and signature verification on every subsequent ServerToAgent message.
+    // If the Server does not offer this capability, the Agent MUST terminate
+    // the connection. See the Message Attestation section of the specification.
+    // Status: [Development]
+    AgentCapabilities_RequiresPayloadTrustVerification = 0x00010000;
+    // The Agent supports Trust On First Use (TOFU) enrollment for the payload
+    // trust anchor. When set alongside
+    // AgentCapabilities_RequiresPayloadTrustVerification it signals that the
+    // Agent has no pre-configured trust anchor and asks the Server to include
+    // the root CA in trust_chain_response.tofu_trust_anchor so the Agent can
+    // bootstrap and persist it. MUST NOT be set if the Agent already has a
+    // persisted or operator-configured trust anchor.
+    // Status: [Development]
+    AgentCapabilities_AcceptsPayloadTrustAnchorTOFU = 0x00020000;
     // Add new capabilities here, continuing with the least significant unused bit.
 }
 
