@@ -4310,12 +4310,13 @@ they evolve.
 The signing leaf certificate MUST:
 
 * Include the Extended Key Usage extension with `id-kp-codeSigning`
-  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages, and neither
-  `id-kp-serverAuth` nor `anyExtendedKeyUsage`, so that a TLS
-  certificate cannot be repurposed as a signing certificate. The Agent
-  must check this itself: X.509 libraries commonly treat a certificate
-  without the extension, or with `anyExtendedKeyUsage`, as valid for any
-  purpose.
+  (`1.3.6.1.5.5.7.3.3`) in its list of allowed usages. TLS server
+  certificates carry `id-kp-serverAuth` instead; because the Agent
+  requires `id-kp-codeSigning` during chain validation, a TLS
+  certificate will fail the EKU check and cannot be repurposed as a
+  signing certificate. The Agent must require `id-kp-codeSigning`
+  explicitly: X.509 libraries commonly treat a certificate without the
+  extension, or with only `anyExtendedKeyUsage`, as valid for any purpose.
 * Be within its validity window
   (`notBefore <= currentTime < notAfter`) at every verification.
 * Contain a Subject Alternative Name (SAN) extension with a `dNSName`
@@ -4379,7 +4380,7 @@ dedicated error-response field is required.
 | Agent set `RequiresPayloadTrustVerification` but the Server sent a plain `ServerToAgent` that is **not** a heartbeat response (typically because the Server does not support the capability, or attempted to deliver actionable content unsigned). A plain `ServerToAgent` that is a heartbeat response — only `instance_uid` set — is permitted and is **not** a failure (see [Heartbeat Response Exemption](#heartbeat-response-exemption)). | Any message received from the Server. |
 | First signed `SignedServerToAgent` does not include `trust_chain_response`. | First signed message. |
 | `trust_chain_response.error_message` is non-empty. | First signed message. |
-| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, leaf EKU not meeting the [Certificate Requirements](#certificate-requirements), revoked certificate, etc.). | First signed message. |
+| Certificate chain fails X.509 path validation (expired certificate, unknown issuer, missing `id-kp-codeSigning` EKU, revoked certificate, etc.). | First signed message. |
 | `SignedServerToAgent` lacks `signature`. | Every message. |
 | `signature` does not verify against the stored leaf certificate over the received `payload` bytes. | Every message. |
 | The verified `payload`'s `instance_uid` is not the Agent's. | Every message. |

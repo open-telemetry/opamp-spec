@@ -88,10 +88,9 @@ Attestation:
 - **`id-kp-codeSigning`** — the certificate may sign arbitrary data. Message
   Attestation uses this EKU to mark signing certificates.
 
-The spec requires the signing leaf certificate to carry `id-kp-codeSigning` and
-prohibits `id-kp-serverAuth` on it. This means a TLS certificate cannot be
-repurposed to sign OpAMP messages, and a signing certificate cannot be used as
-a TLS server certificate.
+The spec requires the signing leaf certificate to carry `id-kp-codeSigning`, so a
+TLS certificate cannot be repurposed to sign OpAMP messages. Keeping signing
+certificates out of TLS use is up to the operator's issuance policy.
 
 ### Do I need a separate root CA for signing?
 
