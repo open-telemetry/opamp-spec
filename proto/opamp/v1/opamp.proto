@@ -915,6 +915,12 @@ enum CommandStatuses {
     // The Agent tried to execute the command but failed.
     // See error_message for more details.
     CommandStatuses_FAILED = 3;
+
+    // The Agent does not support this command type, or support for it is not
+    // enabled (for example the Agent does not have the AcceptsRestartCommand
+    // capability). The Agent did not try to execute the command.
+    // error_message MAY contain more details.
+    CommandStatuses_UNSUPPORTED = 4;
 }
 
 enum RemoteConfigStatuses {

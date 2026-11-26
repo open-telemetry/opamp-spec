@@ -1147,6 +1147,13 @@ of each command it receives via the AgentToServer.command_status field:
    after the restart. If the Agent cannot verify this, it MUST NOT report
    COMPLETED.
 
+If the Agent receives a command whose type it does not support, or for which
+the corresponding capability is not enabled (for example a Restart command
+when the Agent does not have the AcceptsRestartCommand capability), it SHOULD
+report the UNSUPPORTED status instead of executing the command. UNSUPPORTED is
+distinct from FAILED: FAILED means the Agent tried to execute the command and
+did not succeed.
+
 Commands can cause the OpAMP connection to be re-established (for example when
 the Agent process restarts and it is not managed by a Supervisor). In that case
 the Agent SHOULD report the final status after reconnecting.
@@ -1164,6 +1171,7 @@ message CommandStatus {
         COMPLETED = 1;
         EXECUTING = 2;
         FAILED = 3;
+        UNSUPPORTED = 4;
     }
     CommandStatuses status = 3;
     string error_message = 4;
@@ -1185,7 +1193,7 @@ The current status of the command.
 
 ##### CommandStatus.error_message
 
-Optional error message if status==FAILED.
+Optional error message if status==FAILED or status==UNSUPPORTED.
 
 ## Operation
 
