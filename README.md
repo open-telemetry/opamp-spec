@@ -75,6 +75,8 @@ For more information about the emeritus role, see the [community repository](htt
 
 - [Bindplane](https://bindplane.com)
 - [Grafana Fleet Management](https://grafana.com/docs/grafana-cloud/send-data/fleet-management/get-started/opentelemetry-collector/)
+- [Telflo Hosted](https://telflo.com)
+- [Telflo Open Source](https://github.com/telflo/telflo)
 
 ### Agents
 
